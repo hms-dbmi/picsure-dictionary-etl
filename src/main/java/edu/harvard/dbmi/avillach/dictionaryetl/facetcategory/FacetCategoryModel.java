@@ -3,7 +3,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facetcategory;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "facetCategory")
+@Table(name = "facet_category")
 public class FacetCategoryModel {
     @Id
     @SequenceGenerator(name = "facetCategorySeq", sequenceName = "facet_category_facet_category_id_seq", allocationSize = 1)

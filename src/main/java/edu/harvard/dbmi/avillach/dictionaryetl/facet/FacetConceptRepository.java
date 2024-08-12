@@ -7,12 +7,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FacetConceptRepository extends JpaRepository<FacetConceptModel, Long> {
-    List<FacetConceptModel> findByFacetConceptNodeId(long facetConceptNodeId);
+    List<FacetConceptModel> findByFacetConceptId(Long facetConceptId);
 
-    Optional<FacetConceptModel> findByConceptNodeId(long conceptNodeId);
+    Optional<List<FacetConceptModel>> findByConceptNodeId(Long conceptNodeId);
 
-    Optional<FacetConceptModel> findByFacetId(long facetId);
+    Optional<List<FacetConceptModel>> findByFacetId(Long facetId);
 
-    Optional<FacetConceptModel> findByFacetIdAndConceptNodeId(long facetId, long conceptNodeId);
+    Optional<FacetConceptModel> findByFacetIdAndConceptNodeId(Long facetId, Long conceptNodeId);
 
 }

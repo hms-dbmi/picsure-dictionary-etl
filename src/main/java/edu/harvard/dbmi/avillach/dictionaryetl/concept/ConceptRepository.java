@@ -11,6 +11,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
     List<ConceptModel> findByDatasetId(long datasetId);
 
+    List<ConceptModel> findByParentId(long datasetId);
+
     Optional<ConceptModel> findByConceptPath(String conceptPath);
 
 }

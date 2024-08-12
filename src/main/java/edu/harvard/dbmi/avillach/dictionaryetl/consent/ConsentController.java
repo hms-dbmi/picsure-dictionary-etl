@@ -37,7 +37,7 @@ public class ConsentController {
                 consentRepository.findAll().forEach(consentModels::add);
             } else {
                 // get all consents in specific dataset
-                Long datasetId = datasetRepository.findByDatasetRef(datasetRef).get().getDatasetId();
+                Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
                 consentRepository.findByDatasetId(datasetId).forEach(consentModels::add);
 
             }
@@ -55,7 +55,7 @@ public class ConsentController {
     public ResponseEntity<ConsentModel> updateConsent(@RequestParam String datasetRef, @RequestParam String consentCode,
             @RequestParam String description, @RequestParam String authz, @RequestParam Long participantCount,
             @RequestParam Long variableCount, @RequestParam Long sampleCount) {
-        Long datasetId = datasetRepository.findByDatasetRef(datasetRef).get().getDatasetId();
+        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
 
         if (consentData.isPresent()) {
@@ -89,7 +89,7 @@ public class ConsentController {
     public ResponseEntity<ConsentModel> deleteConsent(@RequestParam String consentCode,
             @RequestParam String datasetRef) {
 
-        Long datasetId = datasetRepository.findByDatasetRef(datasetRef).get().getDatasetId();
+        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
 
         if (consentData.isPresent()) {

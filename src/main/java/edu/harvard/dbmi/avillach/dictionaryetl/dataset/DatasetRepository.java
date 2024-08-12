@@ -3,6 +3,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
@@ -11,6 +12,6 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 public interface DatasetRepository extends JpaRepository<DatasetModel, Long> {
     List<DatasetModel> findByDatasetId(long datasetId);
 
-    Optional<DatasetModel> findByDatasetRef(String datasetRef);
+    Optional<DatasetModel> findByRef(String datasetRef);
 
 }

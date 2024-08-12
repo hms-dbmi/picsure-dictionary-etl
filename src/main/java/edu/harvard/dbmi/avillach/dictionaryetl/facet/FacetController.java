@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 
 @CrossOrigin(origins = "http://localhost:8081")
@@ -57,8 +59,20 @@ public class FacetController {
             @RequestParam String name, @RequestParam String display, @RequestParam String desc,
             @RequestParam String parentName) {
 
-        Long categoryId = facetCategoryRepository.findByName(categoryName).get().getFacetCategoryId();
-        Long parentId = facetRepository.findByName(parentName).get().getFacetId();
+        Optional<FacetCategoryModel> facetCategoryModel = facetCategoryRepository.findByName(categoryName);
+        Long categoryId;
+        if (facetCategoryModel.isPresent()) {
+            categoryId = facetCategoryModel.get().getFacetCategoryId();
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Optional<FacetModel> parentModel = facetRepository.findByName(parentName);
+        Long parentId;
+        if (parentModel.isPresent()) {
+            parentId = parentModel.get().getFacetId();
+        } else {
+            parentId = null;
+        }
         Optional<FacetModel> facetData = facetRepository.findByName(name);
 
         if (facetData.isPresent()) {
@@ -91,6 +105,10 @@ public class FacetController {
         Optional<FacetModel> facetData = facetRepository.findByName(name);
 
         if (facetData.isPresent()) {
+            Long facetId = facetData.get().getFacetId();
+            facetConceptRepository.findByFacetId(facetId).get().forEach(fc -> {
+                facetConceptRepository.delete(fc);
+            });
             facetRepository.delete(facetData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -101,6 +119,7 @@ public class FacetController {
     @GetMapping("/facet/concept")
     public ResponseEntity<List<FacetConceptModel>> getAllFacetConceptModels(Optional<String> facetName) {
         try {
+
             List<FacetConceptModel> facetConceptModels = new ArrayList<FacetConceptModel>();
             facetConceptRepository.findAll().forEach(facetConceptModels::add);
 
@@ -120,8 +139,18 @@ public class FacetController {
         // add new facet concept relationship
 
         try {
-            Long facetId = facetRepository.findByName(facetName).get().getFacetId();
-            Long conceptNodeId = conceptRepository.findByConceptPath(conceptPath).get().getConceptNodeId();
+
+            Optional<FacetModel> facet = facetRepository.findByName(facetName);
+            Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
+            Long facetId;
+            Long conceptNodeId;
+            if (facet.isPresent() && concept.isPresent()) {
+                facetId = facet.get().getFacetId();
+                conceptNodeId = concept.get().getConceptNodeId();
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
             FacetConceptModel newConceptFacet = facetConceptRepository
                     .save(new FacetConceptModel(facetId,
                             conceptNodeId));
@@ -136,8 +165,16 @@ public class FacetController {
     @DeleteMapping("/facet/concept")
     public ResponseEntity<FacetConceptModel> deleteConceptFacet(@RequestParam String facetName,
             @RequestParam String conceptPath) {
-        Long facetId = facetRepository.findByName(facetName).get().getFacetId();
-        Long conceptNodeId = conceptRepository.findByConceptPath(conceptPath).get().getConceptNodeId();
+        Optional<FacetModel> facet = facetRepository.findByName(facetName);
+        Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
+        Long facetId;
+        Long conceptNodeId;
+        if (facet.isPresent() && concept.isPresent()) {
+            facetId = facet.get().getFacetId();
+            conceptNodeId = concept.get().getConceptNodeId();
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         Optional<FacetConceptModel> facetConceptData = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
                 conceptNodeId);
 

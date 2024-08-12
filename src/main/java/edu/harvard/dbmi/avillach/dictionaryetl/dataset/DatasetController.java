@@ -15,12 +15,35 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetController;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryController;
+
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api")
 public class DatasetController {
     @Autowired
     DatasetRepository datasetRepository;
+
+    @Autowired
+    FacetRepository facetRepository;
+
+    @Autowired
+    ConceptRepository conceptRepository;
+
+    @Autowired
+    ConceptMetadataRepository conceptMetadataRepository;
+
+    @Autowired
+    FacetConceptRepository facetConceptRepository;
+
+    @Autowired
+    ConsentRepository consentRepository;
 
     @Autowired
     DatasetMetadataRepository datasetMetadataRepository;
@@ -45,7 +68,7 @@ public class DatasetController {
     public ResponseEntity<DatasetModel> updateDataset(@RequestParam String datasetRef,
             @RequestParam String fullName, @RequestParam String abv, @RequestParam String desc) {
 
-        Optional<DatasetModel> datasetData = datasetRepository.findByDatasetRef(datasetRef);
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
 
         if (datasetData.isPresent()) {
             // update already existing dataset
@@ -72,9 +95,37 @@ public class DatasetController {
     @DeleteMapping("/dataset")
     public ResponseEntity<DatasetModel> deleteDataset(@RequestParam String datasetRef) {
 
-        Optional<DatasetModel> datasetData = datasetRepository.findByDatasetRef(datasetRef);
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
 
         if (datasetData.isPresent()) {
+            Long datasetId = datasetData.get().getDatasetId();
+
+            conceptRepository.findByDatasetId(datasetId).forEach(
+                    concept -> {
+                        Long conceptId = concept.getConceptNodeId();
+                        // find all child concept nodes and null the parent ids to prevent dependency
+                        // errors
+                        // potentially would want to instead set the parent id to dataset or the
+                        // parent's parent id - must do eval on use case of single var deletion
+                        conceptRepository.findByParentId(conceptId).forEach(child -> {
+                            child.setParentId(null);
+                            conceptRepository.save(child);
+                        });
+
+                        facetConceptRepository.findByConceptNodeId(conceptId).get().forEach(fc -> {
+                            facetConceptRepository.delete(fc);
+                        });
+                        conceptMetadataRepository.findByConceptNodeId(conceptId).forEach(cm -> {
+                            conceptMetadataRepository.delete(cm);
+                        });
+                        conceptRepository.delete(concept);
+                    });
+            datasetMetadataRepository.findByDatasetId(datasetId).forEach(dm -> {
+                datasetMetadataRepository.delete(dm);
+            });
+            consentRepository.findByDatasetId(datasetId).forEach(consent -> {
+                consentRepository.delete(consent);
+            });
             datasetRepository.delete(datasetData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -88,13 +139,13 @@ public class DatasetController {
         try {
             List<DatasetMetadataModel> datasetMetadataModels = new ArrayList<DatasetMetadataModel>();
 
-            if (datasetRef == null) {
+            if (datasetRef == null || !datasetRef.isPresent()) {
                 // get all dataset metadata in dictionary
                 System.out.println("Hitting datasetMetadata");
                 datasetMetadataRepository.findAll().forEach(datasetMetadataModels::add);
             } else {
                 // get all dataset metadata in specific dataset
-                Long datasetId = datasetRepository.findByDatasetRef(datasetRef.get()).get().getDatasetId();
+                Long datasetId = datasetRepository.findByRef(datasetRef.get()).get().getDatasetId();
                 datasetMetadataRepository.findByDatasetId(datasetId).forEach(datasetMetadataModels::add);
 
             }
@@ -111,7 +162,7 @@ public class DatasetController {
     @PutMapping("/dataset/metadata")
     public ResponseEntity<DatasetMetadataModel> updateDataset(@RequestParam String datasetRef,
             @RequestParam String key, @RequestParam String values) {
-        Long datasetId = datasetRepository.findByDatasetRef(datasetRef).get().getDatasetId();
+        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId,
                 key);
 
@@ -144,7 +195,7 @@ public class DatasetController {
     public ResponseEntity<DatasetMetadataModel> deleteDatasetMetadata(@RequestParam String datasetRef,
             @RequestParam String key) {
 
-        Long datasetId = datasetRepository.findByDatasetRef(datasetRef).get().getDatasetId();
+        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId,
                 key);
 

@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import jakarta.persistence.*;
 
+@Entity
+@Table(name = "facet__concept_node")
 public class FacetConceptModel {
     @Id
     @SequenceGenerator(name = "facetConceptMetaSeq", sequenceName = "facet__concept_node_facet__concept_node_id_seq", allocationSize = 1)

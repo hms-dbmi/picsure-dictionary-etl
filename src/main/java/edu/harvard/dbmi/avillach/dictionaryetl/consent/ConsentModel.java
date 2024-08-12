@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "consent")
 public class ConsentModel {
     @Id
-    @SequenceGenerator(name = "consentNodeSeq", sequenceName = "consent_node_consent_node_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "consentNodeSeq", sequenceName = "consent_consent_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "consentNodeSeq")
     @Column(name = "consent_id")
     private Long consentId;
