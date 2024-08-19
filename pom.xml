@@ -13,6 +13,9 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>dictionaryetl</name>
 	<description>ETL API for Data Dictionary</description>
+	<properties>
+		<java.version>11</java.version>
+	</properties>
 	<url/>
 	<licenses>
 		<license/>
