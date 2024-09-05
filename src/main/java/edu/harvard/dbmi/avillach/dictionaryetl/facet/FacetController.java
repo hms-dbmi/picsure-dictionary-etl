@@ -36,6 +36,9 @@ public class FacetController {
     FacetCategoryRepository facetCategoryRepository;
 
     @Autowired
+    FacetMetadataRepository facetMetadataRepository;
+
+    @Autowired
     ConceptRepository conceptRepository;
 
     @GetMapping("/facet")
@@ -186,4 +189,83 @@ public class FacetController {
         }
     }
 
+    @GetMapping("/facet/metadata")
+    public ResponseEntity<List<FacetMetadataModel>> getAllFacetMetadataModels(
+            @RequestParam Optional<String> name) {
+        try {
+            List<FacetMetadataModel> facetMetadataModels = new ArrayList<FacetMetadataModel>();
+
+            if (name == null || !name.isPresent()) {
+                // get all facetMetadatas in dictionary
+                System.out.println("Hitting facetMetadata null");
+                facetMetadataRepository.findAll().forEach(facetMetadataModels::add);
+            } else {
+                System.out.println("Hitting facetMetadata");
+                Long facetId = facetRepository.findByName(name.get()).get().getFacetId();
+                facetMetadataRepository.findByFacetId(facetId).forEach(facetMetadataModels::add);
+
+            }
+            if (facetMetadataModels.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(facetMetadataModels, HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/facet/metadata")
+    public ResponseEntity<FacetMetadataModel> updateFacetMetadata(@RequestParam String name,
+            @RequestParam String key, @RequestBody String values) {
+        Optional<FacetModel> facet = facetRepository.findByName(name);
+        Long facetId;
+        if (facet.isPresent()) {
+            facetId = facet.get().getFacetId();
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Optional<FacetMetadataModel> facetMetadataData = facetMetadataRepository
+                .findByFacetIdAndKey(facetId, key);
+
+        try {
+            if (facetMetadataData.isPresent()) {
+                // update already existing facetMetadata
+                FacetMetadataModel existingFacetMetadata = facetMetadataData.get();
+                existingFacetMetadata.setValue(values);
+                return new ResponseEntity<>(facetMetadataRepository.save(existingFacetMetadata), HttpStatus.OK);
+            } else {
+                // add new facetMetadata when facetMetadata not present in data
+                try {
+                    FacetMetadataModel newFacetMetadata = facetMetadataRepository
+                            .save(new FacetMetadataModel(facetId, key,
+                                    values));
+                    return new ResponseEntity<>(newFacetMetadata, HttpStatus.CREATED);
+                } catch (Exception e) {
+                    System.out.println(e.getLocalizedMessage());
+                    return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @DeleteMapping("/facet/metadata")
+    public ResponseEntity<FacetMetadataModel> deleteFacetMetadata(@RequestParam String name,
+            @RequestParam String key) {
+
+        Long facetId = facetRepository.findByName(name).get().getFacetId();
+        Optional<FacetMetadataModel> facetMetadataData = facetMetadataRepository
+                .findByFacetIdAndKey(facetId, key);
+
+        if (facetMetadataData.isPresent()) {
+            facetMetadataRepository.delete(facetMetadataData.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

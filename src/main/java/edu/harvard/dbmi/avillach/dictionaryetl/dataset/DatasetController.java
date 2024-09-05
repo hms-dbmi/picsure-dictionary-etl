@@ -160,7 +160,7 @@ public class DatasetController {
     }
 
     @PutMapping("/dataset/metadata")
-    public ResponseEntity<DatasetMetadataModel> updateDataset(@RequestParam String datasetRef,
+    public ResponseEntity<DatasetMetadataModel> updateDatasetMetadata(@RequestParam String datasetRef,
             @RequestParam String key, @RequestParam String values) {
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId,
