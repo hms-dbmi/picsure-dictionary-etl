@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 
 @CrossOrigin(origins = "http://localhost:8081")
@@ -42,7 +43,6 @@ public class ConceptController {
 
             if (datasetRef == null) {
                 // get all concepts in dictionary
-                System.out.println("Hitting concept");
                 conceptRepository.findAll().forEach(conceptModels::add);
             } else {
                 // get all concepts in specific dataset
@@ -67,7 +67,15 @@ public class ConceptController {
 
         Optional<ConceptModel> conceptData = conceptRepository.findByConceptPath(conceptPath);
         Optional<ConceptModel> parentData = conceptRepository.findByConceptPath(parentPath);
-        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        Long datasetId;
+        if (datasetData.isPresent()) {
+            datasetId = datasetData.get().getDatasetId();
+        } else {
+            System.out.println("Dataset not found: " + datasetRef + ". Failed to create/update concept " + conceptPath);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
         Long parentId;
         if (parentData.isPresent()) {
             parentId = parentData.get().getConceptNodeId();
@@ -107,8 +115,10 @@ public class ConceptController {
         if (conceptData.isPresent()) {
 
             Long conceptId = conceptData.get().getConceptNodeId();
-            //find all child concept nodes and null the parent ids to prevent dependency errors
-            //potentially would want to instead set the parent id to dataset or the parent's parent id - must do eval on use case of single var deletion
+            // find all child concept nodes and null the parent ids to prevent dependency
+            // errors
+            // potentially would want to instead set the parent id to dataset or the
+            // parent's parent id - must do eval on use case of single var deletion
             conceptRepository.findByParentId(conceptId).forEach(child -> {
                 child.setParentId(null);
                 conceptRepository.save(child);
