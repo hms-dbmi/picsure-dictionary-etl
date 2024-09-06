@@ -153,11 +153,16 @@ public class FacetController {
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
+            Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
+                    conceptNodeId);
+            if (!conceptFacet.isPresent()) {
+                FacetConceptModel newConceptFacet = facetConceptRepository
+                        .save(new FacetConceptModel(facetId,
+                                conceptNodeId));
+                return new ResponseEntity<>(newConceptFacet, HttpStatus.CREATED);
+            } else
+                return new ResponseEntity<>(conceptFacet.get(), HttpStatus.CREATED);
 
-            FacetConceptModel newConceptFacet = facetConceptRepository
-                    .save(new FacetConceptModel(facetId,
-                            conceptNodeId));
-            return new ResponseEntity<>(newConceptFacet, HttpStatus.CREATED);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
