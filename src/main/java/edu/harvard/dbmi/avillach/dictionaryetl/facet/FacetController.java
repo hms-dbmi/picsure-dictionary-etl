@@ -150,14 +150,17 @@ public class FacetController {
 
             Optional<FacetModel> facet = facetRepository.findByName(facetName);
             Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
-            Optional<FacetModel> parentFacet;
+            Boolean hasParent = false;
+
             Long facetId;
             Long conceptNodeId;
             Long parentFacetId;
             if (facet.isPresent() && concept.isPresent()) {
                 facetId = facet.get().getFacetId();
                 conceptNodeId = concept.get().getConceptNodeId();
-                parentFacet = facetRepository.findById(facet.get().getParentId());
+                if (facet.get().getParentId() != null) {
+                    hasParent = true;
+                }
 
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -171,7 +174,8 @@ public class FacetController {
 
                 // check if parent facet a) exists and b) has the concept relationship
                 // established. If not, create relationship between parent facet and concept
-                if (parentFacet.isPresent()) {
+                if (hasParent) {
+                    Optional<FacetModel> parentFacet = facetRepository.findById(facet.get().getParentId());
                     parentFacetId = parentFacet.get().getFacetId();
                     Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository
                             .findByFacetIdAndConceptNodeId(parentFacetId,
@@ -202,14 +206,12 @@ public class FacetController {
 
             Optional<FacetModel> facet = facetRepository.findByName(facetName);
             Optional<DatasetModel> dataset = datasetRepository.findByRef(datasetRef);
+
             Long datasetID;
             Long facetId;
-
-            Optional<FacetModel> parentFacet;
             if (dataset.isPresent() && facet.isPresent()) {
                 datasetID = dataset.get().getDatasetId();
                 facetId = facet.get().getFacetId();
-                parentFacet = facetRepository.findById(facet.get().getParentId());
 
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -227,7 +229,12 @@ public class FacetController {
 
                     // check if parent facet a) exists and b) has the concept relationship
                     // established. If not, create relationship between parent facet and concept
-                    if (parentFacet.isPresent()) {
+                    Boolean hasParent = false;
+                    if (facet.get().getParentId() != null) {
+                        hasParent = true;
+                    }
+                    if (hasParent) {
+                        Optional<FacetModel> parentFacet = facetRepository.findById(facet.get().getParentId());
                         Long parentFacetId = parentFacet.get().getFacetId();
                         Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository
                                 .findByFacetIdAndConceptNodeId(parentFacetId,
