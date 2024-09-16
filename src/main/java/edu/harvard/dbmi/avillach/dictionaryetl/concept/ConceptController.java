@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.mapping.Map;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -198,6 +201,25 @@ public class ConceptController {
             System.out.println(e.getLocalizedMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+    }
+
+    @PutMapping("/concept/metadata/values")
+    public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String values) {
+
+        try {
+            JSONArray valArray = new JSONArray(values);
+            for (int i = 0; i < valArray.length(); i++) {
+                JSONObject obj = valArray.getJSONObject(i);
+                String path = obj.getString("concept_path");
+                JSONArray vals = obj.getJSONArray("values");
+                updateConceptMetadata(path, "values", vals.toString());
+            }
+        } catch (JSONException e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.CREATED);
 
     }
 
