@@ -123,6 +123,7 @@ public class DatasetController {
             datasetMetadataRepository.findByDatasetId(datasetId).forEach(dm -> {
                 datasetMetadataRepository.delete(dm);
             });
+            facetRepository.delete(facetRepository.findByName(datasetRef).get());
             consentRepository.findByDatasetId(datasetId).forEach(consent -> {
                 consentRepository.delete(consent);
             });
