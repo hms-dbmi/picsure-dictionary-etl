@@ -17,6 +17,9 @@ public class DatasetHarmonizationModel {
     @Column(name = "source_dataset_id")
     private Long sourceDatasetId;
 
+    public DatasetHarmonizationModel() {
+    }
+
     public DatasetHarmonizationModel(Long harmonizedDatasetId, Long sourceDatasetId) {
         this.harmonizedDatasetId = harmonizedDatasetId;
         this.sourceDatasetId = sourceDatasetId;
