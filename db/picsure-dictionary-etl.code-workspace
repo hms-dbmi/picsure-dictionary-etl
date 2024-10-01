@@ -8,6 +8,7 @@
 		"java.project.sourcePaths": [],
 		"java.compile.nullAnalysis.mode": "disabled",
 		"java.configuration.updateBuildConfiguration": "interactive",
-		"java.format.settings.url": "eclipse-formatter.xml"
+		"java.format.settings.url": "eclipse-formatter.xml",
+		"editor.wordWrapColumn": 300
 	}
 }

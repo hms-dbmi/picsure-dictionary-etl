@@ -47,6 +47,8 @@ public class DatasetController {
 
     @Autowired
     DatasetMetadataRepository datasetMetadataRepository;
+    @Autowired
+    DatasetHarmonizationRepository datasetHarmonizationRepository;
 
     @GetMapping("/dataset")
     public ResponseEntity<List<DatasetModel>> getAllDatasetModels() {
@@ -202,6 +204,41 @@ public class DatasetController {
 
         if (datasetMetadataData.isPresent()) {
             datasetMetadataRepository.delete(datasetMetadataData.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PutMapping("/dataset/harmonization")
+    public ResponseEntity<DatasetHarmonizationModel> updateDatasetHarmonization(
+            @RequestParam String harmonizedDatasetRef,
+            @RequestParam String sourceDatasetRef) {
+        Long harmonizedDatasetId = datasetRepository.findByRef(harmonizedDatasetRef).get().getDatasetId();
+        Long sourceDatasetId = datasetRepository.findByRef(sourceDatasetRef).get().getDatasetId();
+        try {
+            DatasetHarmonizationModel newDatasetHarmonization = datasetHarmonizationRepository
+                    .save(new DatasetHarmonizationModel(harmonizedDatasetId, sourceDatasetId));
+            return new ResponseEntity<>(newDatasetHarmonization, HttpStatus.CREATED);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/dataset/harmonization")
+    public ResponseEntity<DatasetHarmonizationModel> deleteDatasetHarmonization(
+            @RequestParam String harmonizedDatasetRef,
+            @RequestParam String sourceDatasetRef) {
+
+        Long harmonizedDatasetId = datasetRepository.findByRef(harmonizedDatasetRef).get().getDatasetId();
+        Long sourceDatasetId = datasetRepository.findByRef(sourceDatasetRef).get().getDatasetId();
+        Optional<DatasetHarmonizationModel> datasetHarmonizationData = datasetHarmonizationRepository
+                .findBySourceDatasetIdAndHarmonizedDatasetId(
+                        harmonizedDatasetId, sourceDatasetId);
+
+        if (datasetHarmonizationData.isPresent()) {
+            datasetHarmonizationRepository.delete(datasetHarmonizationData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
