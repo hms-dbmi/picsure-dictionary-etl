@@ -224,18 +224,28 @@ public class ConceptController {
     }
 
     @DeleteMapping("/concept/metadata")
-    public ResponseEntity<ConceptMetadataModel> deleteConceptMetadata(@RequestParam String conceptPath,
+    public ResponseEntity<ConceptMetadataModel> deleteConceptMetadata(@RequestParam Optional<String> conceptPath,
             @RequestParam String key) {
-
-        Long conceptId = conceptRepository.findByConceptPath(conceptPath).get().getConceptNodeId();
-        Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
+        if(conceptPath.isPresent()){
+            Long conceptId = conceptRepository.findByConceptPath(conceptPath.get()).get().getConceptNodeId();
+            Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
                 .findByConceptNodeIdAndKey(conceptId, key);
 
-        if (conceptMetadataData.isPresent()) {
-            conceptMetadataRepository.delete(conceptMetadataData.get());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            if (conceptMetadataData.isPresent()) {
+                conceptMetadataRepository.delete(conceptMetadataData.get());
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
         }
+        else if (key.length()>0){
+            conceptMetadataRepository.findByKey(key).forEach(cm -> {
+                conceptMetadataRepository.delete(cm);
+            });
+        }
+
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        
     }
 }

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadataModel, Long> {
     List<ConceptMetadataModel> findByConceptNodeId(long conceptNodeId);
 
+    List<ConceptMetadataModel> findByKey(String key);
+
     Optional<ConceptMetadataModel> findByConceptNodeIdAndKey(long conceptNodeId, String key);
 
 }
