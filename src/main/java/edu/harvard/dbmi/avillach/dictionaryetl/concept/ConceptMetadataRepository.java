@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-
 @Repository
 public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadataModel, Long> {
     List<ConceptMetadataModel> findByConceptNodeId(long conceptNodeId);
@@ -20,7 +19,9 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
 
     @Transactional
     @Modifying
-    @Query(value="insert into concept_node_meta (concept_node_id, key, value) VALUES (:conceptId, :key, :value) ON CONFLICT (key, concept_node_id) DO UPDATE SET value=:value", nativeQuery = true)
-    void insertOrUpdateConceptMeta(Long conceptId, String key, String value);
+    @Query(value = "insert into concept_node_meta (concept_node_id, key, value) VALUES :entries "
+            + "ON CONFLICT (key, concept_node_id) "
+            + "DO UPDATE SET value=:value", nativeQuery = true)
+    void insertOrUpdateConceptMeta(String entries, String value);
 
 }

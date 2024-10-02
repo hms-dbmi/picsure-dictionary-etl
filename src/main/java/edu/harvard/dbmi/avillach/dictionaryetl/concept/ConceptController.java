@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.hibernate.mapping.Map;
 import org.json.JSONArray;
@@ -210,27 +211,42 @@ public class ConceptController {
     public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToRemove) {
 
         try {
-            String[] concepts= conceptsToRemove.split("\n");
-            List<String> conceptList =  Arrays.asList(concepts);
-           conceptList.forEach(path -> {
-            Long conceptId;
-            try{
-                Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
-                conceptId=concept.get().getConceptNodeId();
-                try{
-                       System.out.println("Upserting " + path);
-                       conceptMetadataRepository.insertOrUpdateConceptMeta(conceptId, "stigmatized", "true");
+            String[] concepts = conceptsToRemove.split("\n");
+            List<String> conceptList = Arrays.asList(concepts);
+            List<ConceptMetadataModel> queryEntries = new ArrayList<ConceptMetadataModel>();
+            conceptList.forEach(path -> {
+                Long conceptId;
+                try {
+                    Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
+                    conceptId = concept.get().getConceptNodeId();
+                    Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
+                            .findByConceptNodeIdAndKey(conceptId, "stigmatizing");
+                    ConceptMetadataModel cm;
+                    if (conceptMetadataData.isPresent()) {
+                        cm = conceptMetadataData.get();
+                        cm.setValue("true");
+                    } else {
+                        cm = new ConceptMetadataModel(conceptId, "stigmatizing",
+                                "true");
+                    }
+                    queryEntries.add(cm);
+
+                } catch (Exception e) {
+                    System.out.println("Concept path not found in database " + path);
                 }
-                catch(Exception e){
-                    System.out.print(e.getMessage());
-                }
+
+                // updateConceptMetadata(path, "stigmatized", "true");
+            });
+            try {
+                conceptMetadataRepository.saveAll(queryEntries);
+                /*
+                 * String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
+                 * System.out.println(queryInset);
+                 * conceptMetadataRepository.insertOrUpdateConceptMeta(queryInset, "true");
+                 */
+            } catch (Exception e) {
+                System.out.print(e.getMessage());
             }
-            catch(Exception e){
-                System.out.println("Concept path not found in database " + path);
-            }
-            
-               // updateConceptMetadata(path, "stigmatized", "true");
-           });
         } catch (JSONException e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -239,8 +255,7 @@ public class ConceptController {
 
     }
 
-
-    //Specifically for mass value updates
+    // Specifically for mass value updates
     @PutMapping("/concept/metadata/values")
     public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String values) {
 
@@ -263,26 +278,24 @@ public class ConceptController {
     @DeleteMapping("/concept/metadata")
     public ResponseEntity<ConceptMetadataModel> deleteConceptMetadata(@RequestParam Optional<String> conceptPath,
             @RequestParam String key) {
-        if(conceptPath.isPresent()){
+        if (conceptPath.isPresent()) {
             Long conceptId = conceptRepository.findByConceptPath(conceptPath.get()).get().getConceptNodeId();
             Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
-                .findByConceptNodeIdAndKey(conceptId, key);
+                    .findByConceptNodeIdAndKey(conceptId, key);
 
             if (conceptMetadataData.isPresent()) {
                 conceptMetadataRepository.delete(conceptMetadataData.get());
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-            else {
+            } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-        }
-        else if (key.length()>0){
+        } else if (key.length() > 0) {
             conceptMetadataRepository.findByKey(key).forEach(cm -> {
                 conceptMetadataRepository.delete(cm);
             });
         }
 
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+
     }
 }
