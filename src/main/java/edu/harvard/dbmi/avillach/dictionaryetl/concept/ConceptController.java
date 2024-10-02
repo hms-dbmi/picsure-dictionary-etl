@@ -1,6 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -204,6 +205,26 @@ public class ConceptController {
 
     }
 
+    // Specifically for stigvar updates
+    @PutMapping("/concept/metadata/stigvars")
+    public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToRemove) {
+
+        try {
+            String[] concepts= conceptsToRemove.split("\n");
+            List<String> conceptList =  Arrays.asList(concepts);
+           conceptList.forEach(path -> {
+                updateConceptMetadata(path, "stigmatized", "true");
+           });
+        } catch (JSONException e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.CREATED);
+
+    }
+
+
+    //Specifically for mass value updates
     @PutMapping("/concept/metadata/values")
     public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String values) {
 
