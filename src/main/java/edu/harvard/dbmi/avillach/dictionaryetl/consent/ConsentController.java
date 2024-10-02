@@ -85,6 +85,30 @@ public class ConsentController {
 
     }
 
+    @PutMapping("/consent/counts")
+    public ResponseEntity<ConsentModel> updateConsentCounts(@RequestParam String datasetRef,
+            @RequestParam String consentCode,
+            @RequestParam Optional<Long> participantCount, @RequestParam Optional<Long> variableCount,
+            @RequestParam Optional<Long> sampleCount) {
+        Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
+        Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
+
+        if (consentData.isPresent()) {
+            // update already existing consent
+            ConsentModel existingConsent = consentData.get();
+            if (participantCount.isPresent())
+                existingConsent.setParticipantCount(participantCount.get());
+            if (variableCount.isPresent())
+                existingConsent.setVariableCount(variableCount.get());
+            if (sampleCount.isPresent())
+                existingConsent.setSampleCount(sampleCount.get());
+
+            return new ResponseEntity<>(consentRepository.save(existingConsent), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
     @DeleteMapping("/consent")
     public ResponseEntity<ConsentModel> deleteConsent(@RequestParam String consentCode,
             @RequestParam String datasetRef) {
