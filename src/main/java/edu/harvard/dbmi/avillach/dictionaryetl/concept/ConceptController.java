@@ -217,11 +217,13 @@ public class ConceptController {
             try{
                 Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
                 conceptId=concept.get().getConceptNodeId();
-                   System.out.println("Building cm for " + path);
-                ConceptMetadataModel cm = new ConceptMetadataModel(conceptId, "stigmatized",
-                           "true");
-                    System.out.println("Upserting " + path);
-                conceptMetadataRepository.insertOrUpdateConceptMeta(cm, "true");
+                try{
+                       System.out.println("Upserting " + path);
+                       conceptMetadataRepository.insertOrUpdateConceptMeta(conceptId, "stigmatized", "true");
+                }
+                catch(Exception e){
+                    System.out.print(e.getMessage());
+                }
             }
             catch(Exception e){
                 System.out.println("Concept path not found in database " + path);
