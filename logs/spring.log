@@ -3850,3 +3850,147 @@ Caused by: java.lang.ClassNotFoundException: PreparedStatement
 	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:521) ~[na:na]
 	... 31 common frames omitted
 
+2024-10-01T22:39:03.661-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 19.0.2 with PID 60699 (/Users/sharra/github/picsure-dictionary-etl/target/classes started by sharra in /Users/sharra/github/picsure-dictionary-etl)
+2024-10-01T22:39:03.663-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : No active profile set, falling back to 1 default profile: "default"
+2024-10-01T22:39:03.707-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2024-10-01T22:39:03.708-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2024-10-01T22:39:04.336-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-10-01T22:39:04.401-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 57 ms. Found 10 JPA repository interfaces.
+2024-10-01T22:39:05.190-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-10-01T22:39:05.205-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-10-01T22:39:05.205-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-10-01T22:39:05.246-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-10-01T22:39:05.247-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1538 ms
+2024-10-01T22:39:05.396-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-10-01T22:39:05.580-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@2ad1164
+2024-10-01T22:39:05.581-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-10-01T22:39:05.636-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-10-01T22:39:05.707-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2024-10-01T22:39:05.739-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-10-01T22:39:05.964-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-10-01T22:39:06.893-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-10-01T22:39:06.897-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T22:39:07.307-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2024-10-01T22:39:07.449-04:00  WARN 60699 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-10-01T22:39:08.094-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-10-01T22:39:08.134-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-10-01T22:39:08.146-04:00  INFO 60699 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.892 seconds (process running for 5.343)
+2024-10-01T22:39:28.838-04:00  INFO 60699 --- [dictionary_etl] [http-nio-8086-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-10-01T22:39:28.839-04:00  INFO 60699 --- [dictionary_etl] [http-nio-8086-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-10-01T22:39:28.840-04:00  INFO 60699 --- [dictionary_etl] [http-nio-8086-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-10-01T22:39:41.357-04:00  INFO 60699 --- [dictionary_etl] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T22:39:41.360-04:00  INFO 60699 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-10-01T22:39:41.362-04:00  INFO 60699 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-10-01T23:01:49.078-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 19.0.2 with PID 70351 (/Users/sharra/github/picsure-dictionary-etl/target/classes started by sharra in /Users/sharra/github/picsure-dictionary-etl)
+2024-10-01T23:01:49.081-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : No active profile set, falling back to 1 default profile: "default"
+2024-10-01T23:01:49.128-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2024-10-01T23:01:49.128-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2024-10-01T23:01:49.729-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-10-01T23:01:49.861-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 94 ms. Found 10 JPA repository interfaces.
+2024-10-01T23:01:50.512-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-10-01T23:01:50.541-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-10-01T23:01:50.542-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-10-01T23:01:50.588-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-10-01T23:01:50.589-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1460 ms
+2024-10-01T23:01:50.735-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-10-01T23:01:50.939-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3c3962ad
+2024-10-01T23:01:50.948-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-10-01T23:01:51.012-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-10-01T23:01:51.100-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2024-10-01T23:01:51.142-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-10-01T23:01:51.411-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-10-01T23:01:52.398-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-10-01T23:01:52.400-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:01:52.847-04:00  WARN 70351 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-10-01T23:01:53.449-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-10-01T23:01:53.481-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-10-01T23:01:53.492-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.918 seconds (process running for 5.328)
+2024-10-01T23:02:02.808-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-10-01T23:02:02.809-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-10-01T23:02:02.810-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-10-01T23:02:03.840-04:00  WARN 70351 --- [dictionary_etl] [http-nio-8086-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 0, SQLState: 02000
+2024-10-01T23:02:03.840-04:00 ERROR 70351 --- [dictionary_etl] [http-nio-8086-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : No results were returned by the query.
+2024-10-01T23:03:54.842-04:00  INFO 70351 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2024-10-01T23:03:54.858-04:00  INFO 70351 --- [dictionary_etl] [Thread-5] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:03:54.862-04:00  INFO 70351 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-10-01T23:03:54.864-04:00  INFO 70351 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-10-01T23:03:54.973-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 19.0.2 with PID 70351 (/Users/sharra/github/picsure-dictionary-etl/target/classes started by sharra in /Users/sharra/github/picsure-dictionary-etl)
+2024-10-01T23:03:54.974-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : No active profile set, falling back to 1 default profile: "default"
+2024-10-01T23:03:55.166-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-10-01T23:03:55.186-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 19 ms. Found 10 JPA repository interfaces.
+2024-10-01T23:03:55.300-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-10-01T23:03:55.300-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-10-01T23:03:55.301-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-10-01T23:03:55.310-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-10-01T23:03:55.310-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 335 ms
+2024-10-01T23:03:55.350-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2024-10-01T23:03:55.375-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@1f03de8f
+2024-10-01T23:03:55.375-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2024-10-01T23:03:55.376-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-10-01T23:03:55.378-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-10-01T23:03:55.382-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-10-01T23:03:55.503-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-10-01T23:03:55.503-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:03:55.645-04:00  WARN 70351 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-10-01T23:03:55.921-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-10-01T23:03:55.931-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-10-01T23:03:55.937-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 0.984 seconds (process running for 127.763)
+2024-10-01T23:03:55.940-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-10-01T23:03:57.334-04:00  INFO 70351 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2024-10-01T23:03:57.339-04:00  INFO 70351 --- [dictionary_etl] [Thread-7] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:03:57.340-04:00  INFO 70351 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2024-10-01T23:03:57.342-04:00  INFO 70351 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2024-10-01T23:03:57.428-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 19.0.2 with PID 70351 (/Users/sharra/github/picsure-dictionary-etl/target/classes started by sharra in /Users/sharra/github/picsure-dictionary-etl)
+2024-10-01T23:03:57.428-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : No active profile set, falling back to 1 default profile: "default"
+2024-10-01T23:03:57.541-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-10-01T23:03:57.556-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 13 ms. Found 10 JPA repository interfaces.
+2024-10-01T23:03:57.635-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-10-01T23:03:57.636-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-10-01T23:03:57.636-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-10-01T23:03:57.644-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-10-01T23:03:57.645-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 216 ms
+2024-10-01T23:03:57.680-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2024-10-01T23:03:57.703-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@68213771
+2024-10-01T23:03:57.703-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2024-10-01T23:03:57.704-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-10-01T23:03:57.706-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-10-01T23:03:57.710-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-10-01T23:03:57.814-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-10-01T23:03:57.814-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:03:57.972-04:00  WARN 70351 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-10-01T23:03:58.149-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-10-01T23:03:58.157-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-10-01T23:03:58.162-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 0.751 seconds (process running for 129.989)
+2024-10-01T23:03:58.164-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-10-01T23:04:06.361-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-10-01T23:04:06.362-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-10-01T23:04:06.363-04:00  INFO 70351 --- [dictionary_etl] [http-nio-8086-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-10-01T23:04:30.775-04:00  INFO 70351 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2024-10-01T23:04:30.780-04:00  INFO 70351 --- [dictionary_etl] [Thread-11] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:04:30.780-04:00  INFO 70351 --- [dictionary_etl] [Thread-11] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2024-10-01T23:04:30.782-04:00  INFO 70351 --- [dictionary_etl] [Thread-11] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2024-10-01T23:04:30.870-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 19.0.2 with PID 70351 (/Users/sharra/github/picsure-dictionary-etl/target/classes started by sharra in /Users/sharra/github/picsure-dictionary-etl)
+2024-10-01T23:04:30.870-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : No active profile set, falling back to 1 default profile: "default"
+2024-10-01T23:04:30.995-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-10-01T23:04:31.013-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 17 ms. Found 10 JPA repository interfaces.
+2024-10-01T23:04:31.110-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-10-01T23:04:31.110-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-10-01T23:04:31.111-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-10-01T23:04:31.118-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-10-01T23:04:31.118-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 247 ms
+2024-10-01T23:04:31.152-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2024-10-01T23:04:31.174-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@7ae001c3
+2024-10-01T23:04:31.175-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2024-10-01T23:04:31.176-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-10-01T23:04:31.178-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-10-01T23:04:31.181-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-10-01T23:04:31.278-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-10-01T23:04:31.278-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:04:31.406-04:00  WARN 70351 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-10-01T23:04:31.562-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-10-01T23:04:31.570-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-10-01T23:04:31.576-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 0.723 seconds (process running for 163.401)
+2024-10-01T23:04:31.577-04:00  INFO 70351 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-10-01T23:04:33.883-04:00  INFO 70351 --- [dictionary_etl] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-10-01T23:04:33.884-04:00  INFO 70351 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2024-10-01T23:04:33.887-04:00  INFO 70351 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.

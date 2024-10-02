@@ -23,10 +23,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.jpa.*;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -40,6 +44,8 @@ public class ConceptController {
     DatasetRepository datasetRepository;
     @Autowired
     FacetConceptRepository facetConceptRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @GetMapping("/concept")
     public ResponseEntity<List<ConceptModel>> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
@@ -213,23 +219,13 @@ public class ConceptController {
         try {
             String[] concepts = conceptsToRemove.split("\n");
             List<String> conceptList = Arrays.asList(concepts);
-            List<ConceptMetadataModel> queryEntries = new ArrayList<ConceptMetadataModel>();
+            List<String> queryEntries = new ArrayList<String>();
             conceptList.forEach(path -> {
                 Long conceptId;
                 try {
                     Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
                     conceptId = concept.get().getConceptNodeId();
-                    Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
-                            .findByConceptNodeIdAndKey(conceptId, "stigmatizing");
-                    ConceptMetadataModel cm;
-                    if (conceptMetadataData.isPresent()) {
-                        cm = conceptMetadataData.get();
-                        cm.setValue("true");
-                    } else {
-                        cm = new ConceptMetadataModel(conceptId, "stigmatizing",
-                                "true");
-                    }
-                    queryEntries.add(cm);
+                    queryEntries.add("(" + conceptId + "," + "'stigmatized', 'true')");
 
                 } catch (Exception e) {
                     System.out.println("Concept path not found in database " + path);
@@ -238,12 +234,14 @@ public class ConceptController {
                 // updateConceptMetadata(path, "stigmatized", "true");
             });
             try {
-                conceptMetadataRepository.saveAll(queryEntries);
-                /*
-                 * String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
-                 * System.out.println(queryInset);
-                 * conceptMetadataRepository.insertOrUpdateConceptMeta(queryInset, "true");
-                 */
+                String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
+                System.out.println(queryInset);
+                Query fullQuery = entityManager.createNativeQuery(
+                        "insert into concept_node_meta (concept_node_id, key, value) VALUES " + queryInset
+                                + "ON CONFLICT (key, concept_node_id) "
+                                + "DO UPDATE SET value='true'");
+                fullQuery.executeUpdate();
+                // conceptMetadataRepository.insertOrUpdateConceptMeta(fullQuery, "true");
             } catch (Exception e) {
                 System.out.print(e.getMessage());
             }

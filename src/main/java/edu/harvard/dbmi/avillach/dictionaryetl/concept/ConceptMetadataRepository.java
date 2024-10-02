@@ -17,11 +17,9 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
 
     Optional<ConceptMetadataModel> findByConceptNodeIdAndKey(long conceptNodeId, String key);
 
-    @Transactional
+/*     @Transactional
     @Modifying
-    @Query(value = "insert into concept_node_meta (concept_node_id, key, value) VALUES :entries "
-            + "ON CONFLICT (key, concept_node_id) "
-            + "DO UPDATE SET value=:value", nativeQuery = true)
-    void insertOrUpdateConceptMeta(String entries, String value);
+    @Query(value = fullQuery, nativeQuery = true)
+    void insertOrUpdateConceptMeta(Query fullQuery, String value); */
 
 }
