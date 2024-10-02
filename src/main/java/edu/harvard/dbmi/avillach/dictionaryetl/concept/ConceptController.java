@@ -213,6 +213,7 @@ public class ConceptController {
             String[] concepts= conceptsToRemove.split("\n");
             List<String> conceptList =  Arrays.asList(concepts);
            conceptList.forEach(path -> {
+            System.out.println("Stigvar path: " + path);
                 updateConceptMetadata(path, "stigmatized", "true");
            });
         } catch (JSONException e) {
