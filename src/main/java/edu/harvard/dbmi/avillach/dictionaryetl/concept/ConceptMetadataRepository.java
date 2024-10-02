@@ -3,6 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -12,5 +14,9 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
     List<ConceptMetadataModel> findByKey(String key);
 
     Optional<ConceptMetadataModel> findByConceptNodeIdAndKey(long conceptNodeId, String key);
+
+    @Modifying
+    @Query("insert into concept_node_meta :cm ON CONFLICT DO UPDATE SET value=:value")
+    void insertOrUpdateConceptMeta(ConceptMetadataModel cm, String value);
 
 }

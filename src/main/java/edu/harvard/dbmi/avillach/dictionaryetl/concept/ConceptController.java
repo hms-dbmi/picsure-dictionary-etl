@@ -213,8 +213,21 @@ public class ConceptController {
             String[] concepts= conceptsToRemove.split("\n");
             List<String> conceptList =  Arrays.asList(concepts);
            conceptList.forEach(path -> {
-            System.out.println("Stigvar path: " + path);
-                updateConceptMetadata(path, "stigmatized", "true");
+            Long conceptId;
+            try{
+                Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
+                conceptId=concept.get().getConceptNodeId();
+                   System.out.println("Building cm for " + path);
+                ConceptMetadataModel cm = new ConceptMetadataModel(conceptId, "stigmatized",
+                           "true");
+                    System.out.println("Upserting " + path);
+                conceptMetadataRepository.insertOrUpdateConceptMeta(cm, "true");
+            }
+            catch(Exception e){
+                System.out.println("Concept path not found in database " + path);
+            }
+            
+               // updateConceptMetadata(path, "stigmatized", "true");
            });
         } catch (JSONException e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
