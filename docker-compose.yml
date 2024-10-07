@@ -1,11 +1,11 @@
 version: '3.3'
 services:
   dictionary-etl:
-    container_name: dictionaryetl
+    container_name: dictionaryetl-ras
     build: .
     env_file: .env
     ports:
-      - "8086:8086"
+      - "8066:8066"
     networks:
       - dictionaryetl
 
