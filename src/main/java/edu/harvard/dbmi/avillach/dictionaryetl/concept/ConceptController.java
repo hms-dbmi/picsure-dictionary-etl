@@ -227,20 +227,23 @@ public class ConceptController {
                     System.out.println("Concept path not found in database " + path);
                 }
 
-                // updateConceptMetadata(path, "stigmatized", "true");
+                updateConceptMetadata(path, "stigmatized", "true");
             });
-            try {
-                String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
-                System.out.println(queryInset);
-                Query fullQuery = entityManager.createNativeQuery(
-                        "insert into concept_node_meta (concept_node_id, key, value) VALUES " + queryInset
-                                + "ON CONFLICT (key, concept_node_id) "
-                                + "DO UPDATE SET value='true'");
-                fullQuery.executeUpdate();
-                // conceptMetadataRepository.insertOrUpdateConceptMeta(fullQuery, "true");
-            } catch (Exception e) {
-                System.out.print(e.getMessage());
-            }
+            /*
+             * try {
+             * String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
+             * System.out.println(queryInset);
+             * Query fullQuery = entityManager.createNativeQuery(
+             * "insert into concept_node_meta (concept_node_id, key, value) VALUES " +
+             * queryInset
+             * + "ON CONFLICT (key, concept_node_id) "
+             * + "DO UPDATE SET value='true'");
+             * fullQuery.executeUpdate();
+             * // conceptMetadataRepository.insertOrUpdateConceptMeta(fullQuery, "true");
+             * } catch (Exception e) {
+             * System.out.print(e.getMessage());
+             * }
+             */
         } catch (JSONException e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
