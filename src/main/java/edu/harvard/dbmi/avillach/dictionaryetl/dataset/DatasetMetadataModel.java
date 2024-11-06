@@ -24,6 +24,11 @@ public class DatasetMetadataModel {
 
     }
 
+    public DatasetMetadataModel(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
     public DatasetMetadataModel(Long datasetId, String key, String value) {
         this.datasetId = datasetId;
         this.key = key;
