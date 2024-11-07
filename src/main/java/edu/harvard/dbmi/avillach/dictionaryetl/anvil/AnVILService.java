@@ -60,7 +60,8 @@ public class AnVILService {
         // Which studies already exist
         List<String> refs = anVILStudyMetadataList.stream().map(AnVILStudyMetadata::getPhsVal).toList();
 
-        // Get the list of refs not in the database
+        // Get the list of refs not in the database.
+        // I am converting refs to an array because the PostgreSQL expects an array to unnest.
         return this.datasetRepository.findValuesNotInRef(refs.toArray(String[]::new));
     }
 
