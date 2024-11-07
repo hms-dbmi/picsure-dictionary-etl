@@ -9,6 +9,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ public class AnVILService {
         this.datasetMetadataRepository = datasetMetadataRepository;
     }
 
+    @Transactional
     public List<AnVILStudyMetadata> ingestAnVILData(String requestBody) {
         logger.info("ingestAnvilData() has started running.");
         List<AnVILStudyMetadata> anVILStudyMetadataList = this.serializeData(requestBody);
