@@ -39,31 +39,58 @@ public class AnVILStudyMetadata {
 
     public DatasetModel generateDataset() {
         DatasetModel datasetModel = new DatasetModel();
-        datasetModel.setAbbreviation(this.getAbbreviation());
-        datasetModel.setRef(this.getPhsVal());
-        datasetModel.setFullName(this.getName());
+        datasetModel.setAbbreviation(this.abbreviation.isEmpty() ? this.abbreviation : "");
+        datasetModel.setRef(this.phsVal);
+        datasetModel.setFullName(this.name);
         return datasetModel;
     }
 
     public ConsentModel generateConsent() {
         ConsentModel consentModel = new ConsentModel();
-        consentModel.setSampleCount(Long.valueOf(this.samplesSequenced));
-        consentModel.setParticipantCount(Long.valueOf(this.participants));
-        consentModel.setVariableCount(Long.valueOf(this.clinicalVariables));
+        consentModel.setSampleCount(sanitizeNumber(this.samplesSequenced));
+        consentModel.setParticipantCount(sanitizeNumber(this.participants));
+        consentModel.setVariableCount(sanitizeNumber(this.clinicalVariables));
         consentModel.setConsentCode("");
         consentModel.setDescription("");
         consentModel.setAuthz("");
         return consentModel;
     }
 
+    private static Long sanitizeNumber(String number) {
+        if (number.isEmpty()) {
+            return 0L;
+        }
+
+        if (number.contains(",")) {
+            // remove commas
+            number = number.replace(",", "");
+        }
+
+        return Long.parseLong(number);
+    }
+
     public List<DatasetMetadataModel> generateDatasetMetadata() {
         List<DatasetMetadataModel> metadata = new ArrayList<>();
         String[] splitAccession = this.accession.split("\\.");
-        metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.version.name(), splitAccession[1]));
-        metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.phase.name(), splitAccession[2]));
-        metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_accession.name(), this.accession));
-        metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_link.name(), this.link));
-        metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_focus.name(), this.studyFocus));
+        if (splitAccession.length >= 2){
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.version.name(), splitAccession[1]));
+        }
+
+        if (splitAccession.length >= 3) {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.phase.name(), splitAccession[2]));
+        }
+
+        if (!this.accession.isEmpty()) {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_accession.name(), this.accession));
+        }
+
+        if (!this.link.isEmpty()) {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_link.name(), this.link));
+        }
+
+        if (!this.studyFocus.isEmpty()) {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_focus.name(), this.studyFocus));
+        }
 
         return metadata;
     }
