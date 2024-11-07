@@ -303,3 +303,804 @@ Caused by: org.hibernate.HibernateException: Unable to determine Dialect without
 2024-11-07T09:17:09.708-05:00  INFO 1175 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
 2024-11-07T09:17:09.737-05:00  INFO 1175 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
 2024-11-07T09:17:09.746-05:00  INFO 1175 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.433 seconds (process running for 5.266)
+2024-11-07T14:16:45.019-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13106 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:16:45.022-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:16:45.068-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2024-11-07T14:16:45.068-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2024-11-07T14:16:45.702-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:16:45.782-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 75 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:16:46.452-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:16:46.467-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:16:46.467-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:16:46.498-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:16:46.499-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1430 ms
+2024-11-07T14:16:46.622-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:16:46.652-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2024-11-07T14:16:46.670-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:16:46.800-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:16:46.816-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-11-07T14:16:46.931-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@12054907
+2024-11-07T14:16:46.932-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-11-07T14:16:46.956-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:16:47.749-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:16:47.756-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:16:48.013-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2024-11-07T14:16:48.242-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:16:48.711-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:16:48.741-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:16:48.751-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.338 seconds (process running for 5.233)
+2024-11-07T14:17:08.323-05:00  INFO 13106 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2024-11-07T14:17:08.336-05:00  INFO 13106 --- [dictionary_etl] [Thread-5] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:17:08.338-05:00  INFO 13106 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-11-07T14:17:08.341-05:00  INFO 13106 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-11-07T14:17:08.671-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13106 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:17:08.673-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:17:08.928-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:17:08.967-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 35 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:17:09.116-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:17:09.120-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:17:09.120-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:17:09.133-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:17:09.133-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 448 ms
+2024-11-07T14:17:09.190-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:17:09.193-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:17:09.199-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:17:09.200-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2024-11-07T14:17:09.232-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@660b451a
+2024-11-07T14:17:09.232-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2024-11-07T14:17:09.236-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:17:09.450-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:17:09.451-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:17:09.649-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:17:09.835-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:17:09.847-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:17:09.852-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.324 seconds (process running for 26.334)
+2024-11-07T14:17:09.861-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:18:41.351-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-11-07T14:18:41.352-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-11-07T14:18:41.353-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-11-07T14:18:41.387-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:18:41.392-05:00 ERROR 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "java.util.Map.get(Object)" is null] with root cause
+
+java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" because the return value of "java.util.Map.get(Object)" is null
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.getAnVILStudyMetadata(AnVILService.java:95) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.lambda$serializeData$4(AnVILService.java:82) ~[classes/:na]
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197) ~[na:na]
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:575) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluateToArrayNode(AbstractPipeline.java:260) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:616) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:622) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.toList(ReferencePipeline.java:627) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.serializeData(AnVILService.java:82) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.ingestAnVILData(AnVILService.java:35) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController.uploadTsvFile(AnVILController.java:36) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:925) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:830) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2024-11-07T14:19:10.542-05:00  INFO 13106 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 2 class path changes (1 addition, 1 deletion, 0 modifications)
+2024-11-07T14:19:10.552-05:00  INFO 13106 --- [dictionary_etl] [Thread-7] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:19:10.554-05:00  INFO 13106 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2024-11-07T14:19:10.557-05:00  INFO 13106 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2024-11-07T14:19:10.941-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13106 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:19:10.942-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:19:11.152-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:19:11.181-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:19:11.321-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:19:11.325-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:19:11.326-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:19:11.337-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:19:11.337-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 381 ms
+2024-11-07T14:19:11.378-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:19:11.383-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:19:11.389-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:19:11.390-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2024-11-07T14:19:11.420-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@2895582f
+2024-11-07T14:19:11.420-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2024-11-07T14:19:11.424-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:19:11.624-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:19:11.625-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:19:11.811-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:19:11.983-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:19:11.995-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:19:11.998-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.176 seconds (process running for 148.479)
+2024-11-07T14:19:11.999-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:19:52.819-05:00  INFO 13106 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2024-11-07T14:19:52.825-05:00  INFO 13106 --- [dictionary_etl] [Thread-11] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:19:52.825-05:00  INFO 13106 --- [dictionary_etl] [Thread-11] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2024-11-07T14:19:52.828-05:00  INFO 13106 --- [dictionary_etl] [Thread-11] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2024-11-07T14:19:53.166-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13106 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:19:53.169-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:19:53.392-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:19:53.423-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 29 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:19:53.547-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:19:53.551-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:19:53.551-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:19:53.564-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:19:53.565-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 380 ms
+2024-11-07T14:19:53.600-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:19:53.605-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:19:53.612-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:19:53.613-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2024-11-07T14:19:53.647-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@3bf5d9f7
+2024-11-07T14:19:53.647-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2024-11-07T14:19:53.651-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:19:53.873-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:19:53.874-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:19:54.055-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:19:54.412-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:19:54.459-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:19:54.472-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.447 seconds (process running for 190.954)
+2024-11-07T14:19:54.475-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:20:12.558-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-11-07T14:20:12.560-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-11-07T14:20:12.561-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-11-07T14:20:12.591-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:20:12.730-05:00  INFO 13106 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : Refs [phs002378, phs001487, phs000971, phs001211, phs001913, phs001880, phs001871, phs001489, phs002205, phs002041, phs001222, phs001584, phs001642, phs002032, phs003047, phs002324, phs002111, phs002337, phs002110, phs003224, phs002018, phs000424, phs001894, phs002044, phs001272, phs002307, phs002502, phs000744, phs001259, phs001395, phs002206, phs001616, phs003181, phs003184, phs001585, phs001963, phs001227, phs002042, phs002043, phs001676, phs001740, phs001741, phs002004, phs001766, phs003200, phs000711]
+2024-11-07T14:20:12.735-05:00 ERROR 13106 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NumberFormatException: For input string: ""] with root cause
+
+java.lang.NumberFormatException: For input string: ""
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67) ~[na:na]
+	at java.base/java.lang.Long.parseLong(Long.java:719) ~[na:na]
+	at java.base/java.lang.Long.valueOf(Long.java:1157) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILStudyMetadata.generateConsent(AnVILStudyMetadata.java:51) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.lambda$ingestAnVILData$2(AnVILService.java:43) ~[classes/:na]
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.ingestAnVILData(AnVILService.java:41) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController.uploadTsvFile(AnVILController.java:36) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:925) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:830) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2024-11-07T14:20:21.077-05:00  INFO 13106 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2024-11-07T14:20:21.084-05:00  INFO 13106 --- [dictionary_etl] [Thread-15] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:20:21.086-05:00  INFO 13106 --- [dictionary_etl] [Thread-15] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2024-11-07T14:20:21.091-05:00  INFO 13106 --- [dictionary_etl] [Thread-15] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+2024-11-07T14:20:21.428-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13106 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:20:21.431-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:20:21.623-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:20:21.653-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 28 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:20:21.757-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:20:21.760-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:20:21.760-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:20:21.771-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:20:21.772-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 327 ms
+2024-11-07T14:20:21.801-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:20:21.804-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:20:21.811-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:20:21.812-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2024-11-07T14:20:21.848-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@7ecea7a8
+2024-11-07T14:20:21.849-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2024-11-07T14:20:21.853-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:20:22.035-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:20:22.036-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:20:22.188-05:00  WARN 13106 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:20:22.499-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:20:22.545-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:20:22.557-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.271 seconds (process running for 219.035)
+2024-11-07T14:20:22.559-05:00  INFO 13106 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:20:30.546-05:00  INFO 13106 --- [dictionary_etl] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:20:30.549-05:00  INFO 13106 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown initiated...
+2024-11-07T14:20:30.556-05:00  INFO 13106 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown completed.
+2024-11-07T14:20:34.204-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13448 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:20:34.207-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:20:34.246-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2024-11-07T14:20:34.246-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2024-11-07T14:20:34.891-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:20:34.958-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 62 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:20:35.644-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:20:35.656-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:20:35.656-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:20:35.688-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:20:35.689-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1443 ms
+2024-11-07T14:20:35.810-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:20:35.838-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2024-11-07T14:20:35.854-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:20:35.996-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:20:36.011-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-11-07T14:20:36.135-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6d10fede
+2024-11-07T14:20:36.136-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-11-07T14:20:36.155-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:20:36.973-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:20:36.981-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:20:37.253-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2024-11-07T14:20:37.486-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:20:38.046-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:20:38.076-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:20:38.088-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.419 seconds (process running for 6.325)
+2024-11-07T14:20:44.899-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-11-07T14:20:44.899-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-11-07T14:20:44.900-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-11-07T14:20:44.933-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:21:21.240-05:00  WARN 13448 --- [dictionary_etl] [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=45s1ms).
+2024-11-07T14:21:44.165-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : Refs [phs002378, phs001487, phs000971, phs001211, phs001913, phs001880, phs001871, phs001489, phs002205, phs002041, phs001222, phs001584, phs001642, phs002032, phs003047, phs002324, phs002111, phs002337, phs002110, phs003224, phs002018, phs000424, phs001894, phs002044, phs001272, phs002307, phs002502, phs000744, phs001259, phs001395, phs002206, phs001616, phs003181, phs003184, phs001585, phs001963, phs001227, phs002042, phs002043, phs001676, phs001740, phs001741, phs002004, phs001766, phs003200, phs000711]
+2024-11-07T14:21:44.169-05:00 ERROR 13448 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NumberFormatException: For input string: ""] with root cause
+
+java.lang.NumberFormatException: For input string: ""
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67) ~[na:na]
+	at java.base/java.lang.Long.parseLong(Long.java:719) ~[na:na]
+	at java.base/java.lang.Long.valueOf(Long.java:1157) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILStudyMetadata.generateConsent(AnVILStudyMetadata.java:51) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.lambda$ingestAnVILData$2(AnVILService.java:43) ~[classes/:na]
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.ingestAnVILData(AnVILService.java:41) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController.uploadTsvFile(AnVILController.java:36) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:925) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:830) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2024-11-07T14:22:03.812-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-2] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:22:03.816-05:00  INFO 13448 --- [dictionary_etl] [http-nio-8086-exec-2] e.h.d.a.d.anvil.AnVILService             : Refs [phs002378, phs001487, phs000971, phs001211, phs001913, phs001880, phs001871, phs001489, phs002205, phs002041, phs001222, phs001584, phs001642, phs002032, phs003047, phs002324, phs002111, phs002337, phs002110, phs003224, phs002018, phs000424, phs001894, phs002044, phs001272, phs002307, phs002502, phs000744, phs001259, phs001395, phs002206, phs001616, phs003181, phs003184, phs001585, phs001963, phs001227, phs002042, phs002043, phs001676, phs001740, phs001741, phs002004, phs001766, phs003200, phs000711]
+2024-11-07T14:22:03.817-05:00 ERROR 13448 --- [dictionary_etl] [http-nio-8086-exec-2] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NumberFormatException: For input string: ""] with root cause
+
+java.lang.NumberFormatException: For input string: ""
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67) ~[na:na]
+	at java.base/java.lang.Long.parseLong(Long.java:719) ~[na:na]
+	at java.base/java.lang.Long.valueOf(Long.java:1157) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILStudyMetadata.generateConsent(AnVILStudyMetadata.java:51) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.lambda$ingestAnVILData$2(AnVILService.java:43) ~[classes/:na]
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.ingestAnVILData(AnVILService.java:41) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController.uploadTsvFile(AnVILController.java:36) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:925) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:830) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2024-11-07T14:23:24.657-05:00  INFO 13448 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2024-11-07T14:23:24.673-05:00  INFO 13448 --- [dictionary_etl] [Thread-5] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:24.675-05:00  INFO 13448 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-11-07T14:23:24.678-05:00  INFO 13448 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-11-07T14:23:25.035-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13448 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:23:25.038-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:23:25.384-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:23:25.422-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 36 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:23:25.576-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:23:25.578-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:23:25.578-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:23:25.593-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:23:25.594-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 540 ms
+2024-11-07T14:23:25.642-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:23:25.645-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:23:25.650-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:23:25.651-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2024-11-07T14:23:25.682-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@3063635e
+2024-11-07T14:23:25.682-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2024-11-07T14:23:25.687-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:23:25.927-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:23:25.928-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:26.153-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:23:26.359-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:23:26.374-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:23:26.378-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.495 seconds (process running for 174.612)
+2024-11-07T14:23:26.388-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:23:27.778-05:00  INFO 13448 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2024-11-07T14:23:27.784-05:00  INFO 13448 --- [dictionary_etl] [Thread-7] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:27.787-05:00  INFO 13448 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2024-11-07T14:23:27.790-05:00  INFO 13448 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2024-11-07T14:23:28.183-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13448 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:23:28.185-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:23:28.445-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:23:28.478-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 31 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:23:28.613-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:23:28.616-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:23:28.616-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:23:28.628-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:23:28.628-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 430 ms
+2024-11-07T14:23:28.658-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:23:28.662-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:23:28.669-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:23:28.669-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2024-11-07T14:23:28.698-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@32a66a6
+2024-11-07T14:23:28.699-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2024-11-07T14:23:28.704-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:23:28.969-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:23:28.970-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:29.118-05:00  WARN 13448 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:23:29.248-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:23:29.258-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:23:29.261-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.265 seconds (process running for 177.495)
+2024-11-07T14:23:29.262-05:00  INFO 13448 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:23:29.265-05:00  INFO 13448 --- [dictionary_etl] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:29.266-05:00  INFO 13448 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2024-11-07T14:23:29.267-05:00  INFO 13448 --- [dictionary_etl] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2024-11-07T14:23:31.983-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:23:31.986-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:23:32.038-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2024-11-07T14:23:32.038-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2024-11-07T14:23:32.702-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:23:32.789-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 82 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:23:33.533-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:23:33.546-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:23:33.547-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:23:33.580-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:23:33.580-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1541 ms
+2024-11-07T14:23:33.696-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:23:33.719-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2024-11-07T14:23:33.733-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:23:33.871-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:23:33.884-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2024-11-07T14:23:33.985-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@302101b3
+2024-11-07T14:23:33.986-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2024-11-07T14:23:34.004-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:23:34.855-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:23:34.860-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:23:35.129-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2024-11-07T14:23:35.376-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:23:35.896-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:23:35.926-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:23:35.935-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 4.581 seconds (process running for 5.683)
+2024-11-07T14:25:44.339-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-11-07T14:25:44.340-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-11-07T14:25:44.341-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-11-07T14:25:44.376-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:25:44.435-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-1] e.h.d.a.d.anvil.AnVILService             : Refs [phs002378, phs001487, phs000971, phs001211, phs001913, phs001880, phs001871, phs001489, phs002205, phs002041, phs001222, phs001584, phs001642, phs002032, phs003047, phs002324, phs002111, phs002337, phs002110, phs003224, phs001746, phs002018, phs001798, phs000424, phs001894, phs002044, phs001272, phs002307, phs002502, phs000744, phs001259, phs001395, phs002206, phs001616, phs003181, phs003184, phs001585, phs001963, phs001227, phs002042, phs002043, phs001676, phs001740, phs001741, phs002004, phs001766, phs003200, phs000711]
+2024-11-07T14:25:44.582-05:00 ERROR 13549 --- [dictionary_etl] [http-nio-8086-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.NumberFormatException: For input string: "1,840"] with root cause
+
+java.lang.NumberFormatException: For input string: "1,840"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67) ~[na:na]
+	at java.base/java.lang.Long.parseLong(Long.java:709) ~[na:na]
+	at java.base/java.lang.Long.valueOf(Long.java:1157) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILStudyMetadata.generateConsent(AnVILStudyMetadata.java:52) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.lambda$ingestAnVILData$2(AnVILService.java:43) ~[classes/:na]
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75) ~[na:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService.ingestAnVILData(AnVILService.java:41) ~[classes/:na]
+	at edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController.uploadTsvFile(AnVILController.java:36) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:925) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:830) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.5.jar:6.1.5]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.19.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:205) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.5.jar:6.1.5]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.19.jar:10.1.19]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2024-11-07T14:25:58.866-05:00  INFO 13549 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2024-11-07T14:25:58.880-05:00  INFO 13549 --- [dictionary_etl] [Thread-5] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:25:58.885-05:00  INFO 13549 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2024-11-07T14:25:58.888-05:00  INFO 13549 --- [dictionary_etl] [Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2024-11-07T14:25:59.228-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:25:59.231-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:25:59.502-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:25:59.535-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 32 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:25:59.682-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:25:59.684-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:25:59.685-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:25:59.697-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:25:59.697-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 453 ms
+2024-11-07T14:25:59.737-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:25:59.740-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:25:59.745-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:25:59.746-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2024-11-07T14:25:59.782-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@45a56d8e
+2024-11-07T14:25:59.782-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2024-11-07T14:25:59.788-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:26:00.040-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:26:00.041-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:26:00.070-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'anVILController' defined in file [/Users/george/code/picsure-dictionary-etl/target/classes/edu/harvard/dbmi/avillach/dictionaryetl/anvil/AnVILController.class]: Unsatisfied dependency expressed through constructor parameter 0: No qualifying bean of type 'edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+2024-11-07T14:26:00.070-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:26:00.071-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2024-11-07T14:26:00.073-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2024-11-07T14:26:00.074-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2024-11-07T14:26:00.087-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2024-11-07T14:26:00.110-05:00 ERROR 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 0 of constructor in edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILController required a bean of type 'edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'edu.harvard.dbmi.avillach.dictionaryetl.anvil.AnVILService' in your configuration.
+
+2024-11-07T14:26:01.567-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:26:01.567-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:26:01.694-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:26:01.710-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 16 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:26:01.797-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:26:01.798-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:26:01.798-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:26:01.806-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:26:01.806-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 237 ms
+2024-11-07T14:26:01.831-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:26:01.833-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:26:01.837-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:26:01.838-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2024-11-07T14:26:01.861-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@32bcdc90
+2024-11-07T14:26:01.861-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2024-11-07T14:26:01.865-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:26:02.012-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:26:02.012-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:26:02.189-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:26:02.332-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:26:02.342-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:26:02.344-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 0.808 seconds (process running for 152.091)
+2024-11-07T14:26:02.345-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:29:16.789-05:00  INFO 13549 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2024-11-07T14:29:16.794-05:00  INFO 13549 --- [dictionary_etl] [Thread-7] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:16.797-05:00  INFO 13549 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2024-11-07T14:29:16.799-05:00  INFO 13549 --- [dictionary_etl] [Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2024-11-07T14:29:17.184-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:29:17.187-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:29:17.433-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:29:17.466-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 32 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:29:17.601-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:29:17.605-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:29:17.605-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:29:17.619-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:29:17.619-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 417 ms
+2024-11-07T14:29:17.651-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:29:17.655-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:29:17.661-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:29:17.662-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2024-11-07T14:29:17.698-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@3a063e9
+2024-11-07T14:29:17.699-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2024-11-07T14:29:17.703-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:29:17.946-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:29:17.947-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:18.146-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:29:18.297-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:29:18.310-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:29:18.314-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.284 seconds (process running for 348.06)
+2024-11-07T14:29:18.315-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:29:28.821-05:00  INFO 13549 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2024-11-07T14:29:28.825-05:00  INFO 13549 --- [dictionary_etl] [Thread-14] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:28.826-05:00  INFO 13549 --- [dictionary_etl] [Thread-14] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2024-11-07T14:29:28.827-05:00  INFO 13549 --- [dictionary_etl] [Thread-14] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+2024-11-07T14:29:29.197-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:29:29.200-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:29:29.450-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:29:29.488-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 36 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:29:29.625-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:29:29.629-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:29:29.629-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:29:29.642-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:29:29.642-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 427 ms
+2024-11-07T14:29:29.679-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:29:29.685-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:29:29.694-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:29:29.695-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2024-11-07T14:29:29.741-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@60d5b382
+2024-11-07T14:29:29.743-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2024-11-07T14:29:29.748-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:29:29.982-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:29:29.983-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:30.179-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:29:30.348-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:29:30.360-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:29:30.363-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.315 seconds (process running for 360.109)
+2024-11-07T14:29:30.365-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:29:31.773-05:00  INFO 13549 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2024-11-07T14:29:31.778-05:00  INFO 13549 --- [dictionary_etl] [Thread-18] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:31.780-05:00  INFO 13549 --- [dictionary_etl] [Thread-18] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown initiated...
+2024-11-07T14:29:31.782-05:00  INFO 13549 --- [dictionary_etl] [Thread-18] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown completed.
+2024-11-07T14:29:32.155-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:29:32.159-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:29:32.381-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:29:32.417-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 35 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:29:32.551-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:29:32.555-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:29:32.555-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:29:32.565-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:29:32.566-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 394 ms
+2024-11-07T14:29:32.603-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:29:32.607-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:29:32.613-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:29:32.615-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Starting...
+2024-11-07T14:29:32.664-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-6 - Added connection org.postgresql.jdbc.PgConnection@34a8dacd
+2024-11-07T14:29:32.665-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Start completed.
+2024-11-07T14:29:32.669-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:29:32.909-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:29:32.910-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:29:33.112-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:29:33.270-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:29:33.281-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:29:33.284-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.281 seconds (process running for 363.03)
+2024-11-07T14:29:33.285-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:29:47.942-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-11-07T14:29:47.942-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2024-11-07T14:29:47.943-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2024-11-07T14:29:47.952-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:29:47.972-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] e.h.d.a.d.anvil.AnVILService             : Refs [phs002378, phs001487, phs000971, phs001211, phs001913, phs001880, phs001871, phs001489, phs002205, phs002041, phs001222, phs001584, phs001642, phs002032, phs003047, phs002324, phs002111, phs002337, phs002110, phs003224, phs001746, phs002018, phs001798, phs000424, phs001894, phs002044, phs001272, phs002307, phs002502, phs000744, phs001259, phs001395, phs002206, phs001616, phs003181, phs003184, phs001585, phs001963, phs001227, phs002042, phs002043, phs001676, phs001740, phs001741, phs002004, phs001766, phs003200, phs000711]
+2024-11-07T14:29:48.145-05:00  INFO 13549 --- [dictionary_etl] [http-nio-8086-exec-3] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has completed running.
+2024-11-07T14:30:29.641-05:00  INFO 13549 --- [dictionary_etl] [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 30 class path changes (0 additions, 0 deletions, 30 modifications)
+2024-11-07T14:30:29.645-05:00  INFO 13549 --- [dictionary_etl] [Thread-22] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:30:29.646-05:00  INFO 13549 --- [dictionary_etl] [Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown initiated...
+2024-11-07T14:30:29.648-05:00  INFO 13549 --- [dictionary_etl] [Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown completed.
+2024-11-07T14:30:29.684-05:00  WARN 14022 --- [dictionary_etl] [main] ory$DuplicateJsonObjectContextCustomizer : 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/george/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+	jar:file:/Users/george/.m2/repository/org/json/json/20240303/json-20240303.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2024-11-07T14:30:29.690-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Starting AnVILServiceTest using Java 23 with PID 14022 (started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:30:29.691-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : No active profile set, falling back to 1 default profile: "default"
+2024-11-07T14:30:30.055-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Starting DictionaryEtlApplication using Java 21.0.5 with PID 13549 (/Users/george/code/picsure-dictionary-etl/target/classes started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:30:30.059-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : The following 1 profile is active: "dev"
+2024-11-07T14:30:30.288-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-11-07T14:30:30.321-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 31 ms. Found 10 JPA repository interfaces.
+2024-11-07T14:30:30.347-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Started AnVILServiceTest in 0.774 seconds (process running for 1.193)
+2024-11-07T14:30:30.371-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:30:30.372-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : Refs []
+2024-11-07T14:30:30.372-05:00  INFO 14022 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has completed running.
+2024-11-07T14:30:30.462-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8086 (http)
+2024-11-07T14:30:30.467-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-11-07T14:30:30.467-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2024-11-07T14:30:30.484-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2024-11-07T14:30:30.484-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 412 ms
+2024-11-07T14:30:30.525-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2024-11-07T14:30:30.529-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2024-11-07T14:30:30.535-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2024-11-07T14:30:30.535-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Starting...
+2024-11-07T14:30:30.581-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-7 - Added connection org.postgresql.jdbc.PgConnection@ecd72fc
+2024-11-07T14:30:30.582-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Start completed.
+2024-11-07T14:30:30.586-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2024-11-07T14:30:30.849-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2024-11-07T14:30:30.850-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2024-11-07T14:30:31.019-05:00  WARN 13549 --- [dictionary_etl] [restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-11-07T14:30:31.158-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2024-11-07T14:30:31.170-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8086 (http) with context path ''
+2024-11-07T14:30:31.173-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] e.h.d.a.d.DictionaryEtlApplication       : Started DictionaryEtlApplication in 1.252 seconds (process running for 420.919)
+2024-11-07T14:30:31.174-05:00  INFO 13549 --- [dictionary_etl] [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2024-11-07T14:32:11.621-05:00  WARN 14096 --- [dictionary_etl] [main] ory$DuplicateJsonObjectContextCustomizer : 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/george/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+	jar:file:/Users/george/.m2/repository/org/json/json/20240303/json-20240303.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2024-11-07T14:32:11.650-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Starting AnVILServiceTest using Java 21.0.5 with PID 14096 (started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:32:11.651-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : No active profile set, falling back to 1 default profile: "default"
+2024-11-07T14:32:13.920-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Started AnVILServiceTest in 2.869 seconds (process running for 4.195)
+2024-11-07T14:32:14.029-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:32:14.034-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : Refs [phs001746, phs001798]
+2024-11-07T14:32:14.037-05:00  INFO 14096 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has completed running.
+2024-11-07T14:32:20.352-05:00  WARN 14130 --- [dictionary_etl] [main] ory$DuplicateJsonObjectContextCustomizer : 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/george/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+	jar:file:/Users/george/.m2/repository/org/json/json/20240303/json-20240303.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2024-11-07T14:32:20.359-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Starting AnVILServiceTest using Java 23 with PID 14130 (started by george in /Users/george/code/picsure-dictionary-etl)
+2024-11-07T14:32:20.359-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : No active profile set, falling back to 1 default profile: "default"
+2024-11-07T14:32:20.935-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILServiceTest         : Started AnVILServiceTest in 0.696 seconds (process running for 1.089)
+2024-11-07T14:32:20.957-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has started running.
+2024-11-07T14:32:20.957-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : Refs [phs001746, phs001798]
+2024-11-07T14:32:20.959-05:00  INFO 14130 --- [dictionary_etl] [main] e.h.d.a.d.anvil.AnVILService             : ingestAnvilData() has completed running.

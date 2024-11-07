@@ -78,7 +78,7 @@ public class AnVILServiceTest {
 
     @Test
     public void testIngestAnVILData() {
-        Mockito.when(datasetRepository.findValuesNotInRef(any())).thenReturn(List.of());
+        Mockito.when(datasetRepository.findValuesNotInRef(any())).thenReturn(List.of("phs001746", "phs001798"));
         DatasetModel datasetModel = new DatasetModel();
         datasetModel.setDatasetId(1L);
         Mockito.when(datasetRepository.save(any())).thenReturn(datasetModel);
