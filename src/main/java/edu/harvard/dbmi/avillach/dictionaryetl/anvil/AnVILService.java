@@ -34,9 +34,10 @@ public class AnVILService {
         logger.info("ingestAnvilData() has started running.");
         List<AnVILStudyMetadata> anVILStudyMetadataList = this.serializeData(requestBody);
         List<String> newRefs = findExistingRefs(anVILStudyMetadataList);
+        logger.info("Refs {}", newRefs);
 
         // Reduce the list of AnVIL Studies to the ones that don't exist in the database.
-        List<AnVILStudyMetadata> metadataToAdd = anVILStudyMetadataList.stream().filter(metadata -> !newRefs.contains(metadata.getPhsVal())).toList();
+        List<AnVILStudyMetadata> metadataToAdd = anVILStudyMetadataList.stream().filter(metadata -> newRefs.contains(metadata.getPhsVal())).toList();
         metadataToAdd.forEach(anVILStudyMetadata -> {
             DatasetModel datasetModel = anVILStudyMetadata.generateDataset();
             ConsentModel consentModel = anVILStudyMetadata.generateConsent();
@@ -60,7 +61,7 @@ public class AnVILService {
         List<String> refs = anVILStudyMetadataList.stream().map(AnVILStudyMetadata::getPhsVal).toList();
 
         // Get the list of refs not in the database
-        return this.datasetRepository.findValuesNotInRef(refs);
+        return this.datasetRepository.findValuesNotInRef(refs.toArray(String[]::new));
     }
 
     /**
@@ -97,6 +98,7 @@ public class AnVILService {
         model.setClinicalVariables(values[headers.get("Clinical Variables")]);
         model.setSamplesSequenced(values[headers.get("Samples sequenced")]);
         model.setPhsVal(extractPhsVal(model.getAccession()));
+        model.setStudyFocus(values[headers.get("Study Focus")]);
         model.setLink(ANVIL_PROJECT_BASE_LINK + model.getPhsVal());
 
         return model;

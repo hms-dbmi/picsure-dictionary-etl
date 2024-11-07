@@ -1,3 +1,8 @@
+## Uploading a TSV file for `/anvil/upload-tsv` data ingest
+```aiignore
+curl -X POST -H "Content-Type: text/plain" --data-binary @path/to/your/file.tsv http://localhost:8080/anvil/upload-tsv
+```
+
 ## Local Database for Development
 
 To set up a local development database, follow these steps:

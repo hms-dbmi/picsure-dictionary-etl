@@ -50,6 +50,9 @@ public class AnVILStudyMetadata {
         consentModel.setSampleCount(Long.valueOf(this.samplesSequenced));
         consentModel.setParticipantCount(Long.valueOf(this.participants));
         consentModel.setVariableCount(Long.valueOf(this.clinicalVariables));
+        consentModel.setConsentCode("");
+        consentModel.setDescription("");
+        consentModel.setAuthz("");
         return consentModel;
     }
 

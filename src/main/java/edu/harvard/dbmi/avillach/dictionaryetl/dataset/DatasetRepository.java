@@ -20,7 +20,15 @@ public interface DatasetRepository extends JpaRepository<DatasetModel, Long> {
      * @param refs A list of refs
      * @return The List of refs that don't exist in the database
      */
-    @Query("SELECT :refs FROM DatasetModel where ref NOT IN :refs")
-    List<String> findValuesNotInRef(@Param("refs") List<String> refs);
+    @Query(value = """
+    WITH refs AS (
+        SELECT unnest(:refs) AS ref
+    )
+    SELECT refs.ref
+    FROM refs
+    LEFT JOIN dataset d ON refs.ref = d.ref
+    WHERE d.ref IS NULL
+    """, nativeQuery = true)
+    List<String> findValuesNotInRef(@Param("refs") String[] refs);
 
 }
