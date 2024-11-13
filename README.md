@@ -7,9 +7,9 @@ curl -X POST -H "Content-Type: text/plain" --data-binary @path/to/your/file.tsv 
 
 To set up a local development database, follow these steps:
 
-1. Run the `docker-compose.test.yml` file to start the required services:
+1. Run the `docker-compose.postgres.yml` file to start the required services:
    ```bash
-   docker-compose -f docker-compose.test.yml up --build -d
+   docker-compose -f docker-compose.postgres.yml up --build -d
    ```
 
 2. Execute the `db/schema.sql` script to create the `dict` schema and all necessary database tables.
