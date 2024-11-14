@@ -144,6 +144,47 @@ public class ConceptController {
         }
     }
 
+    // Used for curated json from noncompliant studies
+    /*
+     * expected JSONArray element format
+     * {
+     * String dataset_ref
+     * String name
+     * String display
+     * String concept_type
+     * String concept_path
+     * String parent_concept_path
+     * JSONObject metadata {String description, JSONArray drs_uri, String or
+     * JSONArray ~other metadata fields as needed~}
+     * }
+     * 
+     * 
+     */
+    @PutMapping("/concept/curated")
+    public ResponseEntity<String> updateConceptsFromJSON(@RequestBody String input) {
+        JSONArray dictionaryJSON = new JSONArray(input);
+        int varcount = dictionaryJSON.length();
+        for (int i = 0; i < varcount; i++) {
+            JSONObject var = dictionaryJSON.getJSONObject(i);
+            String datasetRef = var.getString("dataset_ref"); 
+            String name = var.getString("name"); 
+            String display = var.getString("display"); 
+            String conceptType = var.getString("concept_type"); 
+            String conceptPath = var.getString("concept_path"); 
+            String parentConceptPath = var.getString("parent_concept_path"); 
+            JSONObject metadata = var.getJSONObject("metadata"); 
+            updateConcept(conceptPath, datasetRef, conceptType, display, name, parentConceptPath);
+            
+            metadata.keys().forEachRemaining(
+                key -> {
+                    updateConceptMetadata(conceptPath, key,  metadata.optString(key));
+                }
+            );
+        }
+
+        return null;
+    }
+
     @GetMapping("/concept/metadata")
     public ResponseEntity<List<ConceptMetadataModel>> getAllConceptMetadataModels(
             @RequestParam Optional<String> conceptPath) {
