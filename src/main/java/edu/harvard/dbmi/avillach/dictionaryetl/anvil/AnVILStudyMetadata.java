@@ -39,7 +39,7 @@ public class AnVILStudyMetadata {
 
     public DatasetModel generateDataset() {
         DatasetModel datasetModel = new DatasetModel();
-        datasetModel.setAbbreviation(this.abbreviation.isEmpty() ? this.abbreviation : "");
+        datasetModel.setAbbreviation(!this.abbreviation.isEmpty() ? this.abbreviation : "");
         datasetModel.setRef(this.phsVal);
         datasetModel.setFullName(this.name);
         return datasetModel;
