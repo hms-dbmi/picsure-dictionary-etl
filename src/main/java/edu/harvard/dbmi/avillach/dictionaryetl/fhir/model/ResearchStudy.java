@@ -10,7 +10,6 @@ public class ResearchStudy {
     private String description;
     private List<Extension> extension;
 
-    // Getters and Setters
     public String getResourceType() {
         return resourceType;
     }

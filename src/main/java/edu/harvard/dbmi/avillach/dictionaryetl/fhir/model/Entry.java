@@ -4,8 +4,6 @@ public class Entry {
     private String fullUrl;
     private ResearchStudy resource;
 
-    // Getters and Setters
-
     public String getFullUrl() {
         return fullUrl;
     }

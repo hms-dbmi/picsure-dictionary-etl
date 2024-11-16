@@ -144,6 +144,10 @@ public class FhirService {
                 String fhirDescription = researchStudy.getDescription();
                 dataset.setDescription(fhirDescription);
 
+                // cannot be null as column is non-null.
+                // Would need to map abv from fhir or another source...
+                dataset.setAbbreviation("");
+
 
                 // Save the new dataset
                 dataset = datasetRepository.save(dataset);
