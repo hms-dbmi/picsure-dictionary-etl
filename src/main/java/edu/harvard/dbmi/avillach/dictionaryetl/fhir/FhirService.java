@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.fhir;
 
+import org.springframework.beans.factory.annotation.Value;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -29,6 +31,9 @@ public class FhirService {
     private static final Logger logger = Logger.getLogger(FhirService.class.getName());
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(FhirService.class);
 
+    @Value("${fhir.api.base-url}")
+    private String fhirApiBaseUrl;
+
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final DatasetRepository datasetRepository;
@@ -38,11 +43,17 @@ public class FhirService {
     public FhirService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper,
                        DatasetRepository datasetRepository,
                        DatasetMetadataRepository datasetMetadataRepository) {
-        this.webClient = webClientBuilder.baseUrl("https://48hhxei7xa.execute-api.us-east-1.amazonaws.com").build();
+        this.webClient = webClientBuilder.baseUrl(fhirApiBaseUrl).build();
         this.objectMapper = objectMapper;
         this.datasetRepository = datasetRepository;
         this.datasetMetadataRepository = datasetMetadataRepository;
     }
+
+    private static final Map<String, String> URL_TO_KEY_MAP = Map.of(
+            "DBGAP-FHIR-Category", "study_design",
+            "DBGAP-FHIR-Sponsor", "sponsor",
+            "DBGAP-FHIR-Focus", "study_focus"
+    );
 
     // Method to retrieve ResearchStudies from the FHIR API
     public List<ResearchStudy> getResearchStudies() throws IOException {
@@ -57,8 +68,8 @@ public class FhirService {
 
         // Parse JSON into list of ResearchStudy objects
         Bundle bundle = objectMapper.readValue(responseBody, Bundle.class);
-        return bundle.getEntry().stream()
-                .map(Entry::getResource)
+        return bundle.entry().stream()
+                .map(Entry::resource)
                 .toList();
     }
 
@@ -69,7 +80,7 @@ public class FhirService {
 
         for (ResearchStudy researchStudy : researchStudies) {
             // Extract the reference ID (only the part before the first '.')
-            String refId = researchStudy.getId().split("\\.")[0];
+            String refId = researchStudy.id().split("\\.")[0];
 
             // Log any resource IDs that are not "phs"
             //if (!refId.startsWith("phs")) {
@@ -88,30 +99,27 @@ public class FhirService {
                 // Update description if it doesn't exist or is blank
                 String currentDescription = dataset.getDescription();
                 //String newDescription = getExtensionValue(researchStudy, "study-description");
-                String fhirDescription = researchStudy.getDescription();
+                String fhirDescription = researchStudy.description();
                 //if (currentDescription == null || currentDescription.isBlank()) {
                 dataset.setDescription(StringUtils.isBlank(fhirDescription) ? currentDescription: fhirDescription);
 
                 // Update Metadata (extensions)
-                List<Extension> extensions = researchStudy.getExtension();
+                List<Extension> extensions = researchStudy.extension();
                 if (extensions != null) {
                     for (Extension extension : extensions) {
-                        String url = extension.getUrl();
-                        String value = extension.getValueString();
+                        String url = extension.url();
+                        String value = extension.valueString();
 
                         // Handle specific metadata mappings by checking if the URL ends with the key
                         if (url.endsWith("DBGAP-FHIR-Category") || url.endsWith("DBGAP-FHIR-Sponsor") || url.endsWith("DBGAP-FHIR-Focus")) {
 
-                            final String key;
-                            if (url.endsWith("DBGAP-FHIR-Category")) {
-                                key = "study_design";
-                            } else if (url.endsWith("DBGAP-FHIR-Sponsor")) {
-                                key = "sponsor";
-                            } else if (url.endsWith("DBGAP-FHIR-Focus")) {
-                                key = "study_focus";
-                            } else {
-                                key = "";
-                            }
+                            final String key = URL_TO_KEY_MAP.entrySet()
+                                    .stream()
+                                    .filter(entry -> url.endsWith(entry.getKey()))
+                                    .map(Map.Entry::getValue)
+                                    .findFirst()
+                                    .orElse("");
+
                             if(key.isBlank()) continue;
                             Optional<DatasetMetadataModel> existingMetadataOpt =
                                     datasetMetadataRepository.findByDatasetIdAndKey(dataset.getDatasetId(), key);
@@ -132,16 +140,16 @@ public class FhirService {
                 dataset = new DatasetModel();
                 dataset.setRef(refId);
 
-                if(researchStudy.getTitle() != null)  {
-                    dataset.setFullName(researchStudy.getTitle());
+                if(researchStudy.title() != null)  {
+                    dataset.setFullName(researchStudy.title());
                 } else {
 
                     dataset.setFullName("Missing researchStudy.getTitle()");
                     //System.out.println("FhirService: " + "Missing researchStudy.getTitle(): - " + refId + " : " + researchStudy.getId());
-                    logger.warning("Missing researchStudy.getTitle(): - " + refId + " : " + researchStudy.getId());
+                    logger.warning("Missing researchStudy.getTitle(): - " + refId + " : " + researchStudy.id());
                     continue;
                 }
-                String fhirDescription = researchStudy.getDescription();
+                String fhirDescription = researchStudy.description();
                 dataset.setDescription(fhirDescription);
 
                 // cannot be null as column is non-null.
@@ -153,12 +161,12 @@ public class FhirService {
                 dataset = datasetRepository.save(dataset);
 
                 // Add Metadata (extensions)
-                List<Extension> extensions = researchStudy.getExtension();
+                List<Extension> extensions = researchStudy.extension();
 
                 if (extensions != null) {
                     for (Extension extension : extensions) {
-                        String url = extension.getUrl();
-                        String value = extension.getValueString();
+                        String url = extension.url();
+                        String value = extension.valueString();
 
                         // Handle specific metadata mappings by checking if the URL ends with the key
                         if (url.endsWith("DBGAP-FHIR-Category") || url.endsWith("DBGAP-FHIR-Sponsor") || url.endsWith("DBGAP-FHIR-Focus")) {
@@ -180,10 +188,10 @@ public class FhirService {
 
     // Helper method to get specific extension value from ResearchStudy by matching URL suffix
     private String getExtensionValue(ResearchStudy researchStudy, String keySuffix) {
-        return researchStudy.getExtension().stream()
-                .filter(extension -> extension.getUrl().endsWith(keySuffix))
+        return researchStudy.extension().stream()
+                .filter(extension -> extension.url().endsWith(keySuffix))
                 .findFirst()
-                .map(Extension::getValueString)
+                .map(Extension::valueString)
                 .orElse(null);
     }
 
@@ -192,7 +200,7 @@ public class FhirService {
 
         // Extract distinct PHS values
         Set<String> distinctPhsValues = researchStudies.stream()
-                .map(ResearchStudy::getId)
+                .map(ResearchStudy::id)
                 .filter(id -> id != null && id.startsWith("phs"))
                 .map(id -> id.split("\\.")[0])
                 .distinct()
