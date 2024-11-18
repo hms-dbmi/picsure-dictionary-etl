@@ -169,7 +169,6 @@ public class ConceptController {
             String datasetRef = var.getString("dataset_ref"); 
             String name = var.getString("name"); 
             String display = var.getString("display"); 
-            String conceptType = var.getString("concept_type"); 
             String conceptPath = var.getString("concept_path"); 
             String parentConceptPath = var.getString("parent_concept_path"); 
             JSONObject metadata = var.getJSONObject("metadata"); 
