@@ -92,7 +92,8 @@ public class ConceptController {
         if (conceptData.isPresent()) {
             // update already existing concept
             ConceptModel existingConcept = conceptData.get();
-            existingConcept.setConceptType(conceptType);
+            if (conceptType != null) 
+                existingConcept.setConceptType(conceptType);
             existingConcept.setDatasetId(datasetId);
             existingConcept.setDisplay(display);
             existingConcept.setParentId(parentId);
@@ -101,6 +102,9 @@ public class ConceptController {
         } else {
             // add new concept when concept not present in data
             try {
+                if (conceptType == null){
+                    conceptType = "categorical";
+                }
                 ConceptModel newConcept = conceptRepository
                         .save(new ConceptModel(datasetId, name,
                                 display, conceptType, conceptPath,
@@ -172,7 +176,8 @@ public class ConceptController {
             String conceptPath = var.getString("concept_path"); 
             String parentConceptPath = var.getString("parent_concept_path"); 
             JSONObject metadata = var.getJSONObject("metadata"); 
-            updateConcept(conceptPath, datasetRef, conceptType, display, name, parentConceptPath);
+            //conceptType is null to ensure that data analyzer is not overwritten
+            updateConcept(conceptPath, datasetRef, null, display, name, parentConceptPath);
             
             metadata.keys().forEachRemaining(
                 key -> {
