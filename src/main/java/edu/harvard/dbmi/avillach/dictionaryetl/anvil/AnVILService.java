@@ -103,6 +103,7 @@ public class AnVILService {
         model.setPhsVal(extractPhsVal(model.getAccession()));
         model.setStudyFocus(values[headers.get("Study Focus")]);
         model.setLink(ANVIL_PROJECT_BASE_LINK + model.getPhsVal());
+        model.setProgramName(values[headers.get("Program")]);
 
         return model;
     }
