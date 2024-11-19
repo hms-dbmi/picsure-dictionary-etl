@@ -22,11 +22,12 @@ public class AnVILStudyMetadata {
     private String accession; // Example: phs001746.v2.p2
     private String phsVal; // Example: phs001746 Note: (parsed from accession at ingestion)
     private String studyFocus; // Example: epigenetic variation (Possibly, Unspecified)
+    private String programName; // Default value: AnVIL
 
     public AnVILStudyMetadata() {
     }
 
-    public AnVILStudyMetadata(String abbreviation, String name, String clinicalVariables, String participants, String samplesSequenced, String link, String accession, String studyFocus) {
+    public AnVILStudyMetadata(String abbreviation, String name, String clinicalVariables, String participants, String samplesSequenced, String link, String accession, String studyFocus, String programName) {
         this.abbreviation = abbreviation;
         this.name = name;
         this.clinicalVariables = clinicalVariables;
@@ -35,6 +36,7 @@ public class AnVILStudyMetadata {
         this.link = link;
         this.accession = accession;
         this.studyFocus = studyFocus;
+        this.programName = programName;
     }
 
     public DatasetModel generateDataset() {
@@ -90,6 +92,12 @@ public class AnVILStudyMetadata {
 
         if (!this.studyFocus.isEmpty()) {
             metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.study_focus.name(), this.studyFocus));
+        }
+
+        if (!this.studyFocus.isEmpty()) {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.program_name.name(), this.programName));
+        } else {
+            metadata.add(new DatasetMetadataModel(DatasetMetadataKeys.program_name.name(), "AnVIL"));
         }
 
         return metadata;
@@ -167,4 +175,11 @@ public class AnVILStudyMetadata {
         this.phsVal = phsVal;
     }
 
+    public String getProgramName() {
+        return programName;
+    }
+
+    public void setProgramName(String programName) {
+        this.programName = programName;
+    }
 }
