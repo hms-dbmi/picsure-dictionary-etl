@@ -84,7 +84,7 @@ public class FhirService {
     private DatasetModel createNewDataset(String refId, ResearchStudy researchStudy) {
         DatasetModel dataset = new DatasetModel();
         dataset.setRef(refId);
-        dataset.setFullName(researchStudy.title() != null ? researchStudy.title() : "Missing researchStudy.title()");
+        dataset.setFullName(researchStudy.title() == null ? "" : researchStudy.title());
         dataset.setDescription(researchStudy.description());
         dataset.setAbbreviation(""); // Non-null field, set a default or proper value
         datasetRepository.save(dataset);
