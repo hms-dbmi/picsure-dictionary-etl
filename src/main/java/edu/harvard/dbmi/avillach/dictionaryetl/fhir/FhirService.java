@@ -43,10 +43,10 @@ public class FhirService {
     private final DatasetRepository datasetRepository;
     private final DatasetMetadataRepository datasetMetadataRepository;
 
-    // Metrics
-    int newStudiesCreated = 0;
-    Set<String> datasetsUpdated = new TreeSet<>();
-    int metadataUpdated = 0;
+    // Tracking metrics variables
+    private int newStudiesCreated = 0;
+    private Set<String> datasetsUpdated = new HashSet<>();
+    private int metadataUpdated = 0;
 
     @Autowired
     public FhirService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper,
@@ -61,8 +61,17 @@ public class FhirService {
 
     @EventListener(ContextRefreshedEvent.class)
     protected void initUrlToKeyMap() {
+        if (StringUtils.isNotBlank(urlToKeyMapJson)) {
+            setUrlToKeyMap(urlToKeyMapJson);
+        } else {
+            logger.warn("URL to Key Map JSON is null or empty. The map has not been initialized.");
+        }
+    }
+
+    public void setUrlToKeyMap(String urlToKeyMapJson) {
         if (StringUtils.isBlank(urlToKeyMapJson)) {
             logger.error("URL to Key Map JSON is null or empty.");
+            this.urlToKeyMap = new HashMap<>();
             return;
         }
 
