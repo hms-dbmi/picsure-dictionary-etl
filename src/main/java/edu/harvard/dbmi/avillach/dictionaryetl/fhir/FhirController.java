@@ -28,7 +28,7 @@ public class FhirController {
         this.fhirService = fhirService;
     }
 
-@PatchMapping("/datasets/metadata/update")
+@PatchMapping("/datasets/metadata/refresh")
 public ResponseEntity<String> datasetsMetadataRefresh() {
     try {
         fhirService.updateDatasetMetadata();
@@ -39,7 +39,7 @@ public ResponseEntity<String> datasetsMetadataRefresh() {
     }
 }
 
-@GetMapping("/research-studies")
+@GetMapping("/research-studies/findAll")
 public ResponseEntity<List<ResearchStudy>> getResearchStudies() {
     try {
         List<ResearchStudy> researchStudies = fhirService.getResearchStudies();
@@ -50,7 +50,7 @@ public ResponseEntity<List<ResearchStudy>> getResearchStudies() {
     }
 }
 
-    @GetMapping("/distinct-phs-values")
+@GetMapping("/listByDbgapAccessions")
 public ResponseEntity<List<String>> getDistinctPhsValues() {
     try {
         List<String> distinctPhsValues = fhirService.getDistinctPhsValues();

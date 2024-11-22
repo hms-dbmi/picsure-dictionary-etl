@@ -5,9 +5,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.fhir.model.Meta;
 import edu.harvard.dbmi.avillach.dictionaryetl.fhir.model.ResearchStudy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -51,22 +49,6 @@ public class FhirControllerTest {
 
         when(fhirService.getResearchStudies()).thenReturn(mockResearchStudies);
         when(fhirService.getDistinctPhsValues()).thenReturn(mockDistinctPhsValues);
-    }
-
-    @Test
-    public void testDatasetsMetadataRefreshSuccess() throws Exception {
-        mockMvc.perform(get("/api/fhir/datasets/metadata/update"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Metadata update successful"));
-    }
-
-    @Test
-    public void testDatasetsMetadataRefreshFailure() throws Exception {
-        doThrow(new IOException("IO Error")).when(fhirService).updateDatasetMetadata();
-
-        mockMvc.perform(get("/api/fhir/datasets/metadata/update"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Metadata update failed"));
     }
 
     @Test

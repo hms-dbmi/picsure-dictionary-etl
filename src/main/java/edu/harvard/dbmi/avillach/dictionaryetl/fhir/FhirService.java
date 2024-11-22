@@ -3,6 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.fhir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,17 +33,17 @@ public class FhirService {
     @Value("${fhir.api.bulk.endpoint}")
     private String fhirBulkEndpoint;
 
+    @Value("${fhir.url-to-key-map-json}")
+    private String urlToKeyMapJson;
+
+    private Map<String, String> urlToKeyMap = new HashMap<>();
+
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final DatasetRepository datasetRepository;
     private final DatasetMetadataRepository datasetMetadataRepository;
 
-    private static final Map<String, String> URL_TO_KEY_MAP = Map.of(
-            "DBGAP-FHIR-Category", "study_design",
-            "DBGAP-FHIR-Sponsor", "sponsor",
-            "DBGAP-FHIR-Focus", "study_focus"
-    );
-    // Some basic metrics
+    // Metrics
     int newStudiesCreated = 0;
     Set<String> datasetsUpdated = new TreeSet<>();
     int metadataUpdated = 0;
@@ -56,6 +59,21 @@ public class FhirService {
         this.datasetMetadataRepository = datasetMetadataRepository;
     }
 
+    @EventListener(ContextRefreshedEvent.class)
+    protected void initUrlToKeyMap() {
+        if (StringUtils.isBlank(urlToKeyMapJson)) {
+            logger.error("URL to Key Map JSON is null or empty.");
+            return;
+        }
+
+        try {
+            this.urlToKeyMap = objectMapper.readValue(urlToKeyMapJson, new TypeReference<Map<String, String>>() {});
+        } catch (IOException e) {
+            logger.error("Failed to parse URL to Key Map JSON: {}", urlToKeyMapJson, e);
+            this.urlToKeyMap = new HashMap<>();
+        }
+    }
+
     @Transactional
     public void updateDatasetMetadata() throws IOException {
         List<ResearchStudy> researchStudies = getResearchStudies();
@@ -63,33 +81,19 @@ public class FhirService {
         for (ResearchStudy researchStudy : researchStudies) {
             String refId = researchStudy.id().split("\\.")[0];
             Optional<DatasetModel> existingDatasetOpt = datasetRepository.findByRef(refId);
-            DatasetModel dataset = existingDatasetOpt
-                    .map(existingDataset -> {
-                        updateDatasetDescription(existingDataset, researchStudy);
-                        return existingDataset;
-                    })
-                    .orElseGet(() -> createNewDataset(refId, researchStudy));
 
-            addOrUpdateMetadata(dataset, researchStudy.extension());
+            // Proceed only if the dataset exists
+            if (existingDatasetOpt.isPresent()) {
+                DatasetModel existingDataset = existingDatasetOpt.get();
 
-            datasetRepository.save(dataset);
+                updateDatasetDescription(existingDataset, researchStudy);
+                addOrUpdateMetadata(existingDataset, researchStudy.extension());
+                datasetRepository.save(existingDataset);
 
-            datasetsUpdated.add(refId);
+                datasetsUpdated.add(refId);
+            }
         }
-        // Log some basic metrics
         logMetrics();
-
-    }
-
-    private DatasetModel createNewDataset(String refId, ResearchStudy researchStudy) {
-        DatasetModel dataset = new DatasetModel();
-        dataset.setRef(refId);
-        dataset.setFullName(researchStudy.title() == null ? "" : researchStudy.title());
-        dataset.setDescription(researchStudy.description());
-        dataset.setAbbreviation(""); // Non-null field, set a default or proper value
-        datasetRepository.save(dataset);
-        newStudiesCreated++;
-        return dataset;
     }
 
     private void updateDatasetDescription(DatasetModel dataset, ResearchStudy researchStudy) {
@@ -103,7 +107,7 @@ public class FhirService {
         if (extensions == null) return;
 
         for (Extension extension : extensions) {
-            String key = URL_TO_KEY_MAP.entrySet()
+            String key = urlToKeyMap.entrySet()
                     .stream()
                     .filter(entry -> extension.url().endsWith(entry.getKey()))
                     .map(Map.Entry::getValue)
@@ -156,7 +160,7 @@ public class FhirService {
             Map<String, Object> metrics = new HashMap<>();
             metrics.put("Number of new studies created", newStudiesCreated);
             metrics.put("Number of datasets updated", datasetsUpdated.size());
-            metrics.put("Total metadata updated", newStudiesCreated);
+            metrics.put("Total metadata updated", metadataUpdated);
 
             String jsonMetrics = objectMapper.writeValueAsString(metrics);
             logger.info(jsonMetrics);
