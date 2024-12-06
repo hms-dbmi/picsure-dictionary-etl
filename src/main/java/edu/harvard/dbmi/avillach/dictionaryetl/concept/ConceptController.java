@@ -92,7 +92,7 @@ public class ConceptController {
         if (conceptData.isPresent()) {
             // update already existing concept
             ConceptModel existingConcept = conceptData.get();
-            if (conceptType != null) 
+            if (conceptType != null)
                 existingConcept.setConceptType(conceptType);
             existingConcept.setDatasetId(datasetId);
             existingConcept.setDisplay(display);
@@ -102,7 +102,7 @@ public class ConceptController {
         } else {
             // add new concept when concept not present in data
             try {
-                if (conceptType == null){
+                if (conceptType == null) {
                     conceptType = "categorical";
                 }
                 ConceptModel newConcept = conceptRepository
@@ -170,20 +170,19 @@ public class ConceptController {
         int varcount = dictionaryJSON.length();
         for (int i = 0; i < varcount; i++) {
             JSONObject var = dictionaryJSON.getJSONObject(i);
-            String datasetRef = var.getString("dataset_ref"); 
-            String name = var.getString("name"); 
-            String display = var.getString("display"); 
-            String conceptPath = var.getString("concept_path"); 
-            String parentConceptPath = var.getString("parent_concept_path"); 
-            JSONObject metadata = var.getJSONObject("metadata"); 
-            //conceptType is null to ensure that data analyzer is not overwritten
+            String datasetRef = var.getString("dataset_ref");
+            String name = var.getString("name");
+            String display = var.getString("display");
+            String conceptPath = var.getString("concept_path");
+            String parentConceptPath = var.getString("parent_concept_path");
+            JSONObject metadata = var.getJSONObject("metadata");
+            // conceptType is null to ensure that data analyzer is not overwritten
             updateConcept(conceptPath, datasetRef, null, display, name, parentConceptPath);
-            
+
             metadata.keys().forEachRemaining(
-                key -> {
-                    updateConceptMetadata(conceptPath, key,  metadata.optString(key));
-                }
-            );
+                    key -> {
+                        updateConceptMetadata(conceptPath, key, metadata.optString(key));
+                    });
         }
 
         return null;
@@ -255,46 +254,13 @@ public class ConceptController {
 
     // Specifically for stigvar updates
     @PutMapping("/concept/metadata/stigvars")
-    public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToRemove) {
-
-        try {
-            String[] concepts = conceptsToRemove.split("\n");
-            List<String> conceptList = Arrays.asList(concepts);
-            List<String> queryEntries = new ArrayList<String>();
-            conceptList.forEach(path -> {
-                Long conceptId;
-                try {
-                    Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
-                    conceptId = concept.get().getConceptNodeId();
-                    queryEntries.add("(" + conceptId + "," + "'stigmatized', 'true')");
-
-                } catch (Exception e) {
-                    System.out.println("Concept path not found in database " + path);
-                }
-
-                updateConceptMetadata(path, "stigmatized", "true");
-            });
-            /*
-             * try {
-             * String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
-             * System.out.println(queryInset);
-             * Query fullQuery = entityManager.createNativeQuery(
-             * "insert into concept_node_meta (concept_node_id, key, value) VALUES " +
-             * queryInset
-             * + "ON CONFLICT (key, concept_node_id) "
-             * + "DO UPDATE SET value='true'");
-             * fullQuery.executeUpdate();
-             * // conceptMetadataRepository.insertOrUpdateConceptMeta(fullQuery, "true");
-             * } catch (Exception e) {
-             * System.out.print(e.getMessage());
-             * }
-             */
-        } catch (JSONException e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToUpdate,
+            @RequestParam String value) {
+        String[] concepts = conceptsToUpdate.split("\n");
+        System.out.println("Concept: " + concepts[0]);
+        conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
 
         return new ResponseEntity<>(null, HttpStatus.CREATED);
-
     }
 
     // Specifically for mass value updates
