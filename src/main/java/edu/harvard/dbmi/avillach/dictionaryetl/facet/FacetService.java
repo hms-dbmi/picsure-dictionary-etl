@@ -43,7 +43,7 @@ public class FacetService {
         );
 
         FacetModel continuous = this.findByName("continuous").orElse(
-                this.save(new FacetModel(dataType.getFacetCategoryId(), "continuous", "Categorical", "", null))
+                this.save(new FacetModel(dataType.getFacetCategoryId(), "continuous", "Continuous", "", null))
         );
 
         this.facetConceptService.mapConceptConceptTypeToFacet(categorical.getFacetId(), "categorical");

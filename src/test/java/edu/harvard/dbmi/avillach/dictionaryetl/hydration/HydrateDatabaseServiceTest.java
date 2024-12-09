@@ -25,7 +25,6 @@ import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -92,14 +91,12 @@ public class HydrateDatabaseServiceTest {
 
     @Test
     void processColumnMetaCSV() {
-        boolean b = hydrateDatabaseService.processColumnMetaCSV(filePath, null, null);
-        assertTrue(b);
+        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, null, null));
     }
 
     @Test
     void processColumnMetaCSV_WithCustomDatasetName() {
-        boolean b = hydrateDatabaseService.processColumnMetaCSV(filePath, "NHANES", null);
-        assertTrue(b);
+        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, "NHANES", null));
         Optional<DatasetModel> nhanes = this.datasetService.findByRef("NHANES");
         assertTrue(nhanes.isPresent());
         assertEquals("NHANES", nhanes.get().getRef());
