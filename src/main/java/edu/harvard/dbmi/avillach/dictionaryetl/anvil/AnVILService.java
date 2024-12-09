@@ -77,7 +77,7 @@ public class AnVILService {
         String[] firstRow = split[0].split("\t");
         Map<String, Integer> headers = new HashMap<>();
         for (int i = 0; i < firstRow.length; i++) {
-            headers.put(firstRow[i], i);
+            headers.put(firstRow[i].replace("\r", ""), i);
         }
 
         String[] data = Arrays.copyOfRange(split, 1, split.length);
