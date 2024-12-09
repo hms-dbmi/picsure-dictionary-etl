@@ -1,0 +1,200 @@
+SUBJECT_ID\,8,0,false,,2.0,41472.0,0,380670,9999,9999
+\demographics\AGE\,8,0,false,,0.0,85.0,380670,761347,9999,9999
+\demographics\DMDBORN\,8,0,false,,1.0,3.0,761347,1141762,9992,9992
+\demographics\DMDMARTL\,8,0,false,,1.0,77.0,1141762,1387886,6458,6458
+\demographics\INDFMPIR\,8,0,false,,0.0,5.0,1387886,1738168,9199,9199
+\demographics\RACE\black\,5,0,true,black,null,null,1738168,1843624,2490,2490
+\demographics\RACE\mexican\,7,0,true,mexican,null,null,1843624,1968978,2829,2829
+\demographics\RACE\other\,5,0,true,other,null,null,1968978,1988040,433,433
+\demographics\RACE\other_hispanic\,14,0,true,other_hispanic,null,null,1988040,2012079,454,454
+\demographics\RACE\white\,5,0,true,white,null,null,2012079,2172261,3793,3793
+\demographics\SDDSRVYR\,8,0,false,,1.0,4.0,2172261,2552943,9999,9999
+\demographics\SDMVPSU\,8,0,false,,1.0,3.0,2552943,2933624,9999,9999
+\demographics\SDMVSTRA\,8,0,false,,1.0,58.0,2933624,3314306,9999,9999
+\demographics\SES_LEVEL\,8,0,false,,0.0,2.0,3314306,3664589,9199,9199
+\demographics\SEX\female\,6,0,true,female,null,null,3664589,3885367,5114,5114
+\demographics\SEX\male\,4,0,true,male,null,null,3885367,4086526,4885,4885
+\demographics\WTMEC2YR\,8,0,false,,0.0,202639.45417,4086526,4467208,9999,9999
+\demographics\WTMEC4YR\,8,0,false,,0.0,85995.76663,4467208,4660968,5080,5080
+\demographics\area\1_10\,4,0,true,1_10,null,null,4660968,4665205,82,82
+\demographics\area\1_11\,4,0,true,1_11,null,null,4665205,4670139,99,99
+\demographics\area\1_12\,4,0,true,1_12,null,null,4670139,4675237,103,103
+\demographics\area\1_13\,4,0,true,1_13,null,null,4675237,4678695,63,63
+\demographics\area\1_14\,4,0,true,1_14,null,null,4678695,4682727,77,77
+\demographics\area\1_15\,4,0,true,1_15,null,null,4682727,4688727,125,125
+\demographics\area\1_16\,4,0,true,1_16,null,null,4688727,4694276,114,114
+\demographics\area\1_17\,4,0,true,1_17,null,null,4694276,4699538,107,107
+\demographics\area\1_18\,4,0,true,1_18,null,null,4699538,4704144,91,91
+\demographics\area\1_19\,4,0,true,1_19,null,null,4704144,4708873,94,94
+\demographics\area\1_1\,3,0,true,1_1,null,null,4708873,4713107,84,84
+\demographics\area\1_20\,4,0,true,1_20,null,null,4713107,4717549,87,87
+\demographics\area\1_21\,4,0,true,1_21,null,null,4717549,4721663,79,79
+\demographics\area\1_22\,4,0,true,1_22,null,null,4721663,4726392,94,94
+\demographics\area\1_23\,4,0,true,1_23,null,null,4726392,4731900,113,113
+\demographics\area\1_24\,4,0,true,1_24,null,null,4731900,4736260,85,85
+\demographics\area\1_25\,4,0,true,1_25,null,null,4736260,4739472,57,57
+\demographics\area\1_26\,4,0,true,1_26,null,null,4739472,4744078,91,91
+\demographics\area\1_27\,4,0,true,1_27,null,null,4744078,4747987,74,74
+\demographics\area\1_28\,4,0,true,1_28,null,null,4747987,4751445,63,63
+\demographics\area\1_29\,4,0,true,1_29,null,null,4751445,4755518,78,78
+\demographics\area\1_2\,3,0,true,1_2,null,null,4755518,4759152,69,69
+\demographics\area\1_30\,4,0,true,1_30,null,null,4759152,4764168,101,101
+\demographics\area\1_31\,4,0,true,1_31,null,null,4764168,4768364,81,81
+\demographics\area\1_32\,4,0,true,1_32,null,null,4768364,4771945,66,66
+\demographics\area\1_33\,4,0,true,1_33,null,null,4771945,4776387,87,87
+\demographics\area\1_34\,4,0,true,1_34,null,null,4776387,4781772,110,110
+\demographics\area\1_35\,4,0,true,1_35,null,null,4781772,4785804,77,77
+\demographics\area\1_36\,4,0,true,1_36,null,null,4785804,4789959,80,80
+\demographics\area\1_37\,4,0,true,1_37,null,null,4789959,4793048,54,54
+\demographics\area\1_38\,4,0,true,1_38,null,null,4793048,4797449,86,86
+\demographics\area\1_39\,4,0,true,1_39,null,null,4797449,4801399,75,75
+\demographics\area\1_3\,3,0,true,1_3,null,null,4801399,4806553,107,107
+\demographics\area\1_40\,4,0,true,1_40,null,null,4806553,4810011,63,63
+\demographics\area\1_41\,4,0,true,1_41,null,null,4810011,4814371,85,85
+\demographics\area\1_42\,4,0,true,1_42,null,null,4814371,4820494,128,128
+\demographics\area\1_43\,4,0,true,1_43,null,null,4820494,4823993,64,64
+\demographics\area\1_44\,4,0,true,1_44,null,null,4823993,4828722,94,94
+\demographics\area\1_45\,4,0,true,1_45,null,null,4828722,4832877,80,80
+\demographics\area\1_46\,4,0,true,1_46,null,null,4832877,4837278,86,86
+\demographics\area\1_47\,4,0,true,1_47,null,null,4837278,4841064,71,71
+\demographics\area\1_48\,4,0,true,1_48,null,null,4841064,4845137,78,78
+\demographics\area\1_49\,4,0,true,1_49,null,null,4845137,4850850,118,118
+\demographics\area\1_4\,3,0,true,1_4,null,null,4850850,4856484,119,119
+\demographics\area\1_50\,4,0,true,1_50,null,null,4856484,4860270,71,71
+\demographics\area\1_51\,4,0,true,1_51,null,null,4860270,4864589,84,84
+\demographics\area\1_52\,4,0,true,1_52,null,null,4864589,4868662,78,78
+\demographics\area\1_53\,4,0,true,1_53,null,null,4868662,4871997,60,60
+\demographics\area\1_54\,4,0,true,1_54,null,null,4871997,4876234,82,82
+\demographics\area\1_55\,4,0,true,1_55,null,null,4876234,4880471,82,82
+\demographics\area\1_56\,4,0,true,1_56,null,null,4880471,4885118,92,92
+\demographics\area\1_57\,4,0,true,1_57,null,null,4885118,4890462,109,109
+\demographics\area\1_58\,4,0,true,1_58,null,null,4890462,4894207,70,70
+\demographics\area\1_5\,3,0,true,1_5,null,null,4894207,4898761,92,92
+\demographics\area\1_6\,3,0,true,1_6,null,null,4898761,4903955,108,108
+\demographics\area\1_7\,3,0,true,1_7,null,null,4903955,4909509,117,117
+\demographics\area\1_8\,3,0,true,1_8,null,null,4909509,4913743,84,84
+\demographics\area\1_9\,3,0,true,1_9,null,null,4913743,4917857,81,81
+\demographics\area\2_10\,4,0,true,2_10,null,null,4917857,4921274,62,62
+\demographics\area\2_11\,4,0,true,2_11,null,null,4921274,4925142,73,73
+\demographics\area\2_12\,4,0,true,2_12,null,null,4925142,4930486,109,109
+\demographics\area\2_13\,4,0,true,2_13,null,null,4930486,4934149,68,68
+\demographics\area\2_14\,4,0,true,2_14,null,null,4934149,4938919,95,95
+\demographics\area\2_15\,4,0,true,2_15,null,null,4938919,4942910,76,76
+\demographics\area\2_16\,4,0,true,2_16,null,null,4942910,4947188,83,83
+\demographics\area\2_17\,4,0,true,2_17,null,null,4947188,4951548,85,85
+\demographics\area\2_18\,4,0,true,2_18,null,null,4951548,4955211,68,68
+\demographics\area\2_19\,4,0,true,2_19,null,null,4955211,4960063,97,97
+\demographics\area\2_1\,3,0,true,2_1,null,null,4960063,4964537,90,90
+\demographics\area\2_20\,4,0,true,2_20,null,null,4964537,4969102,90,90
+\demographics\area\2_21\,4,0,true,2_21,null,null,4969102,4972683,66,66
+\demographics\area\2_22\,4,0,true,2_22,null,null,4972683,4977289,91,91
+\demographics\area\2_23\,4,0,true,2_23,null,null,4977289,4981813,89,89
+\demographics\area\2_24\,4,0,true,2_24,null,null,4981813,4985968,80,80
+\demographics\area\2_25\,4,0,true,2_25,null,null,4985968,4990615,92,92
+\demographics\area\2_26\,4,0,true,2_26,null,null,4990615,4995549,99,99
+\demographics\area\2_27\,4,0,true,2_27,null,null,4995549,5000483,99,99
+\demographics\area\2_28\,4,0,true,2_28,null,null,5000483,5004474,76,76
+\demographics\area\2_29\,4,0,true,2_29,null,null,5004474,5008219,70,70
+\demographics\area\2_2\,3,0,true,2_2,null,null,5008219,5012893,95,95
+\demographics\area\2_30\,4,0,true,2_30,null,null,5012893,5017745,97,97
+\demographics\area\2_31\,4,0,true,2_31,null,null,5017745,5022351,91,91
+\demographics\area\2_32\,4,0,true,2_32,null,null,5022351,5026383,77,77
+\demographics\area\2_33\,4,0,true,2_33,null,null,5026383,5031112,94,94
+\demographics\area\2_34\,4,0,true,2_34,null,null,5031112,5035841,94,94
+\demographics\area\2_35\,4,0,true,2_35,null,null,5035841,5039217,61,61
+\demographics\area\2_36\,4,0,true,2_36,null,null,5039217,5042921,69,69
+\demographics\area\2_37\,4,0,true,2_37,null,null,5042921,5047076,80,80
+\demographics\area\2_38\,4,0,true,2_38,null,null,5047076,5050821,70,70
+\demographics\area\2_39\,4,0,true,2_39,null,null,5050821,5054976,80,80
+\demographics\area\2_3\,3,0,true,2_3,null,null,5054976,5060290,111,111
+\demographics\area\2_40\,4,0,true,2_40,null,null,5060290,5064732,87,87
+\demographics\area\2_41\,4,0,true,2_41,null,null,5064732,5068805,78,78
+\demographics\area\2_42\,4,0,true,2_42,null,null,5068805,5072632,72,72
+\demographics\area\2_43\,4,0,true,2_43,null,null,5072632,5076254,67,67
+\demographics\area\2_44\,4,0,true,2_44,null,null,5076254,5081024,95,95
+\demographics\area\2_45\,4,0,true,2_45,null,null,5081024,5085425,86,86
+\demographics\area\2_46\,4,0,true,2_46,null,null,5085425,5089990,90,90
+\demographics\area\2_47\,4,0,true,2_47,null,null,5089990,5093817,72,72
+\demographics\area\2_48\,4,0,true,2_48,null,null,5093817,5097849,77,77
+\demographics\area\2_49\,4,0,true,2_49,null,null,5097849,5103685,121,121
+\demographics\area\2_4\,3,0,true,2_4,null,null,5103685,5108359,95,95
+\demographics\area\2_50\,4,0,true,2_50,null,null,5108359,5112063,69,69
+\demographics\area\2_51\,4,0,true,2_51,null,null,5112063,5116341,83,83
+\demographics\area\2_52\,4,0,true,2_52,null,null,5116341,5120578,82,82
+\demographics\area\2_53\,4,0,true,2_53,null,null,5120578,5124405,72,72
+\demographics\area\2_54\,4,0,true,2_54,null,null,5124405,5129011,91,91
+\demographics\area\2_55\,4,0,true,2_55,null,null,5129011,5132510,64,64
+\demographics\area\2_56\,4,0,true,2_56,null,null,5132510,5137280,95,95
+\demographics\area\2_57\,4,0,true,2_57,null,null,5137280,5141312,77,77
+\demographics\area\2_58\,4,0,true,2_58,null,null,5141312,5144975,68,68
+\demographics\area\2_5\,3,0,true,2_5,null,null,5144975,5149729,97,97
+\demographics\area\2_6\,3,0,true,2_6,null,null,5149729,5154203,90,90
+\demographics\area\2_7\,3,0,true,2_7,null,null,5154203,5159157,102,102
+\demographics\area\2_8\,3,0,true,2_8,null,null,5159157,5163831,95,95
+\demographics\area\2_9\,3,0,true,2_9,null,null,5163831,5167785,77,77
+\demographics\area\3_1\,3,0,true,3_1,null,null,5167785,5171499,71,71
+\demographics\education\,8,0,false,,0.0,2.0,5171499,5485834,8253,8253
+\examination\blood pressure\60 sec HR (30 sec HR * 2)\,8,0,false,,0.0,184.0,5485834,5560571,1947,1947
+\examination\blood pressure\mean diastolic\,8,0,false,,0.0,122.66667,5560571,5799647,6272,6272
+\examination\blood pressure\mean systolic\,8,0,false,,76.66667,229.33333,5799647,6038722,6272,6272
+\examination\body measures\Body Mass Index (kg per m**2)\,8,0,false,,11.98,130.21,6038722,6362134,8491,8491
+\examination\body measures\Head BMD (g per cm^2)\,8,0,false,,0.844,3.766,6362134,6613072,6584,6584
+\examination\body measures\Head Circumference (cm)\,8,0,false,,15.5,47.6,6613072,6623586,257,257
+\examination\body measures\Lumber Pelvis BMD (g per cm^2)\,8,0,false,,0.579,2.382,6623586,6874533,6584,6584
+\examination\body measures\Lumber Spine BMD (g per cm^2)\,8,0,false,,0.5008,1.843,6874533,7125479,6584,6584
+\examination\body measures\Maximal Calf Circumference (cm)\,8,0,false,,20.7,75.6,7125479,7400367,7214,7214
+\examination\body measures\Recumbent Length (cm)\,8,0,false,,44.9,112.6,7400367,7447739,1227,1227
+\examination\body measures\Standing Height (cm)\,8,0,false,,79.9,199.8,7447739,7774410,8577,8577
+\examination\body measures\Subscapular Skinfold (mm)\,8,0,false,,2.8,42.2,7774410,8075018,7891,7891
+\examination\body measures\Thigh Circumference (cm)\,8,0,false,,27.6,93.3,8075018,8345909,7109,7109
+\examination\body measures\Total BMD (g per cm^2)\,8,0,false,,0.602,1.6736,8345909,8596848,6584,6584
+\examination\body measures\Total Fat (g)\,8,0,false,,3296.9,104786.54,8596848,8847778,6584,6584
+\examination\body measures\Total Lean excl BMC (g)\,8,0,false,,13585.0,116203.84,8847778,9098718,6584,6584
+\examination\body measures\Triceps Skinfold (mm)\,8,0,false,,3.0,44.0,9098718,9424364,8550,8550
+\examination\body measures\Trunk Fat (g)\,8,0,false,,873.7,51879.7,9424364,9675294,6584,6584
+\examination\body measures\Trunk Lean excl BMC (g)\,8,0,false,,6297.5,55041.62,9675294,9926234,6584,6584
+\examination\body measures\Upper Leg Length (cm)\,8,0,false,,24.9,53.1,9926234,10198148,7136,7136
+\examination\body measures\Waist Circumference (cm)\,8,0,false,,32.0,170.7,10198148,10514943,8317,8317
+\examination\body measures\Weight (kg)\,8,0,false,,3.1,371.0,10514943,10868509,9285,9285
+\examination\physical fitness\Estimated VO2max (ml per kg per min)\,8,0,false,,17.99,112.4,10868509,10945197,1998,1998
+\examination\physical fitness\Predicted VO2max (ml per kg per min)\,8,0,false,,4.92,74.68,10945197,11037237,2402,2402
+\examination\physical fitness\Recovery 1 diastolic BP (mm Hg)\,8,0,false,,39.0,139.0,11037237,11118936,2130,2130
+\examination\physical fitness\Recovery 1 heart rate (per min)\,8,0,false,,49.0,230.0,11118936,11200787,2134,2134
+\examination\physical fitness\Recovery 1 systolic BP (mm Hg)\,8,0,false,,75.0,260.0,11200787,11282485,2130,2130
+\examination\physical fitness\Recovery 2 diastolic BP (mm Hg)\,8,0,false,,39.0,129.0,11282485,11365210,2157,2157
+\examination\physical fitness\Recovery 2 heart rate (per min)\,8,0,false,,69.0,175.0,11365210,11447973,2158,2158
+\examination\physical fitness\Recovery 2 systolic BP (mm Hg)\,8,0,false,,83.0,236.0,11447973,11530697,2157,2157
+\examination\physical fitness\Stage 1 diastolic BP (mm Hg)\,8,0,false,,38.0,129.0,11530697,11605857,1958,1958
+\examination\physical fitness\Stage 1 heart rate (per min)\,8,0,false,,61.0,176.0,11605857,11690935,2219,2219
+\examination\physical fitness\Stage 1 systolic BP (mm Hg)\,8,0,false,,53.0,242.0,11690935,11766094,1958,1958
+\examination\physical fitness\Stage 2 diastolic BP (mm Hg)\,8,0,false,,38.0,120.0,11766094,11835554,1808,1808
+\examination\physical fitness\Stage 2 heart rate (per min)\,8,0,false,,86.0,197.0,11835554,11913450,2030,2030
+\examination\physical fitness\Stage 2 systolic BP (mm Hg)\,8,0,false,,73.0,268.0,11913450,11982909,1808,1808
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\,4,0,true,100µ101µ103µ104µ105µ106µ107µ108µ109µ110µ111µ112µ113µ114µ115µ116µ117µ118µ119µ120µ121µ122µ123µ124µ125µ126µ127µ128µ129µ130µ131µ132µ133µ134µ135µ136µ137µ138µ139µ140µ141µ142µ143µ145µ146µ147µ148µ149µ15.6µ151µ152µ153µ154µ155µ156µ158µ159µ16.1µ16.8µ160µ161µ163µ166µ167µ168µ169µ17.4µ171µ172µ173µ174µ175µ177µ178µ179µ18.7µ184µ186µ188µ193µ195µ196µ197µ198µ2µ20.1µ20.2µ20.3µ20.7µ20.9µ200µ205µ206µ208µ21.1µ21.2µ21.3µ21.4µ21.5µ21.7µ210µ211µ213µ214µ216µ22µ22.4µ22.7µ220µ222µ223µ225µ227µ23µ23.2µ23.3µ23.7µ230µ233µ235µ236µ238µ24.1µ24.3µ24.4µ24.7µ24.8µ242µ25µ25.1µ25.4µ25.5µ25.7µ250µ251µ253µ254µ255µ256µ258µ259µ26µ26.1µ26.2µ26.3µ26.4µ26.6µ26.7µ26.9µ261µ264µ27µ27.1µ27.2µ27.3µ27.4µ27.5µ27.6µ27.7µ27.8µ27.9µ272µ275µ276µ28µ28.1µ28.2µ28.3µ28.4µ28.7µ28.8µ28.9µ285µ289µ29µ29.1µ29.2µ29.3µ29.4µ29.6µ29.8µ29.9µ293µ295µ30µ30.1µ30.2µ30.3µ30.4µ30.5µ30.6µ30.7µ30.8µ30.9µ300µ308µ31µ31.1µ31.2µ31.3µ31.4µ31.6µ31.8µ311µ313µ318µ32µ32.1µ32.2µ32.3µ32.4µ32.5µ32.6µ32.7µ32.9µ328µ33.1µ33.2µ33.3µ33.4µ33.5µ33.6µ33.7µ33.9µ34.1µ34.2µ34.3µ34.5µ34.7µ34.8µ34.9µ347µ35µ35.1µ35.3µ35.4µ35.5µ35.6µ35.8µ35.9µ357µ36µ36.1µ36.4µ36.5µ36.6µ36.7µ36.8µ36.9µ37.1µ37.2µ37.3µ37.4µ37.5µ37.6µ37.7µ37.8µ37.9µ38µ38.1µ38.2µ38.3µ38.4µ38.5µ38.6µ38.7µ38.8µ38.9µ39µ39.1µ39.2µ39.3µ39.4µ39.5µ39.6µ39.7µ39.8µ39.9µ40µ40.1µ40.2µ40.3µ40.4µ40.5µ40.6µ40.7µ40.8µ40.9µ409µ41µ41.1µ41.2µ41.3µ41.4µ41.5µ41.6µ41.8µ42µ42.1µ42.2µ42.3µ42.4µ42.5µ42.6µ42.7µ42.8µ42.9µ43µ43.1µ43.2µ43.3µ43.4µ43.5µ43.6µ43.7µ43.8µ43.9µ44µ44.1µ44.2µ44.3µ44.4µ44.5µ44.6µ44.7µ44.8µ44.9µ447µ45µ45.1µ45.2µ45.3µ45.4µ45.5µ45.6µ45.7µ45.8µ45.9µ46µ46.1µ46.2µ46.3µ46.4µ46.5µ46.6µ46.7µ46.8µ46.9µ467µ47µ47.1µ47.2µ47.3µ47.4µ47.5µ47.6µ47.7µ47.8µ47.9µ48µ48.1µ48.2µ48.3µ48.4µ48.5µ48.6µ48.7µ48.8µ48.9µ49µ49.1µ49.2µ49.3µ49.4µ49.5µ49.6µ49.7µ49.8µ49.9µ50µ50.1µ50.2µ50.3µ50.5µ50.6µ50.7µ50.8µ50.9µ502µ51µ51.1µ51.2µ51.3µ51.4µ51.5µ51.6µ51.7µ51.8µ51.9µ513µ52µ52.1µ52.2µ52.3µ52.4µ52.5µ52.6µ52.7µ52.8µ52.9µ53µ53.1µ53.2µ53.3µ53.4µ53.5µ53.6µ53.7µ53.9µ54µ54.1µ54.2µ54.3µ54.4µ54.5µ54.6µ54.7µ54.8µ54.9µ55.1µ55.2µ55.3µ55.4µ55.7µ55.8µ55.9µ56µ56.1µ56.2µ56.3µ56.4µ56.5µ56.7µ56.8µ56.9µ57µ57.1µ57.2µ57.3µ57.4µ57.5µ57.6µ57.7µ57.9µ58µ58.1µ58.2µ58.3µ58.4µ58.5µ58.6µ58.7µ58.8µ58.9µ59µ59.1µ59.3µ59.4µ59.5µ59.6µ59.7µ59.8µ59.9µ60µ60.1µ60.2µ60.3µ60.4µ60.5µ60.6µ60.7µ60.8µ60.9µ61µ61.1µ61.2µ61.3µ61.4µ61.5µ61.6µ61.7µ61.8µ62µ62.1µ62.2µ62.3µ62.4µ62.5µ62.6µ62.7µ62.8µ62.9µ63µ63.1µ63.2µ63.3µ63.4µ63.5µ63.6µ63.7µ63.8µ63.9µ64µ64.1µ64.3µ64.4µ64.5µ64.6µ64.7µ64.8µ64.9µ65µ65.1µ65.2µ65.3µ65.4µ65.5µ65.6µ65.7µ65.8µ66µ66.1µ66.2µ66.3µ66.5µ66.6µ66.7µ66.8µ66.9µ67µ67.1µ67.4µ67.7µ67.8µ67.9µ68µ68.1µ68.3µ68.4µ68.5µ68.6µ68.7µ68.9µ69µ69.1µ69.2µ69.5µ69.6µ69.8µ69.9µ70µ70.1µ70.2µ70.3µ70.4µ70.5µ70.8µ70.9µ71µ71.1µ71.2µ71.3µ71.5µ71.6µ71.7µ71.8µ71.9µ72µ72.1µ72.2µ72.3µ72.4µ72.5µ72.6µ73.1µ73.2µ73.3µ73.5µ73.7µ73.8µ73.9µ74µ74.1µ74.3µ74.4µ74.5µ74.6µ74.8µ74.9µ75µ75.1µ75.2µ75.3µ75.9µ76.3µ76.4µ76.5µ76.6µ76.8µ77.1µ77.2µ77.4µ77.5µ77.6µ77.7µ77.8µ77.9µ78µ78.3µ78.4µ78.6µ78.7µ78.9µ79µ79.1µ79.3µ79.4µ79.8µ80µ80.1µ80.2µ80.3µ80.4µ80.5µ80.9µ81µ81.1µ81.2µ81.6µ81.7µ81.8µ82µ82.2µ82.4µ82.6µ82.8µ82.9µ83.2µ83.3µ83.6µ83.7µ83.9µ84.4µ84.6µ84.7µ84.8µ84.9µ85.1µ85.3µ85.4µ85.6µ85.8µ85.9µ86µ86.4µ86.5µ86.6µ86.7µ86.8µ87.1µ87.2µ87.6µ87.8µ88µ88.2µ88.4µ88.5µ88.8µ89.3µ89.5µ89.6µ89.7µ90µ90.2µ90.3µ90.4µ90.5µ90.7µ90.8µ90.9µ91.4µ91.9µ92.4µ92.6µ92.8µ93µ93.2µ93.7µ94.1µ94.2µ94.9µ95.3µ95.4µ95.9µ96.4µ96.6µ97.1µ97.2µ97.4µ97.5µ97.7µ97.8µ97.9µ98.1µ98.7µ98.8µ99µ99.1µ99.3,null,null,11982909,12066159,1688,1688
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\100\,3,0,true,100,null,null,12066159,12067144,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\101\,3,0,true,101,null,null,12067144,12068169,3,3
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\103\,3,0,true,103,null,null,12068169,12069274,5,5
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\104\,3,0,true,104,null,null,12069274,12070259,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\105\,3,0,true,105,null,null,12070259,12071244,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\106\,3,0,true,106,null,null,12071244,12072389,6,6
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\107\,3,0,true,107,null,null,12072389,12073494,5,5
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\108\,3,0,true,108,null,null,12073494,12074599,5,5
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\109\,3,0,true,109,null,null,12074599,12075584,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\110\,3,0,true,110,null,null,12075584,12076649,4,4
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\111\,3,0,true,111,null,null,12076649,12077634,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\112\,3,0,true,112,null,null,12077634,12078619,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\113\,3,0,true,113,null,null,12078619,12079724,5,5
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\114\,3,0,true,114,null,null,12079724,12080669,1,1
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\115\,3,0,true,115,null,null,12080669,12081654,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\116\,3,0,true,116,null,null,12081654,12082679,3,3
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\117\,3,0,true,117,null,null,12082679,12083824,6,6
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\118\,3,0,true,118,null,null,12083824,12084809,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\119\,3,0,true,119,null,null,12084809,12085834,3,3
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\120\,3,0,true,120,null,null,12085834,12086819,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\121\,3,0,true,121,null,null,12086819,12087884,4,4
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\122\,3,0,true,122,null,null,12087884,12088989,5,5
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\123\,3,0,true,123,null,null,12088989,12089974,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\124\,3,0,true,124,null,null,12089974,12090999,3,3
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\125\,3,0,true,125,null,null,12090999,12091944,1,1
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\126\,3,0,true,126,null,null,12091944,12092929,2,2
+\laboratory\acrylamide\Acrylamide (pmoL per G Hb)\127\,3,0,true,127,null,null,12092929,12093994,4,4
