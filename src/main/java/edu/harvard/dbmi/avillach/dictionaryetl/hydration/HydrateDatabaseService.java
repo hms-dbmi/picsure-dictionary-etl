@@ -25,10 +25,6 @@ public class HydrateDatabaseService {
     private final DatasetService datasetService;
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
-    private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
-    private volatile DatasetModel userDefinedDataset;
-    private final AtomicInteger task = new AtomicInteger();
 
     @Autowired
     public HydrateDatabaseService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource) throws SQLException {
@@ -41,6 +37,10 @@ public class HydrateDatabaseService {
         this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
     }
 
+    private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
+    private volatile DatasetModel userDefinedDataset;
+    private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
     private final ExecutorService fixedThreadPool;
     private volatile boolean running = true;
@@ -51,7 +51,7 @@ public class HydrateDatabaseService {
      */
     private static ConcurrentSkipListSet<List<ColumnMeta>> columnMetaErrors =
             new ConcurrentSkipListSet<>(Comparator.comparing(metas -> metas.getFirst().name())
-    );
+            );
 
     /**
      * Uses the columnMeta.csv that is created as part of the HPDS ETL to hydrate the data-dictionary database.
@@ -106,8 +106,6 @@ public class HydrateDatabaseService {
             this.fixedThreadPool.shutdownNow();
             log.error("Unable to process the following conceptPaths: {}", columnMetaErrors.size());
             columnMetaErrors.forEach(columnMetas -> log.error(columnMetas.getFirst().name()));
-
-
         }
 
         return true;
