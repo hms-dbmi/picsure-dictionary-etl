@@ -154,7 +154,7 @@ public class HydrateDatabaseServiceTest {
                                                                "4688727,4694276,114,114").get());
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\area\\1_17\\,4,0,true,1_17,null,null," +
                                                                "4694276,4699538,107,107").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
         assertNotNull(columnMeta);
         assertEquals("\\demographics\\area\\", columnMeta.name());
         List<String> valuesList = new ArrayList<>(List.of("1_10", "1_11", "1_12", "1_13", "1_14", "1_15", "1_16", "1_17"));
@@ -172,7 +172,7 @@ public class HydrateDatabaseServiceTest {
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\SEX\\male\\,4,0,true,male,null,null," +
                                                                "3885367,4086526,4885,4885").get());
 
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
         assertNotNull(columnMeta);
         assertEquals("\\demographics\\SEX\\", columnMeta.name());
         assertEquals(List.of("female", "male"), columnMeta.categoryValues());
@@ -198,7 +198,7 @@ public class HydrateDatabaseServiceTest {
                                                                "4688727,4694276,114,114").get());
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\area\\1_17\\,4,0,true,1_17,null,null," +
                                                                "4694276,4699538,107,107").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
 
         DatasetModel dataset = new DatasetModel("TEST", "", "", "");
         dataset = this.datasetService.save(dataset);
@@ -229,7 +229,7 @@ public class HydrateDatabaseServiceTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\examination\\body measures\\Waist " +
                                                                     "Circumference (cm)\\,8,0,false,,32.0,170.7," +
                                                                     "10198148,10514943,8317,8317").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
 
         DatasetModel dataset = new DatasetModel("TEST2", "", "", "");
         dataset = this.datasetService.save(dataset);
@@ -283,5 +283,90 @@ public class HydrateDatabaseServiceTest {
         assertEquals("values", demographicsAreaMeta.getFirst().getKey());
         assertEquals(List.of("100", "101", "103"),
                 this.columnMetaUtility.parseValues(demographicsAreaMeta.getFirst().getValue()));
+    }
+
+    @Test
+    void shouldProcessColumMetas_Continuous() {
+        List<ColumnMeta> columnMetas = new ArrayList<>();
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\\",8,0,false,,0.0,68422.0," +
+                                                                    "28621157,29175570,14570,9068").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\10078\\\",5,0,true,10078,null,null,29175570,29176735,6,6").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\10166\\\",5,0,true,10166,null,null,29176735,29178026,9,9").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\10254\\\",5,0,true,10254,null," +
+                                                                    "null,29178026,29179443,12,12").get());
+
+        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
+        assertTrue(byConcept.isPresent());
+
+        List<ConceptMetadataModel> conceptMetadata =
+                this.conceptMetadataService.findByConceptID(byConcept.get().getConceptNodeId());
+        assertFalse(conceptMetadata.isEmpty());
+        ConceptMetadataModel metadata = conceptMetadata.getFirst();
+        Float max = this.columnMetaUtility.parseMax(metadata.getValue());
+        Float min = this.columnMetaUtility.parseMin(metadata.getValue());
+
+        assertEquals(0.0f, min);
+        assertEquals(68422.0f, max);
+    }
+
+    @Test
+    void shouldProcessColumMetas_Continuous_IncreasedMax() {
+        List<ColumnMeta> columnMetas = new ArrayList<>();
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\\",8,0,false,,0.0,68422.0," +
+                                                                    "28621157,29175570,14570,9068").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\10078\\\",5,0,true,10078,null,null,29175570,29176735,6,6").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\10166.0\\\",5,0,true,10166.0,null," +
+                                                                    "null,29176735,29178026,9,9").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\76543\\\",5,0,true,76543,null," +
+                                                                    "null,29178026,29179443,12,12").get());
+
+        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
+        assertTrue(byConcept.isPresent());
+
+        List<ConceptMetadataModel> conceptMetadata =
+                this.conceptMetadataService.findByConceptID(byConcept.get().getConceptNodeId());
+        assertFalse(conceptMetadata.isEmpty());
+        ConceptMetadataModel metadata = conceptMetadata.getFirst();
+        Float max = this.columnMetaUtility.parseMax(metadata.getValue());
+        Float min = this.columnMetaUtility.parseMin(metadata.getValue());
+
+        assertEquals(0.0f, min);
+        assertEquals(76543.0f, max);
+    }
+
+    @Test
+    void shouldProcessColumMetas_Continuous_DecreasedMin() {
+        List<ColumnMeta> columnMetas = new ArrayList<>();
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\\",8,0,false,,0.0,68422.0," +
+                                                                    "28621157,29175570,14570,9068").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\10078\\\",5,0,true,10078,null,null,29175570,29176735,6,6").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\10.0\\\",5,0,true,-10.0,null," +
+                                                                    "null,29176735,29178026,9,9").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\"\\laboratory\\biochemistry\\Creatinine, urine " +
+                                                                    "(umol per L)\\76543\\\",5,0,true,76543,null," +
+                                                                    "null,29178026,29179443,12,12").get());
+
+        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
+        assertTrue(byConcept.isPresent());
+
+        List<ConceptMetadataModel> conceptMetadata =
+                this.conceptMetadataService.findByConceptID(byConcept.get().getConceptNodeId());
+        assertFalse(conceptMetadata.isEmpty());
+        ConceptMetadataModel metadata = conceptMetadata.getFirst();
+        Float max = this.columnMetaUtility.parseMax(metadata.getValue());
+        Float min = this.columnMetaUtility.parseMin(metadata.getValue());
+
+        assertEquals(-10.0f, min);
+        assertEquals(76543.0f, max);
     }
 }

@@ -61,7 +61,7 @@ public class HydrateDatabaseService {
     public String processColumnMetaCSV(String csvPath, String datasetName, String errorFile) throws RuntimeException {
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
-        } else if(!errorFile.endsWith(".csv")) {
+        } else if (!errorFile.endsWith(".csv")) {
             return "The error file must be a csv.";
         }
 
@@ -103,12 +103,10 @@ public class HydrateDatabaseService {
         } finally {
             running = false;
             this.fixedThreadPool.shutdownNow();
-            log.error("Unable to process the following conceptPaths: {}", columnMetaErrors.size());
-            columnMetaErrors.forEach(columnMetas -> log.error(columnMetas.getFirst().name()));
-            this.printColumnMetaErrorsToCSV(errorFile);
         }
 
         if (!this.columnMetaErrors.isEmpty()) {
+            this.printColumnMetaErrorsToCSV(errorFile);
             return "Hydration has completed with errors. Errors can be found at: " + errorFile;
         }
 
@@ -154,22 +152,21 @@ public class HydrateDatabaseService {
         try {
             if (columnMetas.size() == 1) {
                 columnMeta = columnMetas.getFirst();
-                rootConceptNode = buildConceptHierarchy(columnMetas.getFirst().name());
             } else {
                 boolean isContinuous = columnMetas.stream().anyMatch(meta -> !meta.categorical());
                 if (!isContinuous) {
-                    columnMeta = flattenColumnMeta(columnMetas);
-                    rootConceptNode = buildConceptHierarchy(columnMeta.name());
+                    columnMeta = flattenCategoricalColumnMeta(columnMetas);
                 } else {
-                    throw new RuntimeException("Continuous variable concept paths must have one row in the CSV data.");
+                    columnMeta = flattenContinuousColumnMeta(columnMetas);
                 }
             }
 
+            rootConceptNode = buildConceptHierarchy(columnMeta.name());
             createDatabaseEntries(rootConceptNode, columnMeta);
         } catch (Exception e) {
             log.error("Error processing concept path: {} with values for column metas: {}",
                     columnMetas.getFirst().name(),
-                    e.getMessage(), e);
+                    e.getMessage());
             columnMetaErrors.add(columnMetas);
         } finally {
             // Decrement the task counter no matter what happens
@@ -178,15 +175,62 @@ public class HydrateDatabaseService {
     }
 
     /**
-     * Is some cases we need to flatten a group of ColumnMetaRows down to a single ColumnMeta.
-     * This is the case for Concept Paths in the columnMeta.csv that have more than one row. This should only occur
-     * for categorical concepts.
-     * ColumnMeta
+     * In some cases we need to flatten a group of ColumnMetaRows down to a single ColumnMeta.
+     * This is the case for Continuous Concept Paths in the columnMeta.csv that have more than one row.
+     *
+     * @param columnMetas A List of ColumnMeta where the first ColumnMeta is expected to be a continuous value.
+     * @return ColumnMeta that has a min and max based on all ColumnMetas in the list.
+     */
+    private ColumnMeta flattenContinuousColumnMeta(List<ColumnMeta> columnMetas) {
+        // This is a special case. Where the parent (first element) being rolled into must be continuous.
+        if (columnMetas.getFirst().categorical()) {
+            throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
+                                       "for a concept path.");
+        }
+
+        // As the list is processed the min and max will adjust to based on the "values" of other concepts.
+        final Double[] min = {columnMetas.getFirst().min()};
+        final Double[] max = {columnMetas.getLast().max()};
+
+        columnMetas.forEach(columnMeta -> {
+            if (columnMeta.categorical()) {
+                if (columnMeta.categoryValues().size() > 1) {
+                    throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
+                                               "for a concept path.");
+                }
+
+                double value = Double.parseDouble(columnMeta.categoryValues().getFirst());
+                min[0] = Math.min(min[0], value);
+                max[0] = Math.max(max[0], value);
+            } else {
+                min[0] = Math.min(min[0], columnMeta.min());
+                max[0] = Math.max(max[0], columnMeta.max());
+            }
+        });
+
+        return new ColumnMeta(
+                columnMetas.getFirst().name(),
+                null,
+                null,
+                false,
+                columnMetas.getFirst().categoryValues(),
+                min[0],
+                max[0],
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    /**
+     * In some cases we need to flatten a group of ColumnMetaRows down to a single ColumnMeta.
+     * This is the case for Categorical Concept Paths in the columnMeta.csv that have more than one row.
      *
      * @param columnMetas List of ColumnMeta that have the same concept path and are categorical
      * @return A single ColumnMeta that contains ALL the values combined into a single list.
      */
-    protected ColumnMeta flattenColumnMeta(List<ColumnMeta> columnMetas) {
+    protected ColumnMeta flattenCategoricalColumnMeta(List<ColumnMeta> columnMetas) {
         Set<String> setOfVals = new HashSet<>();
         columnMetas.forEach(columnMeta -> {
             setOfVals.addAll(columnMeta.categoryValues());
