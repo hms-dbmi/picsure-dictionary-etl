@@ -24,6 +24,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HydrateDatabaseServiceTest {
 
     private static String filePath;
+    private static String resourcePath;
 
     @Autowired
     private HydrateDatabaseService hydrateDatabaseService;
@@ -80,8 +83,9 @@ public class HydrateDatabaseServiceTest {
         ClassPathResource columnMetaResource = new ClassPathResource("columnMeta.csv");
         assertNotNull(columnMetaResource);
 
-        // Read in file contents
         filePath = columnMetaResource.getFile().toPath().toString();
+        Path testResourcePath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources");
+        resourcePath = testResourcePath.toString();
     }
 
     @BeforeEach
@@ -91,12 +95,17 @@ public class HydrateDatabaseServiceTest {
 
     @Test
     void processColumnMetaCSV() {
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, null, null));
+        // The error file should be written to your resources directory.
+        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, null, resourcePath +
+                                                                                                  "/columnMetaErrors" +
+                                                                                                  ".csv"));
     }
 
     @Test
     void processColumnMetaCSV_WithCustomDatasetName() {
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, "NHANES", null));
+        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(filePath, "NHANES", resourcePath +
+                                                                                                      "/columnMetaErrors" +
+                                                                                                      ".csv"));
         Optional<DatasetModel> nhanes = this.datasetService.findByRef("NHANES");
         assertTrue(nhanes.isPresent());
         assertEquals("NHANES", nhanes.get().getRef());
@@ -111,7 +120,6 @@ public class HydrateDatabaseServiceTest {
         assertFalse(allConcepts.isEmpty());
         assertTrue(allConcepts.size() > 1);
         allConcepts.forEach(concept -> System.out.println(concept.getConceptPath()));
-        System.out.println("Number of Concepts: " + allConcepts.size());
     }
 
     @Test
@@ -273,7 +281,7 @@ public class HydrateDatabaseServiceTest {
                 this.conceptMetadataService.findByConceptID(demographicsArea.get().getConceptNodeId());
         assertFalse(demographicsAreaMeta.isEmpty());
         assertEquals("values", demographicsAreaMeta.getFirst().getKey());
-        assertEquals(List.of("100","101","103"),
+        assertEquals(List.of("100", "101", "103"),
                 this.columnMetaUtility.parseValues(demographicsAreaMeta.getFirst().getValue()));
     }
 }

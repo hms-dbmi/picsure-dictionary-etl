@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
 
+import com.opencsv.CSVWriter;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
@@ -49,21 +50,19 @@ public class HydrateDatabaseService {
      * If a List of ColumnMetas in the readyToLoadMetadata cannot be processed due to an error it will be inserted into
      * this list.
      */
-    private static ConcurrentSkipListSet<List<ColumnMeta>> columnMetaErrors =
+    private final ConcurrentSkipListSet<List<ColumnMeta>> columnMetaErrors =
             new ConcurrentSkipListSet<>(Comparator.comparing(metas -> metas.getFirst().name())
             );
 
     /**
      * Uses the columnMeta.csv that is created as part of the HPDS ETL to hydrate the data-dictionary database.
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
-     *
-     * @return boolean Returns true if successful, else returns false
      */
-    public boolean processColumnMetaCSV(String csvPath, String datasetName, String errorPath) {
-        if (errorPath == null) {
-            // TODO: The default error path will be used.
-            // Record all ColumnMetas that failed to print in a new map.
-            errorPath = "/opt/local/hpds/columnMeta.csv";
+    public String processColumnMetaCSV(String csvPath, String datasetName, String errorFile) throws RuntimeException {
+        if (errorFile == null) {
+            errorFile = "/opt/local/hpds/columnMetaErrors.csv";
+        } else if(!errorFile.endsWith(".csv")) {
+            return "The error file must be a csv.";
         }
 
         if (StringUtils.hasLength(datasetName)) {
@@ -106,9 +105,14 @@ public class HydrateDatabaseService {
             this.fixedThreadPool.shutdownNow();
             log.error("Unable to process the following conceptPaths: {}", columnMetaErrors.size());
             columnMetaErrors.forEach(columnMetas -> log.error(columnMetas.getFirst().name()));
+            this.printColumnMetaErrorsToCSV(errorFile);
         }
 
-        return true;
+        if (!this.columnMetaErrors.isEmpty()) {
+            return "Hydration has completed with errors. Errors can be found at: " + errorFile;
+        }
+
+        return "Success";
     }
 
     /**
@@ -306,7 +310,23 @@ public class HydrateDatabaseService {
         });
     }
 
-    private void printColumnMetaErrorsToCSV() {
-
+    private void printColumnMetaErrorsToCSV(String csvFilePath) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
+            this.columnMetaErrors.forEach(columnMetas ->
+                    columnMetas.forEach(columnMeta ->
+                            writer.writeNext(new String[]{
+                                    columnMeta.name(),
+                                    columnMeta.widthInBytes(),
+                                    columnMeta.columnOffset(),
+                                    String.valueOf(columnMeta.categorical()),
+                                    String.join("µ", columnMeta.categoryValues()),
+                                    columnMeta.allObservationsOffset(),
+                                    columnMeta.allObservationsLength(),
+                                    columnMeta.observationCount(),
+                                    columnMeta.patientCount()
+                            })));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
