@@ -3,6 +3,9 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
+
 @Service
 public class FacetConceptService {
 
@@ -15,5 +18,9 @@ public class FacetConceptService {
 
     public void mapConceptConceptTypeToFacet(Long facetID, String conceptType) {
         this.facetConceptRepository.mapConceptConceptTypeToFacet(facetID, conceptType);
+    }
+
+    public Optional<FacetConceptModel> findByFacetAndConcept(Long facetID, Long conceptID) {
+        return this.facetConceptRepository.findByFacetIdAndConceptNodeId(facetID, conceptID);
     }
 }

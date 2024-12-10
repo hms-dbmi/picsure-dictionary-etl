@@ -34,8 +34,6 @@ public class HydrateDatabaseService {
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
 
-        int maxConnections = dataSource.getConnection().getMetaData().getMaxConnections();
-        this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
     }
 
     private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
@@ -43,7 +41,7 @@ public class HydrateDatabaseService {
     private volatile DatasetModel userDefinedDataset;
     private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
-    private final ExecutorService fixedThreadPool;
+    private final ExecutorService virtualThreadPool = Executors.newVirtualThreadPerTaskExecutor();
     private volatile boolean running = true;
 
     /**
@@ -63,6 +61,10 @@ public class HydrateDatabaseService {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
         } else if (!errorFile.endsWith(".csv")) {
             return "The error file must be a csv.";
+        }
+
+        if (csvPath == null) {
+            csvPath = "/opt/local/hpds/columnMeta.csv";
         }
 
         if (StringUtils.hasLength(datasetName)) {
@@ -102,7 +104,7 @@ public class HydrateDatabaseService {
             throw new RuntimeException(e);
         } finally {
             running = false;
-            this.fixedThreadPool.shutdownNow();
+            this.virtualThreadPool.shutdownNow();
         }
 
         if (!this.columnMetaErrors.isEmpty()) {
@@ -127,7 +129,7 @@ public class HydrateDatabaseService {
                     // process.
                     List<ColumnMeta> columnMetas = this.readyToLoadMetadata.take();
                     if (!columnMetas.isEmpty()) {
-                        this.fixedThreadPool.submit(() -> processColumnMetas(columnMetas));
+                        this.virtualThreadPool.submit(() -> processColumnMetas(columnMetas));
                     }
                 } catch (InterruptedException e) {
                     log.error(e.getMessage());
