@@ -32,6 +32,8 @@ public class ColumnMetaMapper {
                 // "black" is actually the categorical value.
                 conceptPath = conceptPath.replace(categoryValues.getFirst() + "\\", "");
             }
+            // A Thousand Genomes has µ character in concept paths.
+            conceptPath = conceptPath.replace("µ", " ");
 
             return Optional.of(new ColumnMeta(
                     conceptPath,
