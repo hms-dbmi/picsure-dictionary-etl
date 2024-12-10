@@ -39,6 +39,7 @@ public class HydrateDatabaseServiceTest {
     private static String nhanesFilePath;
     private static String resourcePath;
     private static String thousandGenomesFilePath;
+    private static String syntheaFilePath;
 
     @Autowired
     private HydrateDatabaseService hydrateDatabaseService;
@@ -83,13 +84,19 @@ public class HydrateDatabaseServiceTest {
     public static void init() throws IOException {
         ClassPathResource columnMetaResource = new ClassPathResource("columnMeta.csv");
         assertNotNull(columnMetaResource);
-
         nhanesFilePath = columnMetaResource.getFile().toPath().toString();
+
         ClassPathResource genomesResource = new ClassPathResource("columnMeta_1000_genomes.csv");
         assertNotNull(genomesResource);
         thousandGenomesFilePath = genomesResource.getFile().toPath().toString();
+
+        ClassPathResource syntheaResource = new ClassPathResource("columnMeta_synthea.csv");
+        assertNotNull(syntheaResource);
+        syntheaFilePath = syntheaResource.getFile().toPath().toString();
+
         Path testResourcePath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources");
         resourcePath = testResourcePath.toString();
+
     }
 
     @BeforeEach
@@ -384,4 +391,16 @@ public class HydrateDatabaseServiceTest {
         assertFalse(all.isEmpty());
         assertTrue(all.size() >= 25);
     }
+
+    @Test
+    void shouldProcessSynthea() {
+        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
+                                                                                                                     "/columnMetaErrors" +
+                                                                                                                     ".csv"));
+
+        List<ConceptModel> all = this.conceptService.findAll();
+        assertFalse(all.isEmpty());
+        assertTrue(all.size() >= 32);
+    }
+
 }
