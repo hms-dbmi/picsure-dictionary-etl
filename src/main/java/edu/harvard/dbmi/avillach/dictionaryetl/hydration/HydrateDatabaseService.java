@@ -34,6 +34,8 @@ public class HydrateDatabaseService {
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
 
+        int maxConnections = dataSource.getConnection().getMetaData().getMaxConnections();
+        this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
     }
 
     private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
@@ -41,7 +43,7 @@ public class HydrateDatabaseService {
     private volatile DatasetModel userDefinedDataset;
     private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
-    private final ExecutorService virtualThreadPool = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService fixedThreadPool;
     private volatile boolean running = true;
 
     /**
@@ -104,7 +106,7 @@ public class HydrateDatabaseService {
             throw new RuntimeException(e);
         } finally {
             running = false;
-            this.virtualThreadPool.shutdownNow();
+            this.fixedThreadPool.shutdownNow();
         }
 
         if (!this.columnMetaErrors.isEmpty()) {
@@ -129,7 +131,7 @@ public class HydrateDatabaseService {
                     // process.
                     List<ColumnMeta> columnMetas = this.readyToLoadMetadata.take();
                     if (!columnMetas.isEmpty()) {
-                        this.virtualThreadPool.submit(() -> processColumnMetas(columnMetas));
+                        this.fixedThreadPool.submit(() -> processColumnMetas(columnMetas));
                     }
                 } catch (InterruptedException e) {
                     log.error(e.getMessage());
