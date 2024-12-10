@@ -263,12 +263,28 @@ public class ConceptController {
         return new ResponseEntity<>(null, HttpStatus.CREATED);
     }
 
+    // gets all fields for stigvar identification
+    @GetMapping("/concept/metadata/stigvars")
+    public ResponseEntity<String> getInfoForStigvarIdentification(@RequestParam String ref) {
+        /* List<ConceptStigvarIdentificationModel> models = conceptMetadataRepository.getInfoForStigvars(ref);
+        String csvString = "";
+        for (int i = 0; i < models.size(); i++) {
+            csvString = csvString + models.get(i).toString();
+        } */
+       List<ConceptStigvarIdentificationModel> info = conceptMetadataRepository.getInfoForStigvars(ref);
+       StringBuilder csvString = new StringBuilder();
+       info.forEach(model -> {
+        csvString.append(model.toString());
+       });
+        return new ResponseEntity<>(csvString.toString(), HttpStatus.OK);
+    }
+
     // Specifically for mass value updates
     @PutMapping("/concept/metadata/values")
-    public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String values) {
+    public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String valuesInput) {
 
         try {
-            JSONArray valArray = new JSONArray(values);
+            JSONArray valArray = new JSONArray(valuesInput);
             for (int i = 0; i < valArray.length(); i++) {
                 JSONObject obj = valArray.getJSONObject(i);
                 String path = obj.getString("concept_path");

@@ -31,4 +31,13 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             """, nativeQuery = true)
     void updateStigvarsFromConceptPaths(@Param(value = "paths") String[] paths, String val);
 
+    @Query(value = """
+            select new ConceptStigvarIdentificationModel(name, display, metadesc.value, conceptPath, metavals.value, ref)
+                from ConceptModel concept_node
+                    join DatasetModel dataset on dataset.datasetId = concept_node.datasetId
+                    left join ConceptMetadataModel metavals on metavals.conceptNodeId = concept_node.conceptNodeId and metavals.key = 'values'
+                    left join ConceptMetadataModel metadesc on metadesc.conceptNodeId = concept_node.conceptNodeId and metadesc.key = 'description'
+            where ref = :ref
+            """)
+    List<ConceptStigvarIdentificationModel> getInfoForStigvars(@Param(value = "ref") String ref);
 }
