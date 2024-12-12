@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 @Service
@@ -38,6 +39,7 @@ public class HydrateDatabaseService {
         this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
     }
 
+    private final ReentrantLock reentrantLock = new ReentrantLock();
     private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
     private volatile DatasetModel userDefinedDataset;
@@ -59,9 +61,14 @@ public class HydrateDatabaseService {
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
      */
     public String processColumnMetaCSV(String csvPath, String datasetName, String errorFile) throws RuntimeException {
+        if (!this.reentrantLock.tryLock()) {
+            return "This task is already running. Skipping execution.";
+        }
+
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
         } else if (!errorFile.endsWith(".csv")) {
+            reentrantLock.unlock();
             return "The error file must be a csv.";
         }
 
@@ -105,6 +112,7 @@ public class HydrateDatabaseService {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
+            reentrantLock.unlock();
             running = false;
         }
 
