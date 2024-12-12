@@ -13,7 +13,11 @@ public class DatabaseCleanupUtility {
 
     @Transactional
     public void truncateTables() {
-        entityManager.createNativeQuery("TRUNCATE TABLE dict.concept_node_meta, dict.concept_node, dict.dataset CASCADE").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE " +
+                                        " dict.concept_node_meta," +
+                                        " dict.concept_node," +
+                                        " dict.dataset " +
+                                        "CASCADE").executeUpdate();
     }
 
 }
