@@ -151,7 +151,7 @@ public class ConceptController {
     // fetches all concepts still in the dictionary which arent currently in the
     // loader files
     @GetMapping("/concept/obsolete")
-    public ResponseEntity<List<Long>> getObsoleteConcepts(@RequestParam String datasetRef,
+    public ResponseEntity<String> getObsoleteConcepts(@RequestParam String datasetRef,
             @RequestBody String conceptNodeIds) {
         String[] inputArray = conceptNodeIds.split("\n");
         List<Long> inputIds = new ArrayList<>();
@@ -176,7 +176,7 @@ public class ConceptController {
             dictionaryConcepts.add(concept.getConceptNodeId());
         });
         dictionaryConcepts.removeAll(inputIds);
-        return new ResponseEntity<>(inputIds, HttpStatus.OK);
+        return new ResponseEntity<>(inputIds.toString(), HttpStatus.OK);
     }
 
     // Used for curated json from noncompliant studies
