@@ -51,7 +51,7 @@ public class HydrateDatabaseController {
                 csvPath,
                 errorDirectory,
                 includeDefaultFacets);
-//        databaseCleanupUtility.truncateTables();
+        databaseCleanupUtility.truncateTablesAllTables();
         this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
         if (includeDefaultFacets) {
             this.facetService.createDefaultFacets();
