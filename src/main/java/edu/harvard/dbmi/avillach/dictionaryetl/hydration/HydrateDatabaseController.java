@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 @CrossOrigin(origins = "http://localhost:8081")
 @Controller
 @RequestMapping("hydrate")
@@ -23,6 +25,8 @@ public class HydrateDatabaseController {
     private final HydrateDatabaseService hydrateDatabaseService;
     private final FacetService facetService;
     private final DatabaseCleanupUtility databaseCleanupUtility;
+
+    private final ReentrantLock reentrantLock = new ReentrantLock();
 
     @Autowired
     public HydrateDatabaseController(HydrateDatabaseService hydrateDatabaseService, FacetService facetService, DatabaseCleanupUtility databaseCleanupUtility) {
@@ -51,10 +55,20 @@ public class HydrateDatabaseController {
                 csvPath,
                 errorDirectory,
                 includeDefaultFacets);
-        databaseCleanupUtility.truncateTablesAllTables();
-        String response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
-        if (includeDefaultFacets) {
-            this.facetService.createDefaultFacets();
+
+        String response;
+        if (this.reentrantLock.tryLock()) {
+            try {
+                databaseCleanupUtility.truncateTablesAllTables();
+                response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
+                if (includeDefaultFacets) {
+                    this.facetService.createDefaultFacets();
+                }
+            } finally {
+                reentrantLock.unlock();
+            }
+        } else {
+            response = "This task is already running. Skipping execution.";
         }
 
         return new ResponseEntity<>(response, HttpStatus.OK);
