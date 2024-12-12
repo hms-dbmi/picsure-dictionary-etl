@@ -52,11 +52,11 @@ public class HydrateDatabaseController {
                 errorDirectory,
                 includeDefaultFacets);
         databaseCleanupUtility.truncateTablesAllTables();
-        this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
+        String response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
         if (includeDefaultFacets) {
             this.facetService.createDefaultFacets();
         }
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

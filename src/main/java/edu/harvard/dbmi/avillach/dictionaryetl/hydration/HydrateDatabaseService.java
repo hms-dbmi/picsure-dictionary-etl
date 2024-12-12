@@ -106,7 +106,7 @@ public class HydrateDatabaseService {
             throw new RuntimeException(e);
         } finally {
             running = false;
-            this.fixedThreadPool.shutdownNow();
+            this.fixedThreadPool.shutdown();
         }
 
         if (!this.columnMetaErrors.isEmpty()) {
