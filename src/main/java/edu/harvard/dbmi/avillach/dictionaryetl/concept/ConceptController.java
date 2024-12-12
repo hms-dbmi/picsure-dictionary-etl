@@ -148,6 +148,37 @@ public class ConceptController {
         }
     }
 
+    // fetches all concepts still in the dictionary which arent currently in the
+    // loader files
+    @GetMapping("/concept/obsolete")
+    public ResponseEntity<List<Long>> getObsoleteConcepts(@RequestParam String datasetRef,
+            @RequestBody String conceptNodeIds) {
+        String[] inputArray = conceptNodeIds.split("\n");
+        List<Long> inputIds = new ArrayList<>();
+        for (int i = 0; i < inputArray.length; i++) {
+            try {
+                inputIds.add(Long.parseLong(inputArray[i]));
+            } catch (NumberFormatException e) {
+                System.out.println("Unable to parse conceptNodeIds as numeric. Please check your input and try again");
+                return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            }
+        }
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        Long datasetId;
+        if (datasetData.isPresent()) {
+            datasetId = datasetData.get().getDatasetId();
+        } else {
+            System.out.println("Dataset not found: " + datasetRef + ".");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        List<Long> dictionaryConcepts = new ArrayList<>();
+        conceptRepository.findByDatasetId(datasetId).forEach(concept -> {
+            dictionaryConcepts.add(concept.getConceptNodeId());
+        });
+        dictionaryConcepts.removeAll(inputIds);
+        return new ResponseEntity<>(inputIds, HttpStatus.OK);
+    }
+
     // Used for curated json from noncompliant studies
     /*
      * expected JSONArray element format
@@ -263,19 +294,14 @@ public class ConceptController {
         return new ResponseEntity<>(null, HttpStatus.CREATED);
     }
 
-    // gets all fields for stigvar identification
+    // gets all fields needed for stigvar identification
     @GetMapping("/concept/metadata/stigvars")
     public ResponseEntity<String> getInfoForStigvarIdentification(@RequestParam String ref) {
-        /* List<ConceptStigvarIdentificationModel> models = conceptMetadataRepository.getInfoForStigvars(ref);
-        String csvString = "";
-        for (int i = 0; i < models.size(); i++) {
-            csvString = csvString + models.get(i).toString();
-        } */
-       List<ConceptStigvarIdentificationModel> info = conceptMetadataRepository.getInfoForStigvars(ref);
-       StringBuilder csvString = new StringBuilder();
-       info.forEach(model -> {
-        csvString.append(model.toString());
-       });
+        List<ConceptStigvarIdentificationModel> info = conceptMetadataRepository.getInfoForStigvars(ref);
+        StringBuilder csvString = new StringBuilder();
+        info.forEach(model -> {
+            csvString.append(model.toString());
+        });
         return new ResponseEntity<>(csvString.toString(), HttpStatus.OK);
     }
 
