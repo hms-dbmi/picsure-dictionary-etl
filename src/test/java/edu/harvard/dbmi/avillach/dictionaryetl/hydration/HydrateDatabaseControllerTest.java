@@ -92,10 +92,11 @@ class HydrateDatabaseControllerTest {
 
     @Test
     void initialDatabaseHydration_onlyDatasetNhanes_shouldMapFacets() {
-        this.hydrateDatabaseController.initialDatabaseHydration(
+        this.hydrateDatabaseController.allColumnMetaCSVDatabaseHydration(
                 "NHANES",
                 filePath,
                 resourcePath + "/columnMetaErrors.csv",
+                true,
                 true);
 
         List<DatasetModel> all = this.datasetService.findAll();

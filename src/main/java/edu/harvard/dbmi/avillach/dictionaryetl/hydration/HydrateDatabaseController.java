@@ -37,18 +37,24 @@ public class HydrateDatabaseController {
 
     /**
      *
-     * @param datasetName
-     * @param csvPath
-     * @param errorDirectory
-     * @param includeDefaultFacets
+     * @param datasetName If provided all allColumnMeta.csv concept paths will be associated with dataset ref where
+     *                    ref = datasetName. If not provided the first node of each concept path will be used as the
+     *                    dataset ref.
+     * @param csvPath The path to the columnMeta.csv. Uses All-In-One's default HPDS docker mount location if not
+     *                provided
+     * @param errorDirectory The path to the columnMetaErrors.csv. Uses All-In-One's default HPDS docker mount location if not
+     *      *                provided.
+     * @param includeDefaultFacets True by default. Will create the continuous/categorical facets and associate all
+     *                             concept_nodes with them.
      * @return
      */
     @GetMapping(value = "/initialize")
-    public ResponseEntity<String> initialDatabaseHydration(
+    public ResponseEntity<String> allColumnMetaCSVDatabaseHydration(
             @RequestParam(required = false) String datasetName,
             @RequestParam(required = false) String csvPath,
             @RequestParam(required = false) String errorDirectory,
-            @RequestParam(required = false, defaultValue = "true") boolean includeDefaultFacets
+            @RequestParam(required = false, defaultValue = "true") boolean includeDefaultFacets,
+            @RequestParam(required = false, defaultValue = "false") boolean clearDatabase
             ) {
         log.info("initialDatabaseHydration __ datasetName: {}, csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}",
                 datasetName,
@@ -59,7 +65,9 @@ public class HydrateDatabaseController {
         String response;
         if (this.reentrantLock.tryLock()) {
             try {
-                databaseCleanupUtility.truncateTablesAllTables();
+                if (clearDatabase) {
+                    databaseCleanupUtility.truncateTablesAllTables();
+                }
                 response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
@@ -73,4 +81,5 @@ public class HydrateDatabaseController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 }
