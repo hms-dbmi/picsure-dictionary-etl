@@ -10,5 +10,6 @@ public enum DatasetMetadataKeys {
     additional_info_link,
     study_accession,
     study_focus,
+    program_name,
     phase
 }
