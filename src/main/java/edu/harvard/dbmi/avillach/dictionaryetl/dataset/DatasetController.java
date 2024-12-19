@@ -131,6 +131,9 @@ public class DatasetController {
             consentRepository.findByDatasetId(datasetId).forEach(consent -> {
                 consentRepository.delete(consent);
             });
+            datasetHarmonizationRepository.findBySourceDatasetId(datasetId).forEach(dh -> {
+                datasetHarmonizationRepository.delete(dh);
+            });
             datasetRepository.delete(datasetData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
