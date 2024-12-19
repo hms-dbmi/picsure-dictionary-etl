@@ -16,7 +16,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 @Service
@@ -326,17 +325,24 @@ public class HydrateDatabaseService {
     private Long createConceptModel(ConceptNode currentNode, ColumnMeta columnMeta, Long datasetID,
                                     Long parentConceptID) {
         return this.conceptPaths.computeIfAbsent(currentNode.getName(), name -> {
-            String conceptPath = currentNode.getConceptPath();
-            ConceptModel conceptModel = new ConceptModel(
-                    datasetID,
-                    name,
-                    "",
-                    ConceptTypes.CATEGORICAL.conceptType(columnMeta.categorical()),
-                    conceptPath,
-                    parentConceptID
-            );
+            Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(name);
+            ConceptModel conceptModel;
+            if (optConceptModel.isEmpty()) {
+                String conceptPath = currentNode.getConceptPath();
+                 conceptModel = new ConceptModel(
+                        datasetID,
+                        name,
+                        "",
+                        ConceptTypes.CATEGORICAL.conceptType(columnMeta.categorical()),
+                        conceptPath,
+                        parentConceptID
+                );
 
-            conceptModel = this.conceptService.save(conceptModel);
+                conceptModel = this.conceptService.save(conceptModel);
+            } else {
+                conceptModel = optConceptModel.get();
+            }
+
             return conceptModel.getConceptNodeId();
         });
     }
@@ -352,8 +358,15 @@ public class HydrateDatabaseService {
 
     private Long getDatasetRefID(String datasetRef) {
         return this.datasetRefIDs.computeIfAbsent(datasetRef, ref -> {
-            DatasetModel datasetModel = new DatasetModel(ref, "", "", "");
-            datasetModel = this.datasetService.save(datasetModel); // Blocking call
+            Optional<DatasetModel> optDatasetModel = this.datasetService.findByRef(ref);
+            DatasetModel datasetModel;
+            if (optDatasetModel.isPresent()) {
+                datasetModel = optDatasetModel.get();
+            } else {
+                datasetModel = new DatasetModel(ref, "", "", "");
+                datasetModel = this.datasetService.save(datasetModel); // Blocking call
+            }
+
             return datasetModel.getDatasetId();
         });
     }
