@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

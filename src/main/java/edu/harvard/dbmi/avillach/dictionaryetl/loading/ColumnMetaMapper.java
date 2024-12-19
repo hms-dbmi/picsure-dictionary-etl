@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;

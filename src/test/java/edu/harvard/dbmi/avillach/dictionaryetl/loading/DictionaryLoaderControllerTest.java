@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class HydrateDatabaseControllerTest {
+class DictionaryLoaderControllerTest {
 
     private static String filePath;
     private static String resourcePath;
@@ -44,7 +44,7 @@ class HydrateDatabaseControllerTest {
     private DatabaseCleanupUtility databaseCleanupUtility;
 
     @Autowired
-    private HydrateDatabaseController hydrateDatabaseController;
+    private DictionaryLoaderController dictionaryLoaderController;
 
     @Autowired
     private FacetConceptService facetConceptService;
@@ -92,7 +92,7 @@ class HydrateDatabaseControllerTest {
 
     @Test
     void initialDatabaseHydration_onlyDatasetNhanes_shouldMapFacets() {
-        this.hydrateDatabaseController.initialDatabaseHydration(
+        this.dictionaryLoaderController.initialDatabaseHydration(
                 "NHANES",
                 filePath,
                 resourcePath + "/columnMetaErrors.csv",

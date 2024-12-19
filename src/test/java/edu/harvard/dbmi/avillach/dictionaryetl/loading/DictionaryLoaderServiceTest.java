@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class HydrateDatabaseServiceTest {
+public class DictionaryLoaderServiceTest {
 
     private static String nhanesFilePath;
     private static String resourcePath;
@@ -42,7 +42,7 @@ public class HydrateDatabaseServiceTest {
     private static String syntheaFilePath;
 
     @Autowired
-    private HydrateDatabaseService hydrateDatabaseService;
+    private DictionaryLoaderService dictionaryLoaderService;
 
     @Autowired
     private ColumnMetaMapper columnMetaMapper;
@@ -107,16 +107,16 @@ public class HydrateDatabaseServiceTest {
     @Test
     void processColumnMetaCSV() {
         // The error file should be written to your resources directory.
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(nhanesFilePath, null, resourcePath +
-                                                                                                        "/columnMetaErrors" +
-                                                                                                        ".csv"));
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(nhanesFilePath, null, resourcePath +
+                                                                                                         "/columnMetaErrors" +
+                                                                                                         ".csv"));
     }
 
     @Test
     void processColumnMetaCSV_WithCustomDatasetName() {
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(nhanesFilePath, "NHANES", resourcePath +
-                                                                                                            "/columnMetaErrors" +
-                                                                                                            ".csv"));
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(nhanesFilePath, "NHANES", resourcePath +
+                                                                                                             "/columnMetaErrors" +
+                                                                                                             ".csv"));
         Optional<DatasetModel> nhanes = this.datasetService.findByRef("NHANES");
         assertTrue(nhanes.isPresent());
         assertEquals("NHANES", nhanes.get().getRef());
@@ -136,7 +136,7 @@ public class HydrateDatabaseServiceTest {
     @Test
     void shouldProduceConceptHierarchy() {
         String examinationConceptPath = "\\examination\\physical fitness\\Recovery 2 diastolic BP (mm Hg)\\";
-        ConceptNode conceptNode = this.hydrateDatabaseService.buildConceptHierarchy(examinationConceptPath);
+        ConceptNode conceptNode = this.dictionaryLoaderService.buildConceptHierarchy(examinationConceptPath);
         assertEquals("\\examination\\", conceptNode.getConceptPath());
         System.out.println(conceptNode.getConceptPath());
         assertEquals("\\examination\\physical fitness\\", conceptNode.getChild().getConceptPath());
@@ -165,7 +165,7 @@ public class HydrateDatabaseServiceTest {
                                                                "4688727,4694276,114,114").get());
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\area\\1_17\\,4,0,true,1_17,null,null," +
                                                                "4694276,4699538,107,107").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.dictionaryLoaderService.flattenCategoricalColumnMeta(columnMetas);
         assertNotNull(columnMeta);
         assertEquals("\\demographics\\area\\", columnMeta.name());
         List<String> valuesList = new ArrayList<>(List.of("1_10", "1_11", "1_12", "1_13", "1_14", "1_15", "1_16", "1_17"));
@@ -183,7 +183,7 @@ public class HydrateDatabaseServiceTest {
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\SEX\\male\\,4,0,true,male,null,null," +
                                                                "3885367,4086526,4885,4885").get());
 
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.dictionaryLoaderService.flattenCategoricalColumnMeta(columnMetas);
         assertNotNull(columnMeta);
         assertEquals("\\demographics\\SEX\\", columnMeta.name());
         assertEquals(List.of("female", "male"), columnMeta.categoryValues());
@@ -209,7 +209,7 @@ public class HydrateDatabaseServiceTest {
                                                                "4688727,4694276,114,114").get());
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta("\\demographics\\area\\1_17\\,4,0,true,1_17,null,null," +
                                                                "4694276,4699538,107,107").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.dictionaryLoaderService.flattenCategoricalColumnMeta(columnMetas);
 
         DatasetModel dataset = new DatasetModel("TEST", "", "", "");
         dataset = this.datasetService.save(dataset);
@@ -217,7 +217,7 @@ public class HydrateDatabaseServiceTest {
         ConceptModel concept = new ConceptModel(dataset.getDatasetId(), "area", "", "categorical", columnMeta.name(), null);
         concept = this.conceptService.save(concept);
 
-        this.hydrateDatabaseService.buildValuesMetadata(columnMeta, concept.getConceptNodeId());
+        this.dictionaryLoaderService.buildValuesMetadata(columnMeta, concept.getConceptNodeId());
         List<ConceptMetadataModel> metadataModel =
                 this.conceptMetadataService.findByConceptID(concept.getConceptNodeId());
         assertNotNull(metadataModel);
@@ -240,7 +240,7 @@ public class HydrateDatabaseServiceTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\examination\\body measures\\Waist " +
                                                                     "Circumference (cm)\\,8,0,false,,32.0,170.7," +
                                                                     "10198148,10514943,8317,8317").get());
-        ColumnMeta columnMeta = this.hydrateDatabaseService.flattenCategoricalColumnMeta(columnMetas);
+        ColumnMeta columnMeta = this.dictionaryLoaderService.flattenCategoricalColumnMeta(columnMetas);
 
         DatasetModel dataset = new DatasetModel("TEST2", "", "", "");
         dataset = this.datasetService.save(dataset);
@@ -249,7 +249,7 @@ public class HydrateDatabaseServiceTest {
                 , null);
         concept = this.conceptService.save(concept);
 
-        this.hydrateDatabaseService.buildValuesMetadata(columnMeta, concept.getConceptNodeId());
+        this.dictionaryLoaderService.buildValuesMetadata(columnMeta, concept.getConceptNodeId());
         List<ConceptMetadataModel> metadataModel = this.conceptMetadataService.findByConceptID(concept.getConceptNodeId());
         assertNotNull(metadataModel);
         assertFalse(metadataModel.isEmpty());
@@ -278,7 +278,7 @@ public class HydrateDatabaseServiceTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
                                                                     " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                     "12069274,5,5").get());
-        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        this.dictionaryLoaderService.processColumnMetas(columnMetas);
         Optional<ConceptModel> demographics = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(demographics.isPresent());
         assertEquals("laboratory", demographics.get().getName());
@@ -308,7 +308,7 @@ public class HydrateDatabaseServiceTest {
                                                                     "(umol per L)\\10254\\\",5,0,true,10254,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        this.dictionaryLoaderService.processColumnMetas(columnMetas);
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -337,7 +337,7 @@ public class HydrateDatabaseServiceTest {
                                                                     "(umol per L)\\76543\\\",5,0,true,76543,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        this.dictionaryLoaderService.processColumnMetas(columnMetas);
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -366,7 +366,7 @@ public class HydrateDatabaseServiceTest {
                                                                     "(umol per L)\\76543\\\",5,0,true,76543,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.hydrateDatabaseService.processColumnMetas(columnMetas);
+        this.dictionaryLoaderService.processColumnMetas(columnMetas);
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -383,9 +383,9 @@ public class HydrateDatabaseServiceTest {
 
     @Test
     void shouldProcessThousandGenomes() {
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(thousandGenomesFilePath, "NHANES", resourcePath +
-                                                                                                            "/columnMetaErrors" +
-                                                                                                            ".csv"));
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(thousandGenomesFilePath, "NHANES", resourcePath +
+                                                                                                                      "/columnMetaErrors" +
+                                                                                                                      ".csv"));
 
         List<ConceptModel> all = this.conceptService.findAll();
         assertFalse(all.isEmpty());
@@ -394,9 +394,9 @@ public class HydrateDatabaseServiceTest {
 
     @Test
     void shouldProcessSynthea() {
-        assertDoesNotThrow(() -> this.hydrateDatabaseService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
-                                                                                                                     "/columnMetaErrors" +
-                                                                                                                     ".csv"));
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
+                                                                                                              "/columnMetaErrors" +
+                                                                                                              ".csv"));
 
         List<ConceptModel> all = this.conceptService.findAll();
         assertFalse(all.isEmpty());

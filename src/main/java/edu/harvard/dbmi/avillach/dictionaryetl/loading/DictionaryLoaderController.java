@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.hydration;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
@@ -18,19 +18,18 @@ import java.util.concurrent.locks.ReentrantLock;
 @CrossOrigin(origins = "http://localhost:8081")
 @Controller
 @RequestMapping("load")
-public class HydrateDatabaseController {
+public class DictionaryLoaderController {
 
-    private final static Logger log = LoggerFactory.getLogger(HydrateDatabaseController.class);
+    private final static Logger log = LoggerFactory.getLogger(DictionaryLoaderController.class);
 
-    private final HydrateDatabaseService hydrateDatabaseService;
+    private final DictionaryLoaderService dictionaryLoaderService;
     private final FacetService facetService;
     private final DatabaseCleanupUtility databaseCleanupUtility;
-
     private final ReentrantLock reentrantLock = new ReentrantLock();
 
     @Autowired
-    public HydrateDatabaseController(HydrateDatabaseService hydrateDatabaseService, FacetService facetService, DatabaseCleanupUtility databaseCleanupUtility) {
-        this.hydrateDatabaseService = hydrateDatabaseService;
+    public DictionaryLoaderController(DictionaryLoaderService dictionaryLoaderService, FacetService facetService, DatabaseCleanupUtility databaseCleanupUtility) {
+        this.dictionaryLoaderService = dictionaryLoaderService;
         this.facetService = facetService;
         this.databaseCleanupUtility = databaseCleanupUtility;
     }
@@ -63,7 +62,7 @@ public class HydrateDatabaseController {
                 if (clearDatabase) {
                     databaseCleanupUtility.truncateTablesAllTables();
                 }
-                response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
+                response = this.dictionaryLoaderService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
                 }
