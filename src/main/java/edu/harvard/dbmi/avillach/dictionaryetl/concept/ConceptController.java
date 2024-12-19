@@ -92,7 +92,8 @@ public class ConceptController {
         if (conceptData.isPresent()) {
             // update already existing concept
             ConceptModel existingConcept = conceptData.get();
-            existingConcept.setConceptType(conceptType);
+            if (conceptType != null)
+                existingConcept.setConceptType(conceptType);
             existingConcept.setDatasetId(datasetId);
             existingConcept.setDisplay(display);
             existingConcept.setParentId(parentId);
@@ -101,6 +102,9 @@ public class ConceptController {
         } else {
             // add new concept when concept not present in data
             try {
+                if (conceptType == null) {
+                    conceptType = "categorical";
+                }
                 ConceptModel newConcept = conceptRepository
                         .save(new ConceptModel(datasetId, name,
                                 display, conceptType, conceptPath,
@@ -142,6 +146,119 @@ public class ConceptController {
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    // fetches all concepts still in the dictionary which arent currently in the
+    // loader files
+    @GetMapping("/concept/obsolete")
+    public ResponseEntity<List<ConceptModel>> getObsoleteConcepts(@RequestParam String datasetRef,
+            @RequestBody String conceptNodeIds) {
+        String[] inputArray = conceptNodeIds.split("\n");
+        List<ConceptModel> validConcepts = new ArrayList<>();
+        for (int i = 0; i < inputArray.length; i++) {
+            try {
+                System.out.println(inputArray[i]);
+                System.out.println(Long.parseLong(inputArray[i]));
+                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
+            } catch (NumberFormatException e) {
+                System.out.println("Unable to parse conceptNodeIds as numeric. Please check your input and try again");
+                return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            }
+        }
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        Long datasetId;
+        if (datasetData.isPresent()) {
+            datasetId = datasetData.get().getDatasetId();
+        } else {
+            System.out.println("Dataset not found: " + datasetRef + ".");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        List<ConceptModel> obsoleteConcepts = new ArrayList<>();
+        conceptRepository.findByDatasetId(datasetId).forEach(concept -> {
+            obsoleteConcepts.add(concept);
+        });
+        obsoleteConcepts.removeAll(validConcepts);
+        return new ResponseEntity<>(obsoleteConcepts, HttpStatus.OK);
+    }
+
+    // removes all obsolete concepts from dictionary
+    @DeleteMapping("/concept/obsolete")
+    public ResponseEntity<List<ConceptModel>> deleteObsoleteConcepts(@RequestParam String datasetRef,
+            @RequestBody String conceptNodeIds) {
+        String[] inputArray = conceptNodeIds.split("\n");
+        List<ConceptModel> validConcepts = new ArrayList<>();
+        for (int i = 0; i < inputArray.length; i++) {
+            try {
+                System.out.println(inputArray[i]);
+                System.out.println(Long.parseLong(inputArray[i]));
+                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
+            } catch (NumberFormatException e) {
+                System.out.println("Unable to parse conceptNodeIds as numeric. Please check your input and try again");
+                return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            }
+        }
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        Long datasetId;
+        if (datasetData.isPresent()) {
+            datasetId = datasetData.get().getDatasetId();
+        } else {
+            System.out.println("Dataset not found: " + datasetRef + ".");
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        List<ConceptModel> obsoleteConcepts = new ArrayList<>();
+        conceptRepository.findByDatasetId(datasetId).forEach(concept -> {
+            obsoleteConcepts.add(concept);
+        });
+        obsoleteConcepts.removeAll(validConcepts);
+        obsoleteConcepts.forEach(concept -> {
+            // uses the local delete method in order to propery cascade
+            deleteConcept(concept.getConceptPath());
+        });
+        return new ResponseEntity<>(obsoleteConcepts, HttpStatus.OK);
+    }
+
+    // Used for curated json from noncompliant studies
+    /*
+     * expected JSONArray element format
+     * {
+     * String dataset_ref
+     * String name
+     * String display
+     * String concept_path
+     * String parent_concept_path
+     * JSONObject metadata {String description, JSONArray drs_uri, String or
+     * JSONArray ~other metadata fields as needed~}
+     * }
+     * 
+     * 
+     */
+    @PutMapping("/concept/curated")
+    public ResponseEntity<String> updateConceptsFromJSON(@RequestBody String input) {
+        JSONArray dictionaryJSON = new JSONArray(input);
+        int varcount = dictionaryJSON.length();
+        for (int i = 0; i < varcount; i++) {
+            JSONObject var = dictionaryJSON.getJSONObject(i);
+            String datasetRef = var.getString("dataset_ref");
+            String name = var.getString("name");
+            String conceptPath = var.getString("concept_path");
+            String parentConceptPath = var.getString("parent_concept_path");
+            String display = name;
+            try {
+                display = var.getString("display");
+            } catch (JSONException e) {
+                System.err.println("Display type exception for var " + name + " in dataset " + datasetRef);
+            }
+            JSONObject metadata = var.getJSONObject("metadata");
+            // conceptType is null to ensure that data analyzer is not overwritten
+            updateConcept(conceptPath, datasetRef, null, display, name, parentConceptPath);
+
+            metadata.keys().forEachRemaining(
+                    key -> {
+                        updateConceptMetadata(conceptPath, key, metadata.optString(key));
+                    });
+        }
+
+        return null;
     }
 
     @GetMapping("/concept/metadata")
@@ -210,54 +327,32 @@ public class ConceptController {
 
     // Specifically for stigvar updates
     @PutMapping("/concept/metadata/stigvars")
-    public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToRemove) {
-
-        try {
-            String[] concepts = conceptsToRemove.split("\n");
-            List<String> conceptList = Arrays.asList(concepts);
-            List<String> queryEntries = new ArrayList<String>();
-            conceptList.forEach(path -> {
-                Long conceptId;
-                try {
-                    Optional<ConceptModel> concept = conceptRepository.findByConceptPath(path);
-                    conceptId = concept.get().getConceptNodeId();
-                    queryEntries.add("(" + conceptId + "," + "'stigmatized', 'true')");
-
-                } catch (Exception e) {
-                    System.out.println("Concept path not found in database " + path);
-                }
-
-                updateConceptMetadata(path, "stigmatized", "true");
-            });
-            /*
-             * try {
-             * String queryInset = queryEntries.stream().collect(Collectors.joining(", "));
-             * System.out.println(queryInset);
-             * Query fullQuery = entityManager.createNativeQuery(
-             * "insert into concept_node_meta (concept_node_id, key, value) VALUES " +
-             * queryInset
-             * + "ON CONFLICT (key, concept_node_id) "
-             * + "DO UPDATE SET value='true'");
-             * fullQuery.executeUpdate();
-             * // conceptMetadataRepository.insertOrUpdateConceptMeta(fullQuery, "true");
-             * } catch (Exception e) {
-             * System.out.print(e.getMessage());
-             * }
-             */
-        } catch (JSONException e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<ConceptMetadataModel> updateStigvars(@RequestBody String conceptsToUpdate,
+            @RequestParam String value) {
+        String[] concepts = conceptsToUpdate.split("\n");
+        System.out.println("Concept: " + concepts[0]);
+        conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
 
         return new ResponseEntity<>(null, HttpStatus.CREATED);
+    }
 
+    // gets all fields needed for stigvar identification
+    @GetMapping("/concept/metadata/stigvars")
+    public ResponseEntity<String> getInfoForStigvarIdentification(@RequestParam String ref) {
+        List<ConceptStigvarIdentificationModel> info = conceptMetadataRepository.getInfoForStigvars(ref);
+        StringBuilder csvString = new StringBuilder();
+        info.forEach(model -> {
+            csvString.append(model.toString());
+        });
+        return new ResponseEntity<>(csvString.toString(), HttpStatus.OK);
     }
 
     // Specifically for mass value updates
     @PutMapping("/concept/metadata/values")
-    public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String values) {
+    public ResponseEntity<ConceptMetadataModel> updateManyValues(@RequestBody String valuesInput) {
 
         try {
-            JSONArray valArray = new JSONArray(values);
+            JSONArray valArray = new JSONArray(valuesInput);
             for (int i = 0; i < valArray.length(); i++) {
                 JSONObject obj = valArray.getJSONObject(i);
                 String path = obj.getString("concept_path");
