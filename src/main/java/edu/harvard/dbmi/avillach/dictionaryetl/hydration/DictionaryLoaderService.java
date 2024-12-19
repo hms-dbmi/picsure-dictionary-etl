@@ -19,16 +19,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Service
-public class HydrateDatabaseService {
+public class DictionaryLoaderService {
 
-    private final Logger log = LoggerFactory.getLogger(HydrateDatabaseService.class);
+    private final Logger log = LoggerFactory.getLogger(DictionaryLoaderService.class);
     private final ColumnMetaMapper columnMetaMapper;
     private final DatasetService datasetService;
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
 
     @Autowired
-    public HydrateDatabaseService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource) throws SQLException {
+    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource) throws SQLException {
         this.columnMetaMapper = columnMetaMapper;
         this.datasetService = datasetService;
         this.conceptService = conceptService;
@@ -389,5 +389,9 @@ public class HydrateDatabaseService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void generateDictionaryIngestFiles() {
+
     }
 }
