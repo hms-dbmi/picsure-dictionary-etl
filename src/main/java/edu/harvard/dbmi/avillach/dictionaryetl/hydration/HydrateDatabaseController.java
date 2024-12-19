@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @Controller
-@RequestMapping("hydrate")
+@RequestMapping("load")
 public class HydrateDatabaseController {
 
     private final static Logger log = LoggerFactory.getLogger(HydrateDatabaseController.class);
@@ -48,7 +48,8 @@ public class HydrateDatabaseController {
             @RequestParam(required = false) String datasetName,
             @RequestParam(required = false) String csvPath,
             @RequestParam(required = false) String errorDirectory,
-            @RequestParam(required = false, defaultValue = "true") boolean includeDefaultFacets
+            @RequestParam(required = false, defaultValue = "true") boolean includeDefaultFacets,
+            @RequestParam(required = false, defaultValue = "false") boolean clearDatabase
             ) {
         log.info("initialDatabaseHydration __ datasetName: {}, csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}",
                 datasetName,
@@ -59,7 +60,9 @@ public class HydrateDatabaseController {
         String response;
         if (this.reentrantLock.tryLock()) {
             try {
-                databaseCleanupUtility.truncateTablesAllTables();
+                if (clearDatabase) {
+                    databaseCleanupUtility.truncateTablesAllTables();
+                }
                 response = this.hydrateDatabaseService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();

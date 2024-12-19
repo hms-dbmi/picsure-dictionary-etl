@@ -96,6 +96,7 @@ class HydrateDatabaseControllerTest {
                 "NHANES",
                 filePath,
                 resourcePath + "/columnMetaErrors.csv",
+                true,
                 true);
 
         List<DatasetModel> all = this.datasetService.findAll();
