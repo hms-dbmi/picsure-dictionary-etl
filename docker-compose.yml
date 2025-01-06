@@ -7,7 +7,10 @@ services:
     ports:
       - "8086:8086"
     networks:
-      - dictionaryetl
+      etlnetwork:
+        ipv4_address: 172.20.0.2
 
 networks:
-  dictionaryetl:
+  etlnetwork:
+    name: etlnetwork
+    external: true
