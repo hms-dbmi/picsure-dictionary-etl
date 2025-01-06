@@ -7,12 +7,9 @@ services:
     ports:
       - "8086:8086"
     networks:
-      etlnetwork:
-        ipv4_address: 172.20.0.2
+      - etlnetwork
 
 networks:
   etlnetwork:
-    ipam:
-      driver: bridge
-      config:
-        - subnet: "172.20.0.0/16"
+    name: etlnetwork
+    external: true
