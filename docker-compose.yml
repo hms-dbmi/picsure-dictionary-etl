@@ -8,6 +8,11 @@ services:
       - "8086:8086"
     networks:
       - dictionaryetl
+      - etlnetwork
 
 networks:
   dictionaryetl:
+  etlnetwork:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "172.20.0.2"
