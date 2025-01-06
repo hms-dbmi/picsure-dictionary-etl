@@ -7,12 +7,11 @@ services:
     ports:
       - "8086:8086"
     networks:
-      - dictionaryetl
-      - etlnetwork
+      etlnetwork:
+        ipv4_address: 172.20.0.2
 
 networks:
-  dictionaryetl:
   etlnetwork:
     driver: bridge
-    driver_opts:
-      com.docker.network.bridge.host_binding_ipv4: "172.20.0.2"
+    config:
+      - subnet: "172.20.0.0/16"
