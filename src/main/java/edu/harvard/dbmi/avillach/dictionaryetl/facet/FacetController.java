@@ -150,7 +150,7 @@ public class FacetController {
 
             Optional<FacetModel> facet = facetRepository.findByName(facetName);
             Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
-            Boolean hasParent = false;
+            boolean hasParent = false;
 
             Long facetId;
             Long conceptNodeId;
@@ -167,7 +167,7 @@ public class FacetController {
             }
             Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
                     conceptNodeId);
-            if (!conceptFacet.isPresent()) {
+            if (conceptFacet.isEmpty()) {
                 FacetConceptModel newConceptFacet = facetConceptRepository
                         .save(new FacetConceptModel(facetId,
                                 conceptNodeId));
@@ -180,7 +180,7 @@ public class FacetController {
                     Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository
                             .findByFacetIdAndConceptNodeId(parentFacetId,
                                     conceptNodeId);
-                    if (!parentConceptFacet.isPresent()) {
+                    if (parentConceptFacet.isEmpty()) {
                         FacetConceptModel newConceptParentFacet = facetConceptRepository
                                 .save(new FacetConceptModel(parentFacetId,
                                         conceptNodeId));

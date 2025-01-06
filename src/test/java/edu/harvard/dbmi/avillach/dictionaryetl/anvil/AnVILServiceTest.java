@@ -53,7 +53,7 @@ public class AnVILServiceTest {
     }
 
     @Test
-    public void testSerializedData() throws IOException {
+    public void testSerializedData() {
         assertNotNull(fileContents);
         List<AnVILStudyMetadata> anVILStudyMetadataList = this.anVILService.serializeData(fileContents);
         assertFalse(anVILStudyMetadataList.isEmpty());
@@ -71,7 +71,7 @@ public class AnVILServiceTest {
         // mock the database request
         List<String> existingRefs = this.anVILService.findExistingRefs(anVILStudyMetadata);
         assertFalse(existingRefs.isEmpty());
-        String testPhsVal = existingRefs.get(0);
+        String testPhsVal = existingRefs.getFirst();
         assertNotNull(testPhsVal);
         assertEquals(testPhsVal, "phs001746");
     }
