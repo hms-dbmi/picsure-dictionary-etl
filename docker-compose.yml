@@ -12,6 +12,7 @@ services:
 
 networks:
   etlnetwork:
-    driver: bridge
-    config:
-      - subnet: "172.20.0.0/16"
+    ipam:
+      driver: bridge
+      config:
+        - subnet: "172.20.0.0/16"
