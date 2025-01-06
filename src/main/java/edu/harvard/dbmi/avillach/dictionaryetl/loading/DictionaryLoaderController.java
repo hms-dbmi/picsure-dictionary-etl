@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -35,34 +32,34 @@ public class DictionaryLoaderController {
     }
 
     /**
+     * This method is responsible for loading all data from a provided columnMeta.csv into the data dictionary
+     * SQL database. It will return a response based on the results. If there are errors during the transform process
+     * the rows will be printed to a separate error file.
      *
-     * @param datasetName
-     * @param csvPath
-     * @param errorDirectory
-     * @param includeDefaultFacets
-     * @return
+     * @param request InitializeRequest
+     * @return Returns a string response based on the results of attempting to load the initial data.
      */
-    @GetMapping(value = "/initialize")
+    @PostMapping(value = "/initialize")
     public ResponseEntity<String> initialDatabaseHydration(
-            @RequestParam(required = false) String datasetName,
-            @RequestParam(required = false) String csvPath,
-            @RequestParam(required = false) String errorDirectory,
-            @RequestParam(required = false, defaultValue = "true") boolean includeDefaultFacets,
-            @RequestParam(required = false, defaultValue = "false") boolean clearDatabase
-            ) {
-        log.info("initialDatabaseHydration __ datasetName: {}, csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}",
-                datasetName,
-                csvPath,
-                errorDirectory,
-                includeDefaultFacets);
+            @RequestBody InitializeRequest request
+    ) {
+        log.info("initialDatabaseHydration __ datasetName: {}, csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}, clearDatabase: {}",
+                request.datasetName(),
+                request.csvPath(),
+                request.errorDirectory(),
+                request.includeDefaultFacets(),
+                request.clearDatabase());
 
+        boolean includeDefaultFacets = (request.includeDefaultFacets() != null) ? request.includeDefaultFacets() : true;
+        boolean clearDatabase = (request.clearDatabase() != null) ? request.clearDatabase() : false;
         String response;
         if (this.reentrantLock.tryLock()) {
             try {
                 if (clearDatabase) {
                     databaseCleanupUtility.truncateTablesAllTables();
                 }
-                response = this.dictionaryLoaderService.processColumnMetaCSV(csvPath, datasetName, errorDirectory);
+                response = this.dictionaryLoaderService.processColumnMetaCSV(request.csvPath(), request.datasetName(),
+                        request.errorDirectory());
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
                 }

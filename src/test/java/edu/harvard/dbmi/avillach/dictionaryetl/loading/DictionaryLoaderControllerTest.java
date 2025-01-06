@@ -92,12 +92,13 @@ class DictionaryLoaderControllerTest {
 
     @Test
     void initialDatabaseHydration_onlyDatasetNhanes_shouldMapFacets() {
-        this.dictionaryLoaderController.initialDatabaseHydration(
+        this.dictionaryLoaderController.initialDatabaseHydration(new InitializeRequest(
                 "NHANES",
-                filePath,
-                resourcePath + "/columnMetaErrors.csv",
-                true,
-                true);
+                        filePath,
+                        resourcePath + "/columnMetaErrors.csv",
+                        true,
+                        true));
+
 
         List<DatasetModel> all = this.datasetService.findAll();
         assertFalse(all.isEmpty());
