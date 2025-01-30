@@ -96,7 +96,9 @@ public class ConceptController {
                 existingConcept.setConceptType(conceptType);
             existingConcept.setDatasetId(datasetId);
             existingConcept.setDisplay(display);
-            existingConcept.setParentId(parentId);
+            if (parentId != null) {
+                existingConcept.setParentId(parentId);
+            }
             existingConcept.setName(name);
             return new ResponseEntity<>(conceptRepository.save(existingConcept), HttpStatus.OK);
         } else {
@@ -241,7 +243,6 @@ public class ConceptController {
             String datasetRef = var.getString("dataset_ref");
             String name = var.getString("name");
             String conceptPath = var.getString("concept_path");
-            String parentConceptPath = var.getString("parent_concept_path");
             String display = name;
             try {
                 display = var.getString("display");
@@ -250,7 +251,8 @@ public class ConceptController {
             }
             JSONObject metadata = var.getJSONObject("metadata");
             // conceptType is null to ensure that data analyzer is not overwritten
-            updateConcept(conceptPath, datasetRef, null, display, name, parentConceptPath);
+            // parentpath is null to let hpds dictate parent structure
+            updateConcept(conceptPath, datasetRef, null, display, name, null);
 
             metadata.keys().forEachRemaining(
                     key -> {
