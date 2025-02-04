@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +28,11 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -219,6 +225,8 @@ public class ConceptController {
         return new ResponseEntity<>(obsoleteConcepts, HttpStatus.OK);
     }
 
+
+    
     // Used for curated json from noncompliant studies
     /*
      * expected JSONArray element format
@@ -242,6 +250,7 @@ public class ConceptController {
             JSONObject var = dictionaryJSON.getJSONObject(i);
             String datasetRef = var.getString("dataset_ref");
             String name = var.getString("name");
+            String conceptType = var.getString("concept_type");
             String conceptPath = var.getString("concept_path");
             String display = name;
             try {
@@ -252,7 +261,7 @@ public class ConceptController {
             JSONObject metadata = var.getJSONObject("metadata");
             // conceptType is null to ensure that data analyzer is not overwritten
             // parentpath is null to let hpds dictate parent structure
-            updateConcept(conceptPath, datasetRef, null, display, name, null);
+            updateConcept(conceptPath, datasetRef, conceptType, display, name, null);
 
             metadata.keys().forEachRemaining(
                     key -> {
