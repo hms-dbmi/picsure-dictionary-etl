@@ -267,24 +267,24 @@ public class ConceptController {
         }
         JSONArray dictionaryJSON = new JSONArray(input);
         int varcount = dictionaryJSON.length();
+        System.out.println("varcount: " + varcount);
         int conceptUpdateCount = 0;
         int metaUpdateCount = 0;
-        Map<String, JSONObject> conceptMetaMap = new HashMap<String, JSONObject>();
+        final Map<String, JSONObject> conceptMetaMap = new HashMap<String, JSONObject>();
         List<ConceptModel> conceptModels = new ArrayList<>();
 
         for (int i = 0; i < varcount; i++) {
             JSONObject var = dictionaryJSON.getJSONObject(i);
+            String name = var.getString("name").replaceAll("'", "''");
 
-            String name = var.getString("name");
+            String conceptType = var.getString("concept_type").replaceAll("'", "''");
 
-            String conceptType = var.getString("concept_type");
-
-            String conceptPath = var.getString("concept_path");
+            String conceptPath = var.getString("concept_path").replaceAll("'", "''");
 
             String display = name;
 
             try {
-                display = var.getString("display");
+                display = var.getString("display").replaceAll("'", "''");
             } catch (JSONException e) {
                 System.out.println("Using name as display");
             }
@@ -295,29 +295,36 @@ public class ConceptController {
             newConceptModel.setDisplay(display);
             newConceptModel.setName(name);
             conceptModels.add(newConceptModel);
-            conceptMetaMap.put(conceptPath.replaceAll("'", "''"), var.getJSONObject("metadata"));
-            if (i % BATCH_SIZE == 0 || i == varcount - 1) {
+            conceptMetaMap.put(conceptPath, var.getJSONObject("metadata"));
+            if ((i % BATCH_SIZE == 0 && i != 0)  || i == varcount - 1) {
                 // bulk update concept_node
+
                 Query conceptQuery = entityManager.createNativeQuery(service.getUpsertConceptBatchQuery(conceptModels));
 
                 conceptUpdateCount += conceptQuery.executeUpdate();
 
+                conceptMetaMap.forEach((key,value) -> {System.out.println("Path key" + key); 
+                    System.out.println("meta value" + value);
+            });
                 // fetch updated concept node ids corresponding to concept paths
-                Map<String, Long> conceptPathIdMap = new HashMap<String, Long>();
+                Map<Long, JSONObject> idMetaMap = new HashMap<Long, JSONObject>();
                 List<Object[]> refList = entityManager
                         .createNativeQuery(service.getIdsFromPathsQuery(conceptMetaMap.keySet())).getResultList();
                 refList.forEach(entry -> {
-                    conceptPathIdMap.put((String) entry[0], (Long) entry[1]);
+                    Long id = Long.parseLong(entry[1].toString());
+                    JSONObject metaJson = conceptMetaMap.get(entry[0].toString().replaceAll("'", "''"));
+                    idMetaMap.put(id, metaJson);
                 });
 
                 // bulk update concept_node_meta
                 List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
-                conceptMetaMap.entrySet().forEach(entry -> {
-                    String path = entry.getKey();
+                idMetaMap.entrySet().forEach(entry -> {
+                    Long id = entry.getKey(); 
+                    System.out.println("Id:" + id);
                     JSONObject metaJson = entry.getValue();
                     metaJson.keySet().forEach(metaKey -> {
                         ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
-                        conceptMeta.setConceptNodeId(conceptPathIdMap.get(path));
+                        conceptMeta.setConceptNodeId(id);
                         conceptMeta.setKey(metaKey);
                         conceptMeta.setValue(metaJson.get(metaKey).toString());
                         metaList.add(conceptMeta);
@@ -328,7 +335,7 @@ public class ConceptController {
 
                 // clear all dataobjects for next batch
                 conceptModels = new ArrayList<>();
-                conceptMetaMap = new HashMap<String, JSONObject>();
+                conceptMetaMap.clear();
                 entityManager.flush();
             }
         }

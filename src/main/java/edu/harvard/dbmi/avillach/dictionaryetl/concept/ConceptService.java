@@ -54,11 +54,10 @@ public class ConceptService {
         }
 
         public String getUpsertConceptBatchQuery(List<ConceptModel> conceptModels) {
-
+                //System.out.println("List length: " + conceptModels.size());
                 String conceptPaths = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
                                 conceptModels.stream()
-                                                .map(model -> StringUtils.quote(model.getConceptPath().replaceAll("'",
-                                                                "''")))
+                                                .map(model -> StringUtils.quote(model.getConceptPath()))
                                                 .collect(Collectors.toList()))
                                 + "])";
                 String conceptTypes = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
@@ -69,12 +68,10 @@ public class ConceptService {
                                 conceptModels.stream().map(model -> model.getDatasetId()).collect(Collectors.toList()))
                                 + "])";
                 String displays = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                conceptModels.stream().map(model -> StringUtils.quote(model.getDisplay().replaceAll("'",
-                                                "''"))).collect(Collectors.toList()))
+                                conceptModels.stream().map(model -> StringUtils.quote(model.getDisplay())).collect(Collectors.toList()))
                                 + "])";
                 String names = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                conceptModels.stream().map(model -> StringUtils.quote(model.getName().replaceAll("'",
-                                                "''"))).collect(Collectors.toList()))
+                                conceptModels.stream().map(model -> StringUtils.quote(model.getName())).collect(Collectors.toList()))
                                 + "])";
 
                 String vals = StringUtils.arrayToCommaDelimitedString(
@@ -82,8 +79,8 @@ public class ConceptService {
 
                 String upsertQuery = "insert into concept_node (concept_path,concept_type,dataset_id,display,name) "
                                 + "VALUES (" + vals + ")"
-                                + " ON CONFLICT (md5(CONCEPT_PATH)) DO UPDATE SET (concept_type,dataset_id,display,name) = (EXCLUDED.concept_type,EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
-
+                                + " ON CONFLICT (CONCEPT_PATH) DO UPDATE SET (concept_type,dataset_id,display,name) = (EXCLUDED.concept_type,EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
+                //System.out.println("UPSERT QUERY: " + upsertQuery);
                 return upsertQuery;
         }
 
@@ -93,7 +90,7 @@ public class ConceptService {
                                 .collect(Collectors.toList())) + "])";
                 String getIdsQuery = "select concept_path, concept_node_id from concept_node where concept_path in (select "
                                 + pathClause + ")";
-
+                //System.out.println("Get ids query: " + getIdsQuery);
                 return getIdsQuery;
         }
 
@@ -104,8 +101,8 @@ public class ConceptService {
                                                 .collect(Collectors.toList()))
                                 + "])";
                 String keys = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                conceptMetaModels.stream().map(model -> StringUtils.quote(model.getKey().replaceAll("'",
-                                                "''"))).collect(Collectors.toList()))
+                                conceptMetaModels.stream().map(model -> StringUtils.quote(model.getKey()))
+                                                .collect(Collectors.toList()))
                                 + "])";
                 String values = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
                                 conceptMetaModels.stream()
