@@ -54,7 +54,7 @@ public class ConceptService {
         }
 
         public String getUpsertConceptBatchQuery(List<ConceptModel> conceptModels) {
-                //System.out.println("List length: " + conceptModels.size());
+                // System.out.println("List length: " + conceptModels.size());
                 String conceptPaths = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
                                 conceptModels.stream()
                                                 .map(model -> StringUtils.quote(model.getConceptPath()))
@@ -68,10 +68,12 @@ public class ConceptService {
                                 conceptModels.stream().map(model -> model.getDatasetId()).collect(Collectors.toList()))
                                 + "])";
                 String displays = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                conceptModels.stream().map(model -> StringUtils.quote(model.getDisplay())).collect(Collectors.toList()))
+                                conceptModels.stream().map(model -> StringUtils.quote(model.getDisplay()))
+                                                .collect(Collectors.toList()))
                                 + "])";
                 String names = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                conceptModels.stream().map(model -> StringUtils.quote(model.getName())).collect(Collectors.toList()))
+                                conceptModels.stream().map(model -> StringUtils.quote(model.getName()))
+                                                .collect(Collectors.toList()))
                                 + "])";
 
                 String vals = StringUtils.arrayToCommaDelimitedString(
@@ -79,8 +81,8 @@ public class ConceptService {
 
                 String upsertQuery = "insert into concept_node (concept_path,concept_type,dataset_id,display,name) "
                                 + "VALUES (" + vals + ")"
-                                + " ON CONFLICT (CONCEPT_PATH) DO UPDATE SET (concept_type,dataset_id,display,name) = (EXCLUDED.concept_type,EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
-                //System.out.println("UPSERT QUERY: " + upsertQuery);
+                                + " ON CONFLICT (md5(CONCEPT_PATH::text)) DO UPDATE SET (concept_type,dataset_id,display,name) = (EXCLUDED.concept_type,EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
+                // System.out.println("UPSERT QUERY: " + upsertQuery);
                 return upsertQuery;
         }
 
@@ -90,7 +92,7 @@ public class ConceptService {
                                 .collect(Collectors.toList())) + "])";
                 String getIdsQuery = "select concept_path, concept_node_id from concept_node where concept_path in (select "
                                 + pathClause + ")";
-                //System.out.println("Get ids query: " + getIdsQuery);
+                // System.out.println("Get ids query: " + getIdsQuery);
                 return getIdsQuery;
         }
 
