@@ -253,7 +253,6 @@ public class ConceptController {
      * 
      * 
      */
-    @SuppressWarnings("unchecked")
     @Transactional
     @PutMapping("/concept/curated")
     public ResponseEntity<Object> updateConceptsFromJSON(@RequestParam String datasetRef, @RequestBody String input) {
