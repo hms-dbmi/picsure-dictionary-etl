@@ -275,16 +275,16 @@ public class ConceptController {
 
         for (int i = 0; i < varcount; i++) {
             JSONObject var = dictionaryJSON.getJSONObject(i);
-            String name = var.getString("name").replaceAll("'", "''");
+            String name = var.getString("name").replaceAll("'", "''").replaceAll("\n", " ");
 
             String conceptType = var.getString("concept_type").replaceAll("'", "''").replaceAll("\n", " ");
 
-            String conceptPath = var.getString("concept_path").replaceAll("'", "''");
+            String conceptPath = var.getString("concept_path").replaceAll("'", "''").replaceAll("\n", " ");
 
             String display = name;
 
             try {
-                display = var.getString("display").replaceAll("'", "''");
+                display = var.getString("display").replaceAll("'", "''").replaceAll("\n", " ");
             } catch (JSONException e) {
                 System.out.println("Using name as display");
             }
