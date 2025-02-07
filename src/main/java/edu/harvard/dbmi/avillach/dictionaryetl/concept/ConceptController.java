@@ -277,7 +277,7 @@ public class ConceptController {
             JSONObject var = dictionaryJSON.getJSONObject(i);
             String name = var.getString("name").replaceAll("'", "''");
 
-            String conceptType = var.getString("concept_type").replaceAll("'", "''");
+            String conceptType = var.getString("concept_type").replaceAll("'", "''").replaceAll("\n", " ");
 
             String conceptPath = var.getString("concept_path").replaceAll("'", "''");
 
@@ -296,16 +296,17 @@ public class ConceptController {
             newConceptModel.setName(name);
             conceptModels.add(newConceptModel);
             conceptMetaMap.put(conceptPath, var.getJSONObject("metadata"));
-            if ((i % BATCH_SIZE == 0 && i != 0)  || i == varcount - 1) {
+            if ((i % BATCH_SIZE == 0 && i != 0) || i == varcount - 1) {
                 // bulk update concept_node
 
                 Query conceptQuery = entityManager.createNativeQuery(service.getUpsertConceptBatchQuery(conceptModels));
 
                 conceptUpdateCount += conceptQuery.executeUpdate();
 
-                conceptMetaMap.forEach((key,value) -> {System.out.println("Path key" + key); 
+                conceptMetaMap.forEach((key, value) -> {
+                    System.out.println("Path key" + key);
                     System.out.println("meta value" + value);
-            });
+                });
                 // fetch updated concept node ids corresponding to concept paths
                 Map<Long, JSONObject> idMetaMap = new HashMap<Long, JSONObject>();
                 List<Object[]> refList = entityManager
@@ -319,7 +320,7 @@ public class ConceptController {
                 // bulk update concept_node_meta
                 List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
                 idMetaMap.entrySet().forEach(entry -> {
-                    Long id = entry.getKey(); 
+                    Long id = entry.getKey();
                     System.out.println("Id:" + id);
                     JSONObject metaJson = entry.getValue();
                     metaJson.keySet().forEach(metaKey -> {
