@@ -1,8 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +27,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -45,6 +51,9 @@ public class FacetController {
 
     @Autowired
     DatasetRepository datasetRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     @GetMapping("/facet")
     public ResponseEntity<List<FacetModel>> getAllFacetModels() {
@@ -195,6 +204,51 @@ public class FacetController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+    }
+    @Transactional
+    @PutMapping("/facet/general/refresh/")
+    public ResponseEntity<String> refreshGeneralFacets() {
+        // get list of datasets currently in dictionary and create/update dataset facet
+        // category
+        List<DatasetModel> datasetModels = datasetRepository.findAll();
+
+        FacetCategoryModel datasetCategoryModel = facetCategoryRepository.findByName("dataset_id")
+                .orElse(new FacetCategoryModel("dataset_id", "Dataset",
+                        "First node of concept path"));
+        entityManager.persist(datasetCategoryModel);
+        Long datasetFacetCategoryId = datasetCategoryModel.getFacetCategoryId();
+
+        datasetModels.forEach(dataset -> {
+            // create or update facet for dataset
+            FacetModel facet = facetRepository.findByName(dataset.getRef())
+                    .orElse(new FacetModel(datasetFacetCategoryId, dataset.getRef(),
+                            dataset.getAbbreviation() + " (" + dataset.getRef() + ")", dataset.getFullName(), null));
+            entityManager.persist(facet);
+            Long facetId = facet.getFacetId();
+            facetConceptRepository.mapConceptDatasetIdToFacet(facetId, dataset.getDatasetId());
+        });
+
+        // if dataset facet has 0 concepts remove it(excludes anvil studies etc)
+        facetRepository.deleteUnusedFacetsFromCategory(datasetFacetCategoryId);
+
+        // create/update data type category and facet
+        FacetCategoryModel dataTypeCategoryModel = facetCategoryRepository.findByName("data_type")
+                .orElse(new FacetCategoryModel("data_type", "Type of Variable",
+                        "Continuous or categorical"));
+        entityManager.persist(dataTypeCategoryModel);
+        Long dataTypeFacetCategoryId = dataTypeCategoryModel.getFacetCategoryId();
+
+        FacetModel catFacet = facetRepository.findByName("categorical").orElse(
+                new FacetModel(dataTypeFacetCategoryId, "categorical", "Categorical", "", null));
+        entityManager.persist(catFacet);
+        Long catFacetId = catFacet.getFacetId();
+        FacetModel conFacet = facetRepository.findByName("continuous").orElse(
+                new FacetModel(dataTypeFacetCategoryId, "continuous", "Continuous", "", null));
+        entityManager.persist(conFacet);
+        Long conFacetId = conFacet.getFacetId();
+        facetConceptRepository.mapConceptConceptTypeToFacet(catFacetId, catFacet.getName());
+        facetConceptRepository.mapConceptConceptTypeToFacet(conFacetId, conFacet.getName());
+        return new ResponseEntity<>("Successfully updated facets\n", HttpStatus.OK);
     }
 
     @PutMapping("/facet/dataset")

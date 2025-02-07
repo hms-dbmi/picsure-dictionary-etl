@@ -23,4 +23,5 @@ public class FacetConceptService {
     public Optional<FacetConceptModel> findByFacetAndConcept(Long facetID, Long conceptID) {
         return this.facetConceptRepository.findByFacetIdAndConceptNodeId(facetID, conceptID);
     }
+
 }

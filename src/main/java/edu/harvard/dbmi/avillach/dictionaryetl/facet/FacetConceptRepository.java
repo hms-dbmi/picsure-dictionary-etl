@@ -11,28 +11,34 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface FacetConceptRepository extends JpaRepository<FacetConceptModel, Long> {
-    List<FacetConceptModel> findByFacetConceptId(Long facetConceptId);
+  List<FacetConceptModel> findByFacetConceptId(Long facetConceptId);
 
-    Optional<List<FacetConceptModel>> findByConceptNodeId(Long conceptNodeId);
+  Optional<List<FacetConceptModel>> findByConceptNodeId(Long conceptNodeId);
 
-    Optional<List<FacetConceptModel>> findByFacetId(Long facetId);
+  Optional<List<FacetConceptModel>> findByFacetId(Long facetId);
 
-    Optional<FacetConceptModel> findByFacetIdAndConceptNodeId(Long facetId, Long conceptNodeId);
+  Optional<FacetConceptModel> findByFacetIdAndConceptNodeId(Long facetId, Long conceptNodeId);
 
-    @Modifying
-    @Transactional
-    @Query(value = """
-    INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
-    SELECT :facetID, cn.concept_node_id
-    FROM dict.concept_node cn
-    WHERE cn.concept_type = :conceptType
-      AND NOT EXISTS (
-          SELECT 1
-          FROM dict.facet__concept_node fcn
-          WHERE fcn.facet_id = :facetID
-            AND fcn.concept_node_id = cn.concept_node_id
-      );
-    """, nativeQuery = true)
-    void mapConceptConceptTypeToFacet(@Param("facetID") Long facetID, @Param("conceptType") String conceptType);
+  @Modifying
+  @Transactional
+  @Query(value = """
+      INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
+      SELECT :facetID, cn.concept_node_id
+      FROM dict.concept_node cn
+      WHERE LOWER(cn.concept_type) = LOWER(:conceptType)
+      ON CONFLICT DO NOTHING;
+      """, nativeQuery = true)
+  void mapConceptConceptTypeToFacet(@Param("facetID") Long facetID, @Param("conceptType") String conceptType);
+
+  @Modifying
+  @Transactional
+  @Query(value = """
+      INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
+      SELECT :facetID, cn.concept_node_id
+      FROM dict.concept_node cn
+      WHERE cn.dataset_id = :datasetId
+      ON CONFLICT DO NOTHING;
+      """, nativeQuery = true)
+  void mapConceptDatasetIdToFacet(@Param("facetID") Long facetID, @Param("datasetId") Long datasetId);
 
 }

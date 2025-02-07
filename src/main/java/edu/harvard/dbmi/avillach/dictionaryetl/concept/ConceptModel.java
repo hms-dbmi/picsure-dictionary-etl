@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
+
 import jakarta.persistence.*;
 
 @Entity
@@ -28,9 +29,14 @@ public class ConceptModel {
 
     @Column(name = "parent_id")
     private Long parentId;
+    
 
     public ConceptModel() {
 
+    }
+
+    public ConceptModel(String conceptPath) {
+        this.conceptPath = conceptPath;
     }
 
     public ConceptModel(Long dataset_id, String name, String display, String concept_type, String concept_path,
@@ -41,6 +47,15 @@ public class ConceptModel {
         this.conceptType = concept_type;
         this.conceptPath = concept_path;
         this.parentId = parent_id;
+    }
+
+    public ConceptModel(Long dataset_id, String name, String display, String concept_type, String concept_path) {
+        this.datasetId = dataset_id;
+        this.name = name;
+        this.display = display;
+        this.conceptType = concept_type;
+        this.conceptPath = concept_path;
+        
     }
 
     public Long getConceptNodeId() {
@@ -113,3 +128,4 @@ public class ConceptModel {
     }
 
 }
+
