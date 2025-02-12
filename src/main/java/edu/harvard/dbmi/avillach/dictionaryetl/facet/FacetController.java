@@ -231,7 +231,7 @@ public class FacetController {
         // if dataset facet has 0 concepts remove it(excludes anvil studies etc)
         facetRepository.deleteUnusedFacetsFromCategory(datasetFacetCategoryId);
 
-        // create/update data type category and facet
+        // create/update type of variable category and facet
         FacetCategoryModel dataTypeCategoryModel = facetCategoryRepository.findByName("data_type")
                 .orElse(new FacetCategoryModel("data_type", "Type of Variable",
                         "Continuous or categorical"));
@@ -248,7 +248,9 @@ public class FacetController {
         Long conFacetId = conFacet.getFacetId();
         facetConceptRepository.mapConceptConceptTypeToFacet(catFacetId, catFacet.getName());
         facetConceptRepository.mapConceptConceptTypeToFacet(conFacetId, conFacet.getName());
-        return new ResponseEntity<>("Successfully updated facets\n", HttpStatus.OK);
+
+
+        return new ResponseEntity<>("Successfully updated dataset and type of variable facets\n", HttpStatus.OK);
     }
 
     @PutMapping("/facet/dataset")

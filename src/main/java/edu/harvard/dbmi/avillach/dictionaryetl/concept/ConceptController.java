@@ -276,8 +276,14 @@ public class ConceptController {
             JSONObject var = dictionaryJSON.getJSONObject(i);
             String name = var.getString("name").replaceAll("'", "''").replaceAll("\n", " ");
 
-            String conceptType = var.getString("concept_type").replaceAll("'", "''").replaceAll("\n", " ");
-
+            String conceptType = var.getString("concept_type");
+            if (!conceptType.equalsIgnoreCase("Categorical") && !conceptType.equalsIgnoreCase("Continuous")
+                    && !conceptType.isEmpty()) {
+                return new ResponseEntity<Object>(
+                        "Bad input for concept_type (" + conceptType + ") for var " + name,
+                        HttpStatus.BAD_REQUEST);
+            }
+            ;
             String conceptPath = var.getString("concept_path").replaceAll("'", "''").replaceAll("\n", " ");
 
             String display = name;

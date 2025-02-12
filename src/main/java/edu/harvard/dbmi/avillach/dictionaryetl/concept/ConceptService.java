@@ -81,7 +81,7 @@ public class ConceptService {
 
                 String upsertQuery = "insert into concept_node (concept_path,concept_type,dataset_id,display,name) "
                                 + "VALUES (" + vals + ")"
-                                + " ON CONFLICT (md5(CONCEPT_PATH)) DO UPDATE SET (concept_type,dataset_id,display,name) = (EXCLUDED.concept_type,EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
+                                + " ON CONFLICT (md5(CONCEPT_PATH)) DO UPDATE SET (dataset_id,display,name) = (EXCLUDED.dataset_id,EXCLUDED.display,EXCLUDED.name);";
                 // System.out.println("UPSERT QUERY: " + upsertQuery);
                 return upsertQuery;
         }

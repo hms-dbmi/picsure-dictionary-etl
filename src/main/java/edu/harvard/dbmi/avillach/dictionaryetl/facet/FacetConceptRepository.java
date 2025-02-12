@@ -41,4 +41,5 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       """, nativeQuery = true)
   void mapConceptDatasetIdToFacet(@Param("facetID") Long facetID, @Param("datasetId") Long datasetId);
 
+
 }
