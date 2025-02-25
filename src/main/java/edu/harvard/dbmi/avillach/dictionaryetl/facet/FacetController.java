@@ -254,7 +254,7 @@ public class FacetController {
     }
 
     @PutMapping("/facet/dataset")
-    public ResponseEntity<FacetConceptModel> addDatasetFacet(@RequestParam String facetName,
+    public ResponseEntity<FacetConceptModel> addFacetToFullDataset(@RequestParam String facetName,
             @RequestParam String datasetRef) {
         // add relationship between facet and all concepts in dataset
 

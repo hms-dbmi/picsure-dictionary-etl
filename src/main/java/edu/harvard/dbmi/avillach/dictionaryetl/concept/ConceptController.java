@@ -238,6 +238,7 @@ public class ConceptController {
         return new ResponseEntity<>("removed " + obsoleteConcepts.size() + " obsolete concepts", HttpStatus.OK);
     }
 
+    
     // Used for curated json from noncompliant studies
     /*
      * expected JSONArray element format
