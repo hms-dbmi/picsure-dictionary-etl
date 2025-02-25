@@ -41,5 +41,15 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       """, nativeQuery = true)
   void mapConceptDatasetIdToFacet(@Param("facetID") Long facetID, @Param("datasetId") Long datasetId);
 
+  @Modifying
+  @Transactional
+  @Query(value = """
+      INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
+      SELECT :facetID, cn.concept_node_id
+      FROM dict.concept_node cn
+      WHERE cn.display = :display
+      ON CONFLICT DO NOTHING;
+      """, nativeQuery = true)
+  void mapConceptDisplayToFacet(@Param("facetID") Long facetID, @Param("display") String display);
 
 }

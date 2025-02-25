@@ -50,4 +50,5 @@ public class FacetService {
         this.facetConceptService.mapConceptConceptTypeToFacet(continuous.getFacetId(), "continuous");
     }
 
+
 }
