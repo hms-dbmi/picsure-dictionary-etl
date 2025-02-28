@@ -419,10 +419,10 @@ public class ConceptController {
     public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate,
             @RequestParam String value) {
         String[] concepts = conceptsToUpdate.split("\n");
-        System.out.println("Concept: " + concepts[0]);
-        conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
-
-        return new ResponseEntity<>(null, HttpStatus.CREATED);
+        System.out.println("concept size:" + concepts.length);
+        int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
+                System.out.println("count:" +upsertCount);
+        return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n", HttpStatus.CREATED);
     }
 
     // gets all fields needed for stigvar identification
@@ -439,7 +439,7 @@ public class ConceptController {
     // Specifically for mass value updates
     @PutMapping("/concept/metadata/values")
     public ResponseEntity<Object> updateManyValues(@RequestBody String valuesInput) {
-
+        //TODO convert this to use getUpsertConceptMetaBatchQuery
         try {
             JSONArray valArray = new JSONArray(valuesInput);
             for (int i = 0; i < valArray.length(); i++) {

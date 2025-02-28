@@ -21,15 +21,15 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
     @Modifying
     @Transactional
     @Query(value = """
-            WITH paths AS (
-                SELECT unnest(:paths) AS path
-            )
-                update concept_node_meta set value = :val where concept_node_meta_id in (
-                        select cnm.concept_node_meta_id from paths
-                        left join concept_node cn on paths.path = cn.concept_path
-                        left join concept_node_meta cnm on cn.concept_node_id=cnm.concept_node_id and key = 'stigmatized')
+            insert into dict.concept_node_meta
+                (concept_node_id, key, value)
+                    select concept_node_id, 'stigmatized' as key, :val as new_value
+                        from dict.concept_node as cn
+                            where concept_path in (select unnest(:paths))
+            on conflict (concept_node_id, key)
+            do update set value = EXCLUDED.value
             """, nativeQuery = true)
-    void updateStigvarsFromConceptPaths(@Param(value = "paths") String[] paths, String val);
+    int updateStigvarsFromConceptPaths(@Param(value = "paths") String[] paths, String val);
 
     @Query(value = """
             select new ConceptStigvarIdentificationModel(name, display, metadesc.value, conceptPath, metavals.value, ref)
