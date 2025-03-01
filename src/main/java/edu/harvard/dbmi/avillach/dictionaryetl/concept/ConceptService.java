@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Tuple;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +55,7 @@ public class ConceptService {
         }
 
         public String getUpsertConceptBatchQuery(List<ConceptModel> conceptModels) {
-                // System.out.println("List length: " + conceptModels.size());
+                 System.out.println("List length: " + conceptModels.size());
                 String conceptPaths = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
                                 conceptModels.stream()
                                                 .map(model -> StringUtils.quote(model.getConceptPath()))
@@ -119,9 +120,36 @@ public class ConceptService {
                 String upsertQuery = "insert into concept_node_meta (concept_node_id,key,value) "
                                 + "VALUES (" + vals + ")"
                                 + " ON CONFLICT (key, concept_node_id) DO UPDATE SET value = EXCLUDED.value;";
+                //System.out.println(upsertQuery);
 
                 return upsertQuery;
         }
-        
+
+        public String getUpdateParentIdsQuery(Map<Long, String> parentConceptMap) {
+                String conceptNodeIds = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
+                                parentConceptMap.keySet())
+                                + "])";
+                String parentPaths = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
+                                parentConceptMap.values().stream().map(val -> StringUtils.quote(val))
+                                                .collect(Collectors
+                                                                .toList()))
+                                + "])";
+
+                String updateQuery = "with parent_table (node_id, parent_path) as"
+                                + "(select " + conceptNodeIds + ", " + parentPaths + ")"
+                                + "update concept_node set parent_id = parent_ref.p_id from "
+                                + "(select node_id, concept_node_id as p_id from parent_table left join concept_node on parent_path = concept_path) as parent_ref"
+                                + " where concept_node_id = node_id;";
+
+                return updateQuery;
+        }
+
+        public Map<String, Integer> buildCsvInputsHeaderMap(String[] headers) {
+                Map<String, Integer> inputsHeaders = new HashMap<String, Integer>();
+                for (int i = 0; i < headers.length; i++) {
+                        inputsHeaders.put(headers[i], i);
+                }
+                return inputsHeaders;
+        }
 
 }
