@@ -1,8 +1,15 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +22,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
@@ -22,6 +32,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetController;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryController;
+import jakarta.transaction.Transactional;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -92,6 +103,81 @@ public class DatasetController {
             }
         }
 
+    }
+
+    @Transactional
+    @PutMapping("/dataset/csv")
+    public ResponseEntity<Object> updateDatasetsFromCsv(@RequestBody String input) {
+        DatasetService datasetService = new DatasetService(datasetRepository);
+        Map<String, Integer> headerMap = new HashMap<String, Integer>();
+        List<String> metaColumnNames = new ArrayList<>();
+        List<String[]> datasets = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new StringReader(input))) {
+            String[] header = reader.readNext();
+            headerMap = datasetService.buildCsvInputsHeaderMap(header);
+            String[] coreDatasetHeaders = { "ref", "full_name", "abbreviation", "description" };
+            if (!headerMap.keySet().containsAll(Arrays.asList(coreDatasetHeaders))) {
+                return new ResponseEntity<>(
+                        "Headers in dataset ingest file incorrect",
+                        HttpStatus.BAD_REQUEST);
+            } else {
+                headerMap.keySet().forEach(k -> {
+                    if (!Arrays.asList(coreDatasetHeaders).contains(k)) {
+                        metaColumnNames.add(k);
+                    }
+                });
+            }
+            datasets = reader.readAll();
+            datasets.remove(header);
+            reader.close();
+        } catch (IOException | CsvException e) {
+            return new ResponseEntity<>(
+                    "Error reading dataset ingestion csv. Error: \n" + e.getStackTrace(),
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (datasets.isEmpty()) {
+            return new ResponseEntity<>(
+                    "No csv records found in dataset input file.",
+                    HttpStatus.BAD_REQUEST);
+        }
+        int datasetCount = datasets.size();
+        int datasetUpdateCount = 0;
+        int metaUpdateCount = 0;
+
+        for (int i = 0; i < datasetCount; i++) {
+            String[] dataset = datasets.get(i);
+            String ref = dataset[headerMap.get("ref")];
+            String fullName = dataset[headerMap.get("full_name")];
+            String abbreviation = dataset[headerMap.get("abbreviation")];
+            String description = dataset[headerMap.get("description")];
+            Optional<DatasetModel> datasetData = datasetRepository.findByRef(ref);
+            DatasetModel datasetModel;
+            if (datasetData.isPresent()) {
+                // update already existing dataset
+                datasetModel = datasetData.get();
+                datasetModel.setAbbreviation(abbreviation);
+                datasetModel.setDescription(description);
+                datasetModel.setFullName(fullName);
+            } else {
+                // add new dataset when dataset not present in data
+                datasetModel = new DatasetModel(ref,
+                        fullName, abbreviation, description);
+            }
+            datasetRepository.save(datasetModel);
+            datasetUpdateCount++;
+            for (int j = 0; j < metaColumnNames.size(); j++) {
+                String key = metaColumnNames.get(j);
+                String value = dataset[headerMap.get(key)];
+                if (!value.isBlank() && value != null) {
+                    DatasetMetadataModel dmModel = datasetMetadataRepository.findByDatasetIdAndKey(datasetModel.getDatasetId(), key).orElse(new DatasetMetadataModel(datasetModel.getDatasetId(), key, value));
+                    dmModel.setValue(value);
+                    datasetMetadataRepository.save(dmModel);
+                    metaUpdateCount++;
+                }
+            }
+        }
+        return new ResponseEntity<>("Successfully created/updated " + datasetUpdateCount + " datasets and "
+                + metaUpdateCount + " dataset metadata entries from input csv.", HttpStatus.CREATED);
     }
 
     @DeleteMapping("/dataset")

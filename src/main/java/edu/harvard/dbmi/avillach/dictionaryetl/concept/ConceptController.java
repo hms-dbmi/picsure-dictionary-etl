@@ -267,9 +267,8 @@ public class ConceptController {
         Map<String, Integer> headerMap = new HashMap<String, Integer>();
         List<String> metaColumnNames = new ArrayList<>();
         try (CSVReader reader = new CSVReader(new StringReader(input))) {
-            ConceptService conceptService = new ConceptService(conceptRepository);
             String[] header = reader.readNext();
-            headerMap = conceptService.buildCsvInputsHeaderMap(header);
+            headerMap = service.buildCsvInputsHeaderMap(header);
             String[] coreConceptHeaders = { "dataset_ref", "name", "display", "concept_type", "concept_path",
                     "parent_concept_path" };
             if (!headerMap.keySet().containsAll(Arrays.asList(coreConceptHeaders))) {
@@ -650,10 +649,4 @@ public class ConceptController {
     }
 }
 
-class SortbyId implements Comparator<ConceptModel> {
 
-    @Override
-    public int compare(ConceptModel o1, ConceptModel o2) {
-        return (int) (o1.getConceptNodeId() - o2.getConceptNodeId());
-    }
-}
