@@ -308,11 +308,18 @@ public class ConceptController {
             String[] var = concepts.get(i);
             if (var.length < headerMap.size())
                 continue;
-            String name = var[headerMap.get("name")];
-            String display = var[headerMap.get("display")];
+
             String conceptType = var[headerMap.get("concept_type")];
             String conceptPath = var[headerMap.get("concept_path")].replaceAll("'",
                     "''");
+            String name = var[headerMap.get("name")];
+            if (name.isEmpty()) {
+                String[] nodes = conceptPath.split("\\\\");
+                name = nodes[nodes.length - 1];
+            }
+            String display = var[headerMap.get("display")];
+            if (display.isEmpty())
+                display = name;
             String parentConceptPath = var[headerMap.get("parent_concept_path")].replaceAll("'",
                     "''");
             if (!parentConceptPath.isEmpty() && parentConceptPath != null)
@@ -648,5 +655,3 @@ public class ConceptController {
 
     }
 }
-
-
