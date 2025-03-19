@@ -40,6 +40,7 @@ class DictionaryLoaderControllerTest {
 
     private static String filePath;
     private static String resourcePath;
+
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
 

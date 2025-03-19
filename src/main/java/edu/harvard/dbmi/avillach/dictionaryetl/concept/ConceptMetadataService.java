@@ -35,4 +35,8 @@ public class ConceptMetadataService {
 
     
 
+    public List<String> allMetadataKeys() {
+        return this.conceptMetadataRepository.findAllKeyValues();
+    }
+
 }

@@ -40,4 +40,7 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             where ref = :ref
             """)
     List<ConceptStigvarIdentificationModel> getInfoForStigvars(@Param(value = "ref") String ref);
+
+    @Query(value = "select key FROM dict.concept_node_meta group by key;", nativeQuery = true)
+    List<String> findAllKeyValues();
 }
