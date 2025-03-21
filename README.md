@@ -24,7 +24,7 @@ To set up a local development database, follow these steps:
       --jobs=10 \
       --verbose \
       --no-owner \
-      ./dictionary_db.sql
+      ./dictionary_db
    ```
    You will be prompted to enter the database password after executing this command.
 
