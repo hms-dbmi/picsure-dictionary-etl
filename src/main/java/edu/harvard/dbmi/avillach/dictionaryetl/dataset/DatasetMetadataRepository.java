@@ -13,5 +13,5 @@ public interface DatasetMetadataRepository extends JpaRepository<DatasetMetadata
     Optional<DatasetMetadataModel> findByDatasetIdAndKey(long datasetId, String key);
 
     @Query(value = "select key FROM dict.dataset_meta group by key;", nativeQuery = true)
-    List<String> findAllKeyValues();
+    List<String> getAllKeyNames();
 }

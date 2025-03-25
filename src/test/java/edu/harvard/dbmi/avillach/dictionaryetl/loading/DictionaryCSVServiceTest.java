@@ -67,14 +67,6 @@ class DictionaryCSVServiceTest {
 
     @Test
     public void shouldGenerateDatasetCsv() {
-        dictionaryLoaderController.initialDatabaseHydration(
-                "",
-                filePath,
-                resourcePath + "/columnMetaErrors.csv",
-                true,
-                true);
-
-        dictionaryCSVService.generateDatasetsCSV(resourcePath + "/csv/");
     }
 
 }

@@ -1,15 +1,15 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
 import com.opencsv.CSVWriter;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class DictionaryCSVService {
@@ -35,14 +32,21 @@ public class DictionaryCSVService {
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
     private final ColumnMetaUtility columnMetaUtility;
+    private final FacetService facetService;
+    private final FacetCategoryService facetCategoryService;
+
+    private final CSVUtility csvUtility;
 
     @Autowired
-    public DictionaryCSVService(DatasetService datasetService, DatasetMetadataService datasetMetadataService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, ColumnMetaUtility columnMetaUtility) {
+    public DictionaryCSVService(DatasetService datasetService, DatasetMetadataService datasetMetadataService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, ColumnMetaUtility columnMetaUtility, FacetService facetService, FacetCategoryService facetCategoryService, CSVUtility csvUtility) {
         this.datasetService = datasetService;
         this.datasetMetadataService = datasetMetadataService;
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
         this.columnMetaUtility = columnMetaUtility;
+        this.facetService = facetService;
+        this.facetCategoryService = facetCategoryService;
+        this.csvUtility = csvUtility;
     }
 
     public void generateFullIngestCSVs(String path) {
@@ -55,66 +59,93 @@ public class DictionaryCSVService {
             }
         }
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(6)) {
-            List<Callable<Void>> tasks = new ArrayList<>();
-            tasks.add(() -> {
-                generateDatasetsCSV(path);
-                return null;
-            });
-            tasks.add(() -> {
-                generateConsentsCSV(path);
-                return null;
-            });
-            tasks.add(() -> {
-                generateConceptsCSV(path);
-                return null;
-            });
-            tasks.add(() -> {
-                generateFacetCategories(path);
-                return null;
-            });
-            tasks.add(() -> {
-                generateFacetsCSV(path);
-                return null;
-            });
-            tasks.add(() -> {
-                generateFacetConceptLists(path);
-                return null;
-            });
+        /*
+        TODO: Outline for efficient database export to ideal ingest format.
 
-            try {
-                System.out.println("Generating all ingest csv files...");
-                // Invoke all tasks and wait for completion
-                executorService.invokeAll(tasks);
-                System.out.println("All csv files are completed...");
-            } catch (InterruptedException e) {
-                log.error(e.getMessage());
-            } finally {
-                executorService.shutdown();
-            }
-        }
-    }
+         1. Load a set of the dataset_refs in order.
+         2. Iterate over this list filling five FIFO queues each allowing 10 records at time. The primary thread should
+         wait until there is space available in a queue to put more data into it. Data will be loaded in an order.
+         3. 6 consumers are watching the FIFO queues and are writing data out to each file in order.
 
-    private void generateFacetConceptLists(String path) {
+         */
+        log.info("Creating Datasets.csv");
+        List<String> datasetMetadataKeys = this.datasetMetadataService.getAllKeyNames();
+        String[] datasetCSVHeaders = getDatasetCSVHeaders(datasetMetadataKeys);
+        this.csvUtility.createCSVFile(path + "Datasets.csv", datasetCSVHeaders);
+        log.info("Dataset.csv created with initial headers");
 
-    }
+        log.info("Creating Concepts.csv");
+        String[] consentCSVHeaders = new String[]{"dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"};
+        this.csvUtility.createCSVFile(path + "Consents.csv", consentCSVHeaders);
+        log.info("Consents.csv created with initial headers");
 
-    private void generateFacetsCSV(String path) {
+        log.info("Creating Concept.csv");
+        List<String> metadataKeys = this.conceptMetadataService.allMetadataKeys();
+        String[] conceptCSVHeaders = getConceptCSVHeaders(metadataKeys);
+        this.csvUtility.createCSVFile(path + "Concept.csv", conceptCSVHeaders);
+       log.info("Concept.csv created with initial headers");
 
-    }
+        log.info("Creating Facet.csv");
+        List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
+        String[] facetCSVHeaders = getFacetCSVHeaders(facetMetadataKeyNames);
+        this.csvUtility.createCSVFile(path + "Facet.csv", facetCSVHeaders);
+        log.info("Facet.csv created with initial headers");
 
-    private void generateFacetCategories(String path) {
+        log.info("Creating Facet_Categories.csv");
+        List<String> facetCategoryMetadataKeyNames = this.facetCategoryService.getFacetCategoryMetadataKeyNames();
+        String[] facetCategoriesHeaders = getFacetCategoriesHeaders(facetCategoryMetadataKeyNames);
+        this.csvUtility.createCSVFile(path + "Facet_Categories.csv", facetCategoriesHeaders);
+        log.info("Facet_Categories.csv created with initial headers");
+
+        // load all datasets refs as a sorted list of strings that will be iterated over to load data in order.
+        List<DataSetRefDto> datasetRefs = this.datasetService.getAllDatasetRefsSorted();
+        List<Long> datasetIds = datasetRefs.stream().map(DataSetRefDto::dataset_id).toList();
+        List<String> facetName = this.facetService.getFacetNames();
+
+        log.info("Creating Facet_Concept_List.csv");
+        String[] facetConceptListHeaders = getFacetConceptListHeaders(datasetMetadataKeys, facetName);
+        this.csvUtility.createCSVFile(path + "Facet_Concept_List.csv", facetConceptListHeaders);
+        log.info("Facet_Concept_List.csv created with initial headers");
 
     }
 
-    private void generateConceptsCSV(String path) {
-        String csvName = "Concept.csv";
+    private String[] getFacetCategoriesHeaders(List<String> facetCategoryMetadataKeyNames) {
+        // name(unique)	display name	description	meta_key_1	meta_key_2
+        List<String> facetCategoriesHeaders = new ArrayList<>(List.of("name", "display name", "description"));
+        facetCategoriesHeaders.addAll(facetCategoryMetadataKeyNames);
+        return facetCategoriesHeaders.toArray(new String[0]);
+    }
+
+    private String[] getFacetConceptListHeaders(List<String> datasetMetadataKeys, List<String> facetName) {
+        //dataset_id_1	dataset_id_2	dataset_id_3	facet_name1	facet_name2	facet_name3
+
+        return null;
+    }
+
+    private String[] getFacetCSVHeaders(List<String> facetMetadataKeyNames) {
+        String[] facetCSVHeaders = new String[]{"facet_category", "facet_name", "display_name", "description", "parent_name", "meta_1"};
+        Collections.sort(facetMetadataKeyNames);
+        facetCSVHeaders = facetMetadataKeyNames.toArray(facetCSVHeaders);
+        return facetCSVHeaders;
+    }
+
+    private String[] getConceptCSVHeaders(List<String> metadataKeys) {
         List<String> headers = new ArrayList<>(List.of("dataset_ref", "concept name", "display name", "concept_type",
                 "concept_path", "parent_concept_path", "values", "description"));
-        List<String> metadataKeys = this.conceptMetadataService.allMetadataKeys();
         Collections.sort(metadataKeys);
         headers.addAll(metadataKeys);
+        return headers.toArray(new String[0]);
+    }
 
+    private String[] getDatasetCSVHeaders(List<String> datasetMetadataKeys) {
+        List<String> headers = new ArrayList<>(List.of("ref", "full_name", "abbreviation", "description"));
+        Collections.sort(datasetMetadataKeys);
+        headers.addAll(datasetMetadataKeys);
+        return headers.toArray(new String[0]);
+    }
+
+    private void generateConceptsCSV(String path, List<String> headers) {
+        String csvName = "Concept.csv";
         try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
             List<ConceptModel> conceptModels = this.conceptService.findAll();
             conceptModels.forEach(concept -> {
@@ -171,7 +202,7 @@ public class DictionaryCSVService {
     private void generateConsentsCSV(String path) {
         String csvName = "Dataset.csv";
         List<String> headers = new ArrayList<>(List.of("dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"));
-        List<String> metadataKeys = this.datasetMetadataService.allMetadataKeys();
+        List<String> metadataKeys = this.datasetMetadataService.getAllKeyNames();
         Collections.sort(metadataKeys);
         headers.addAll(metadataKeys);
         try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
@@ -199,12 +230,9 @@ public class DictionaryCSVService {
         }
     }
 
-    protected void generateDatasetsCSV(String path) {
+    public void generateDatasetsCSV(String path, List<String> headers) {
         String csvName = "Dataset.csv";
-        List<String> headers = new ArrayList<>(List.of("ref", "full_name", "abbreviation", "description"));
-        List<String> metadataKeys = this.datasetMetadataService.allMetadataKeys();
-        Collections.sort(metadataKeys);
-        headers.addAll(metadataKeys);
+
         try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
             List<DatasetModel> datasets = this.datasetService.findAll();
             datasets.forEach(datasetModel -> {
@@ -229,5 +257,7 @@ public class DictionaryCSVService {
             throw new RuntimeException(e);
         }
     }
+
+
 
 }

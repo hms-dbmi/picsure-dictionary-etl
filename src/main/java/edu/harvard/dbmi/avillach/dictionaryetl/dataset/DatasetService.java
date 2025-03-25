@@ -45,4 +45,8 @@ public class DatasetService {
     public Optional<DatasetModel> findByID(Long datasetId) {
         return this.datasetRepository.findById(datasetId);
     }
+
+    public List<DataSetRefDto> getAllDatasetRefsSorted() {
+        return this.datasetRepository.getAllDatasetRefsSorted();
+    }
 }

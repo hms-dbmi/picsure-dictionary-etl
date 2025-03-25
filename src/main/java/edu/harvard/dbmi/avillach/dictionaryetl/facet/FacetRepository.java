@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface FacetRepository extends JpaRepository<FacetModel, Long> {
+
     List<FacetModel> findByFacetId(long facetId);
 
     Optional<FacetModel> findByName(String name);
@@ -23,4 +24,6 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
             """, nativeQuery = true)
     void deleteUnusedFacetsFromCategory(@Param("facetCategoryId") Long facetCategoryId);
 
+    @Query(value = "select name from dict.facet order by name", nativeQuery = true)
+    List<String> getAllFacetNames();
 }
