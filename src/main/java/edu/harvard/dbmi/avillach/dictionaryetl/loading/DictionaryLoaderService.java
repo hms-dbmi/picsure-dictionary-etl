@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -40,7 +39,6 @@ public class DictionaryLoaderService {
 
     private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
-    private volatile DatasetModel userDefinedDataset;
     private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
     private final ExecutorService fixedThreadPool;
@@ -58,7 +56,7 @@ public class DictionaryLoaderService {
      * Uses the columnMeta.csv that is created as part of the HPDS ETL to hydrate the data-dictionary database.
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
      */
-    public String processColumnMetaCSV(String csvPath, String datasetName, String errorFile) throws RuntimeException {
+    public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
         } else if (!errorFile.endsWith(".csv")) {
@@ -67,11 +65,6 @@ public class DictionaryLoaderService {
 
         if (csvPath == null) {
             csvPath = "/opt/local/hpds/columnMeta.csv";
-        }
-
-        if (StringUtils.hasLength(datasetName)) {
-            this.userDefinedDataset = this.datasetService.save(new DatasetModel(datasetName, "", "", ""));
-            log.info("Loaded dataset: {}", datasetName);
         }
 
         this.startProcessing();
@@ -302,13 +295,7 @@ public class DictionaryLoaderService {
     }
 
     protected void createDatabaseEntries(ConceptNode rootConceptNode, ColumnMeta columnMeta) {
-        Long datasetID;
-        if (this.userDefinedDataset != null) {
-            datasetID = this.userDefinedDataset.getDatasetId();
-        } else {
-            datasetID = this.getDatasetRefID(rootConceptNode.getName());
-        }
-
+        Long datasetID = this.getDatasetRefID(rootConceptNode.getName());
         ConceptNode currentNode = rootConceptNode;
         Long parentConceptID = null;
         while (currentNode != null) {

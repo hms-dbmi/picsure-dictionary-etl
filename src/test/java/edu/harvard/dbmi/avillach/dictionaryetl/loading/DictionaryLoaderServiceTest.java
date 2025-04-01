@@ -107,30 +107,9 @@ public class DictionaryLoaderServiceTest {
     @Test
     void processColumnMetaCSV() {
         // The error file should be written to your resources directory.
-        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(nhanesFilePath, null, resourcePath +
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(nhanesFilePath, resourcePath +
                                                                                                          "/columnMetaErrors" +
                                                                                                          ".csv"));
-    }
-
-    @Test
-    void processColumnMetaCSV_WithCustomDatasetName() {
-        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(nhanesFilePath, "NHANES", resourcePath +
-                                                                                                             "/columnMetaErrors" +
-                                                                                                             ".csv"));
-        Optional<DatasetModel> nhanes = this.datasetService.findByRef("NHANES");
-        assertTrue(nhanes.isPresent());
-        assertEquals("NHANES", nhanes.get().getRef());
-        Optional<DatasetModel> demographic = this.datasetService.findByRef("demographics");
-        assertFalse(demographic.isPresent());
-
-        List<DatasetModel> allDatasets = this.datasetService.findAll();
-        assertFalse(allDatasets.isEmpty());
-        allDatasets.forEach(dataset -> System.out.println(dataset.getRef()));
-
-        List<ConceptModel> allConcepts = this.conceptService.findAll();
-        assertFalse(allConcepts.isEmpty());
-        assertTrue(allConcepts.size() > 1);
-        allConcepts.forEach(concept -> System.out.println(concept.getConceptPath()));
     }
 
     @Test
@@ -383,7 +362,7 @@ public class DictionaryLoaderServiceTest {
 
     @Test
     void shouldProcessThousandGenomes() {
-        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(thousandGenomesFilePath, "NHANES", resourcePath +
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(thousandGenomesFilePath,resourcePath +
                                                                                                                       "/columnMetaErrors" +
                                                                                                                       ".csv"));
 
@@ -394,7 +373,7 @@ public class DictionaryLoaderServiceTest {
 
     @Test
     void shouldProcessSynthea() {
-        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
+        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath +
                                                                                                               "/columnMetaErrors" +
                                                                                                               ".csv"));
 
