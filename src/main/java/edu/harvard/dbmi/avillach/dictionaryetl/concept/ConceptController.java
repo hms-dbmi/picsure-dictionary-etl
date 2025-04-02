@@ -66,8 +66,7 @@ public class ConceptController {
     DatasetRepository datasetRepository;
     @Autowired
     FacetConceptRepository facetConceptRepository;
-    @Autowired
-    SessionFactory sessionFactory;
+
     @PersistenceContext
     private EntityManager entityManager;
     private int BATCH_SIZE = 100;
@@ -586,12 +585,24 @@ public class ConceptController {
     @PutMapping("/concept/metadata/stigvars")
     public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate,
             @RequestParam String value) {
-        String[] concepts = conceptsToUpdate.split("\n");
-        System.out.println("concept size:" + concepts.length);
-        int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
-        System.out.println("count:" + upsertCount);
-        return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
-                HttpStatus.CREATED);
+        List<String> conceptList = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new StringReader(conceptsToUpdate))) {
+            conceptList = reader.readAll().stream().map(line -> {
+                return line[0];
+            }).toList();
+            String[] concepts = conceptList.toArray(new String[0]);
+            int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
+                   System.out.println("count:" + upsertCount);
+                   return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
+                           HttpStatus.CREATED);
+
+        }
+        catch (IOException | CsvException e) {
+                    return new ResponseEntity<>(
+                            "Error reading conceptstoupdate csv. Error: \n" + e.getStackTrace(),
+                            HttpStatus.BAD_REQUEST);
+                }
+
     }
 
     // gets all fields needed for stigvar identification
