@@ -71,6 +71,7 @@ public class DictionaryLoaderService {
 
         if (StringUtils.hasLength(datasetName)) {
             this.userDefinedDataset = this.datasetService.save(new DatasetModel(datasetName, "", "", ""));
+            log.info("Loaded dataset: {}", datasetName);
         }
 
         this.startProcessing();
