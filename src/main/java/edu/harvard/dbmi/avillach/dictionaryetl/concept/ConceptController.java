@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.opencsv.CSVParserBuilder;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.StatelessSession;
@@ -585,11 +587,12 @@ public class ConceptController {
     @PutMapping("/concept/metadata/stigvars")
     public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate,
             @RequestParam String value) {
-        List<String> conceptList = new ArrayList<>();
-        try (CSVReader reader = new CSVReader(new StringReader(conceptsToUpdate))) {
-            conceptList = reader.readAll().stream().map(line -> {
-                return line[0];
-            }).toList();
+        try {
+            CSVParser csvParser =  new CSVParserBuilder().withEscapeChar('φ').build();
+            List<String> conceptList = new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream().map(line -> {
+                                                  return line[0];
+                                              }).toList();
+
             String[] concepts = conceptList.toArray(new String[0]);
             int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
                    System.out.println("count:" + upsertCount);
