@@ -60,4 +60,20 @@ public class FacetService {
     public List<String> getFacetNames() {
         return this.facetRepository.getAllFacetNames();
     }
+
+    public List<FacetModel> findAllFacetsByDatasetIDs(Long[] datasetIDs) {
+        return this.facetRepository.findAllFacetsByDatasetIDs(datasetIDs);
+    }
+
+    public List<FacetModel> findAll() {
+        return this.facetRepository.findAll();
+    }
+
+    public Optional<FacetModel> findByID(Long parentId) {
+        return this.facetRepository.findById(parentId);
+    }
+
+    public Optional<FacetMetadataModel> findFacetMetadataByFacetIDAndKey(Long facetId, String key) {
+        return this.facetMetadataRepository.findByFacetIdAndKey(facetId, key);
+    }
 }

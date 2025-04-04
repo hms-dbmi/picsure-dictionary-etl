@@ -1,31 +1,19 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMetaMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 import org.testcontainers.utility.MountableFile;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @ActiveProfiles("test")

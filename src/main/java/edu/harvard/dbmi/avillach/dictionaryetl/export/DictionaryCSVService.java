@@ -10,6 +10,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
@@ -87,23 +89,83 @@ public class DictionaryCSVService {
         String[] facetCategoriesHeaders = getFacetCategoriesHeaders(facetCategoryMetadataKeyNames);
         String fullFacetCategoryPath = path + "/Facet_Categories.csv";
         this.csvUtility.createCSVFile(fullFacetCategoryPath, facetCategoriesHeaders);
-        generateFacetCategoriesCSV(fullFacetCategoryPath, facetCategoriesHeaders, facetCategoryMetadataKeyNames);
+        List<FacetCategoryModel> facetCategoryModels = this.facetCategoryService.findAll();
+        generateFacetCategoriesCSV(fullFacetCategoryPath, facetCategoriesHeaders, facetCategoryMetadataKeyNames, facetCategoryModels);
         // -----------------------------------------------------------------------------------------
 
+        log.info("Creating Facet.csv");
+        List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
+        String[] facetCSVHeaders = getFacetCSVHeaders(facetMetadataKeyNames);
+        String fullFacetPath = path + "/Facet.csv";
+        this.csvUtility.createCSVFile(fullFacetPath, facetCSVHeaders);
+        log.info("Facet.csv created with initial headers");
+        generateFacetCSV(fullFacetPath, facetCSVHeaders, facetMetadataKeyNames, facetCategoryModels, datasetIDs);
 
+        /*
+         * TODO: Make this faster
+         * I think to push performance further we can make many of the concept CSVs in parallel.
+         * We can just name them based on their dataset ref and then merge them later.
+         *
+         */
         for (DataSetRefDto dataset : datasets) {
+            log.info("Populating CSVs for dataset: {}", dataset.getRef());
             generateConsentsCSV(fullConsentPath, dataset, consentsCsvWithHeaders);
-            generateConceptsCSV(fullConceptPath, conceptCSVHeaders, conceptMetadataKeys, dataset);
+//            generateConceptsCSV(fullConceptPath, conceptCSVHeaders, conceptMetadataKeys, dataset);
+            log.info("Populated CSVs for dataset: {}", dataset.getRef());
         }
 
     }
 
-    private void generateFacetCategoriesCSV(String fullPath, String[] facetCategoriesHeaders, List<String> facetCategoryMetadataKeyNames) {
-        List<FacetCategoryModel> facetCategoryMetas = this.facetCategoryService.findAll();
-        Long[] facetCategoryIDs = facetCategoryMetas.stream().map(FacetCategoryModel::getFacetCategoryId).toArray(Long[]::new);
+    private void generateFacetCSV(String fullFacetPath, String[] facetCategoriesHeaders, List<String> facetMetadataKeyNames, List<FacetCategoryModel> facetCategoryModels, Long[] datasetIDs) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(fullFacetPath, true))) {
+            List<FacetModel> facetModels = this.facetService.findAllFacetsByDatasetIDs(datasetIDs);
+            // create a map of facet category id to name
+            Map<Long, String> facetCategoryIdToName = new HashMap<>();
+            facetCategoryModels.forEach(facetCategoryModel -> {
+                facetCategoryIdToName.put(facetCategoryModel.getFacetCategoryId(), facetCategoryModel.getName());
+            });
+
+            // make map of parent id to object
+            Map<Long, FacetModel> parentIdToFacetModel = new HashMap<>();
+            facetModels.stream()
+                    .map(facetModel -> this.facetService.findByID(facetModel.getParentId()))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(facetModel -> parentIdToFacetModel.put(facetModel.getParentId(), facetModel));
+
+
+            facetModels.forEach(facet -> {
+                String[] row = new String[facetCategoriesHeaders.length];
+                String facetCategoryName = facetCategoryIdToName.get(facet.getFacetCategoryId());
+                row[0] = facetCategoryName != null ? facetCategoryName : "";
+                row[1] = facet.getName();
+                row[2] = facet.getDisplay();
+                row[3] = facet.getDescription();
+
+                FacetModel parentFacet = parentIdToFacetModel.get(facet.getParentId());
+                row[4] = parentFacet != null ? parentFacet.getName() : "";
+
+                int col = 5;
+                for (String key : facetMetadataKeyNames) {
+                    Optional<FacetMetadataModel> facetMetaDataByKey =
+                            this.facetService.findFacetMetadataByFacetIDAndKey(facet.getFacetId(), key);
+                    row[col] = facetMetaDataByKey.isPresent() ? facetMetaDataByKey.get().getValue() : "";
+                    col++;
+                }
+
+                writer.writeNext(row);
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void generateFacetCategoriesCSV(String fullPath, String[] facetCategoriesHeaders, List<String> facetCategoryMetadataKeyNames, List<FacetCategoryModel> facetCategoryModels) {
+        Long[] facetCategoryIDs = facetCategoryModels.stream().map(FacetCategoryModel::getFacetCategoryId).toArray(Long[]::new);
         List<FacetCategoryMeta> facetCategoryMetaData = this.facetCategoryService.findFacetCategoryMetaByFacetCategoriesID(facetCategoryIDs);
         try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath, true))) {
-            facetCategoryMetas.forEach(facetCategory -> {
+            facetCategoryModels.forEach(facetCategory -> {
                 String[] row = new String[facetCategoriesHeaders.length];
                 row[0] = facetCategory.getName();
                 row[1] = facetCategory.getDisplay();
@@ -130,20 +192,6 @@ public class DictionaryCSVService {
 
     }
 
-    private void createIdealIngestCSVFiles(String path, List<String> facetName, List<String> datasetRefNames) {
-        log.info("Creating Facet.csv");
-        List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
-        String[] facetCSVHeaders = getFacetCSVHeaders(facetMetadataKeyNames);
-        this.csvUtility.createCSVFile(path + "/Facet.csv", facetCSVHeaders);
-        log.info("Facet.csv created with initial headers");
-
-
-
-//        log.info("Creating Facet_Concept_List.csv");//        String[] facetConceptListHeaders = getFacetConceptListHeaders(datasetMetadataKeys, facetName);
-//        this.csvUtility.createCSVFile(path + "Facet_Concept_List.csv", facetConceptListHeaders);
-//        log.info("Facet_Concept_List.csv created with initial headers");
-    }
-
     private String[] createConsentsCsvWithHeaders(String fullPath) {
         log.info("Creating Concepts.csv");
         String[] consentCSVHeaders = new String[]{"dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"};
@@ -153,8 +201,7 @@ public class DictionaryCSVService {
     }
 
     private String[] getFacetCategoriesHeaders(List<String> facetCategoryMetadataKeyNames) {
-        // name(unique)	display name	description	meta_key_1	meta_key_2
-        List<String> facetCategoriesHeaders = new ArrayList<>(List.of("name", "display name", "description"));
+        List<String> facetCategoriesHeaders = new ArrayList<>(List.of("facet_category", "facet_name", "display_name", "description", "parent_name"));
         facetCategoriesHeaders.addAll(facetCategoryMetadataKeyNames);
         return facetCategoriesHeaders.toArray(new String[0]);
     }
@@ -211,8 +258,16 @@ public class DictionaryCSVService {
                     parentConceptPath = parent.getConceptPath();
                 }
                 row[5] = parentConceptPath;
-                row[6] = convertConceptValuesToDelimitedString(conceptMetadatas.stream().filter(conceptMetadata -> conceptMetadata.getKey().equals("values")).findFirst(), concept.getConceptType());
 
+                Optional<ConceptMetadataModel> values = Optional.empty();
+                for (ConceptMetadataModel metadataModel : conceptMetadatas) {
+                    if (metadataModel.getKey().equals("values")) {
+                        values = Optional.of(metadataModel);
+                        break;
+                    }
+                }
+                String conceptType = concept.getConceptType();
+                row[6] = convertConceptValuesToDelimitedString(values, conceptType);
                 Optional<ConceptMetadataModel> description = conceptMetadatas.stream().filter(conceptMetadata -> conceptMetadata.getKey().equals("values")).findFirst();
                 row[7] = description.isPresent() ? description.get().getValue() : "";
 
@@ -248,7 +303,8 @@ public class DictionaryCSVService {
                 Float min = this.columnMetaUtility.parseMin(data);
                 values = min + "µ" + max;
             }
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
+            log.warn("Error parsing values for concept: {} with values: {}", conceptMetadataModel.getConceptNodeId(), data, e);
             return data;
         }
 
