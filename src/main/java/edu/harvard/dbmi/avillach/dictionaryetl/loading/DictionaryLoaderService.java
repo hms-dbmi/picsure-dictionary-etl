@@ -351,7 +351,7 @@ public class DictionaryLoaderService {
             if (optDatasetModel.isPresent()) {
                 datasetModel = optDatasetModel.get();
             } else {
-                datasetModel = new DatasetModel(ref, "", "", "");
+                datasetModel = new DatasetModel(ref, "", datasetRef,"");
                 datasetModel = this.datasetService.save(datasetModel); // Blocking call
             }
 
