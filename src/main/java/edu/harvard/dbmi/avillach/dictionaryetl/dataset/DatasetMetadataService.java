@@ -23,7 +23,7 @@ public class DatasetMetadataService {
      *
      * @return A list of all the metadata set key values
      */
-    public List<String> getAllKeyNames() {
-        return this.datasetMetadataRepository.getAllKeyNames();
+    public List<String> getAllKeyNames(Long[] datasetIDs) {
+        return this.datasetMetadataRepository.findByDatasetID(datasetIDs);
     }
 }

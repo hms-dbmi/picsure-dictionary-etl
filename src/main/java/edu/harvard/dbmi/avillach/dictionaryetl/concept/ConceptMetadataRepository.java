@@ -43,4 +43,14 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
 
     @Query(value = "select key FROM dict.concept_node_meta group by key;", nativeQuery = true)
     List<String> findAllKeyValues();
+
+    @Query(value = """
+            select concept_node_meta.key from dict.concept_node_meta
+            where concept_node_id in (
+                select concept_node_id from dict.concept_node
+                where concept_node.dataset_id in (:datasetIDs)
+                )
+            group by key;
+    """, nativeQuery = true)
+    List<String> findByDatasetID(Long[] datasetIDs);
 }

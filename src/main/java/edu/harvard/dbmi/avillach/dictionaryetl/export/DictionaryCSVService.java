@@ -7,21 +7,21 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class DictionaryCSVService {
@@ -34,11 +34,12 @@ public class DictionaryCSVService {
     private final ColumnMetaUtility columnMetaUtility;
     private final FacetService facetService;
     private final FacetCategoryService facetCategoryService;
+    private final ConsentService consentService;
 
     private final CSVUtility csvUtility;
 
     @Autowired
-    public DictionaryCSVService(DatasetService datasetService, DatasetMetadataService datasetMetadataService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, ColumnMetaUtility columnMetaUtility, FacetService facetService, FacetCategoryService facetCategoryService, CSVUtility csvUtility) {
+    public DictionaryCSVService(DatasetService datasetService, DatasetMetadataService datasetMetadataService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, ColumnMetaUtility columnMetaUtility, FacetService facetService, FacetCategoryService facetCategoryService, ConsentService consentService, CSVUtility csvUtility) {
         this.datasetService = datasetService;
         this.datasetMetadataService = datasetMetadataService;
         this.conceptService = conceptService;
@@ -46,67 +47,109 @@ public class DictionaryCSVService {
         this.columnMetaUtility = columnMetaUtility;
         this.facetService = facetService;
         this.facetCategoryService = facetCategoryService;
+        this.consentService = consentService;
         this.csvUtility = csvUtility;
     }
 
-    public void generateFullIngestCSVs(String path) {
-        File file = new File(path);
-        if (!file.exists()) {
-            boolean mkdir = file.mkdir();
-            if (!mkdir) {
-                throw new RuntimeException("Unable to create necessary directory. Directory: " + path + ". Please " +
-                                           "create directory.");
-            }
+    public void generateFullIngestCSVs(String path, String... datasetRefs) {
+        List<DataSetRefDto> datasets;
+        if (datasetRefs.length == 0) {
+            datasets = this.datasetService.getAllDatasetRefsSorted();
+        } else {
+            datasets = this.datasetService.getDatasetRefsSorted(datasetRefs);
         }
 
-        /*
-        TODO: Outline for efficient database export to ideal ingest format.
+        Long[] datasetIDs = datasets.stream().map(DataSetRefDto::getDatasetId).toArray(Long[]::new);
 
-         1. Load a set of the dataset_refs in order.
-         2. Iterate over this list filling five FIFO queues each allowing 10 records at time. The primary thread should
-         wait until there is space available in a queue to put more data into it. Data will be loaded in an order.
-         3. 6 consumers are watching the FIFO queues and are writing data out to each file in order.
+        // Create and populate dataset CSV
+        // -----------------------------------------------------------------------------------------
+        List<String> datasetMetadataKeys = this.datasetMetadataService.getAllKeyNames(datasetIDs);
+        generateDatasetsCSV(path + "/Datasets.csv", datasetMetadataKeys, datasets);
+        // -----------------------------------------------------------------------------------------
 
-         */
-        log.info("Creating Datasets.csv");
-        List<String> datasetMetadataKeys = this.datasetMetadataService.getAllKeyNames();
-        String[] datasetCSVHeaders = getDatasetCSVHeaders(datasetMetadataKeys);
-        this.csvUtility.createCSVFile(path + "Datasets.csv", datasetCSVHeaders);
-        log.info("Dataset.csv created with initial headers");
+        // Create consent CSV
+        // -----------------------------------------------------------------------------------------
+        String fullConsentPath = path + "/Consents.csv";
+        String[] consentsCsvWithHeaders = createConsentsCsvWithHeaders(fullConsentPath);
+        // -----------------------------------------------------------------------------------------
 
-        log.info("Creating Concepts.csv");
-        String[] consentCSVHeaders = new String[]{"dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"};
-        this.csvUtility.createCSVFile(path + "Consents.csv", consentCSVHeaders);
-        log.info("Consents.csv created with initial headers");
+        // Create Concept CSV
+        // -----------------------------------------------------------------------------------------
+        List<String> conceptMetadataKeys = this.conceptMetadataService.findMetadataKeysByDatasetID(datasetIDs);
+        String[] conceptCSVHeaders = getConceptCSVHeaders(conceptMetadataKeys);
+        String fullConceptPath = path + "/Concept.csv";
+        this.csvUtility.createCSVFile(fullConceptPath, conceptCSVHeaders);
+        // -----------------------------------------------------------------------------------------
 
-        log.info("Creating Concept.csv");
-        List<String> metadataKeys = this.conceptMetadataService.allMetadataKeys();
-        String[] conceptCSVHeaders = getConceptCSVHeaders(metadataKeys);
-        this.csvUtility.createCSVFile(path + "Concept.csv", conceptCSVHeaders);
-       log.info("Concept.csv created with initial headers");
+        // Create and Populate Facet Categories CSV
+        // -----------------------------------------------------------------------------------------
+        List<String> facetCategoryMetadataKeyNames = this.facetCategoryService.getFacetCategoryMetadataKeyNames();
+        String[] facetCategoriesHeaders = getFacetCategoriesHeaders(facetCategoryMetadataKeyNames);
+        String fullFacetCategoryPath = path + "/Facet_Categories.csv";
+        this.csvUtility.createCSVFile(fullFacetCategoryPath, facetCategoriesHeaders);
+        generateFacetCategoriesCSV(fullFacetCategoryPath, facetCategoriesHeaders, facetCategoryMetadataKeyNames);
+        // -----------------------------------------------------------------------------------------
 
+
+        for (DataSetRefDto dataset : datasets) {
+            generateConsentsCSV(fullConsentPath, dataset, consentsCsvWithHeaders);
+            generateConceptsCSV(fullConceptPath, conceptCSVHeaders, conceptMetadataKeys, dataset);
+        }
+
+    }
+
+    private void generateFacetCategoriesCSV(String fullPath, String[] facetCategoriesHeaders, List<String> facetCategoryMetadataKeyNames) {
+        List<FacetCategoryModel> facetCategoryMetas = this.facetCategoryService.findAll();
+        Long[] facetCategoryIDs = facetCategoryMetas.stream().map(FacetCategoryModel::getFacetCategoryId).toArray(Long[]::new);
+        List<FacetCategoryMeta> facetCategoryMetaData = this.facetCategoryService.findFacetCategoryMetaByFacetCategoriesID(facetCategoryIDs);
+        try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath, true))) {
+            facetCategoryMetas.forEach(facetCategory -> {
+                String[] row = new String[facetCategoriesHeaders.length];
+                row[0] = facetCategory.getName();
+                row[1] = facetCategory.getDisplay();
+                row[2] = facetCategory.getDescription();
+
+                int col = 3;
+                for (String key : facetCategoryMetadataKeyNames) {
+                    FacetCategoryMeta facetCategoryMetaDataByKey =
+                            facetCategoryMetaData.stream().filter(meta -> meta.getKey().equals(key)).findFirst().orElse(null);
+                    if (facetCategoryMetaDataByKey != null) {
+                        row[col] = facetCategoryMetaDataByKey.getValue();
+                    } else {
+                        row[col] = "";
+                    }
+
+                    col++;
+                }
+
+                writer.writeNext(row);
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void createIdealIngestCSVFiles(String path, List<String> facetName, List<String> datasetRefNames) {
         log.info("Creating Facet.csv");
         List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
         String[] facetCSVHeaders = getFacetCSVHeaders(facetMetadataKeyNames);
-        this.csvUtility.createCSVFile(path + "Facet.csv", facetCSVHeaders);
+        this.csvUtility.createCSVFile(path + "/Facet.csv", facetCSVHeaders);
         log.info("Facet.csv created with initial headers");
 
-        log.info("Creating Facet_Categories.csv");
-        List<String> facetCategoryMetadataKeyNames = this.facetCategoryService.getFacetCategoryMetadataKeyNames();
-        String[] facetCategoriesHeaders = getFacetCategoriesHeaders(facetCategoryMetadataKeyNames);
-        this.csvUtility.createCSVFile(path + "Facet_Categories.csv", facetCategoriesHeaders);
-        log.info("Facet_Categories.csv created with initial headers");
 
-        // load all datasets refs as a sorted list of strings that will be iterated over to load data in order.
-        List<DataSetRefDto> datasetRefs = this.datasetService.getAllDatasetRefsSorted();
-        List<Long> datasetIds = datasetRefs.stream().map(DataSetRefDto::dataset_id).toList();
-        List<String> facetName = this.facetService.getFacetNames();
 
-        log.info("Creating Facet_Concept_List.csv");
-        String[] facetConceptListHeaders = getFacetConceptListHeaders(datasetMetadataKeys, facetName);
-        this.csvUtility.createCSVFile(path + "Facet_Concept_List.csv", facetConceptListHeaders);
-        log.info("Facet_Concept_List.csv created with initial headers");
+//        log.info("Creating Facet_Concept_List.csv");//        String[] facetConceptListHeaders = getFacetConceptListHeaders(datasetMetadataKeys, facetName);
+//        this.csvUtility.createCSVFile(path + "Facet_Concept_List.csv", facetConceptListHeaders);
+//        log.info("Facet_Concept_List.csv created with initial headers");
+    }
 
+    private String[] createConsentsCsvWithHeaders(String fullPath) {
+        log.info("Creating Concepts.csv");
+        String[] consentCSVHeaders = new String[]{"dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"};
+        this.csvUtility.createCSVFile(fullPath, consentCSVHeaders);
+        log.info("Consents.csv created with initial headers");
+        return consentCSVHeaders;
     }
 
     private String[] getFacetCategoriesHeaders(List<String> facetCategoryMetadataKeyNames) {
@@ -118,6 +161,7 @@ public class DictionaryCSVService {
 
     private String[] getFacetConceptListHeaders(List<String> datasetMetadataKeys, List<String> facetName) {
         //dataset_id_1	dataset_id_2	dataset_id_3	facet_name1	facet_name2	facet_name3
+        // loop over the datasetMetadataKeys and place them in the header
 
         return null;
     }
@@ -144,12 +188,14 @@ public class DictionaryCSVService {
         return headers.toArray(new String[0]);
     }
 
-    private void generateConceptsCSV(String path, List<String> headers) {
-        String csvName = "Concept.csv";
-        try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
-            List<ConceptModel> conceptModels = this.conceptService.findAll();
+    private void generateConceptsCSV(String fullPath,
+                                     String[] conceptCSVHeaders,
+                                     List<String> conceptMetaDataKeys,
+                                     DataSetRefDto dataSetRefDto) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath, true))) {
+            List<ConceptModel> conceptModels = this.conceptService.findByDatasetID(dataSetRefDto.getDatasetId());
             conceptModels.forEach(concept -> {
-                String[] row = new String[headers.size()];
+                String[] row = new String[conceptCSVHeaders.length];
                 Optional<DatasetModel> datasetModel = this.datasetService.findByID(concept.getDatasetId());
                 List<ConceptMetadataModel> conceptMetadatas =
                         this.conceptMetadataService.findByConceptID(concept.getConceptNodeId());
@@ -170,7 +216,14 @@ public class DictionaryCSVService {
                 Optional<ConceptMetadataModel> description = conceptMetadatas.stream().filter(conceptMetadata -> conceptMetadata.getKey().equals("values")).findFirst();
                 row[7] = description.isPresent() ? description.get().getValue() : "";
 
-                // TODO: Metadata
+                int col = 8;
+                for (String key : conceptMetaDataKeys) {
+                    Optional<ConceptMetadataModel> conceptMetaDataByKey =
+                            conceptMetadatas.stream().filter(meta -> meta.getKey().equals(key)).findFirst();
+                    row[col] = conceptMetaDataByKey.isPresent() ? conceptMetaDataByKey.get().getValue() : "";
+                    col++;
+                }
+
                 writer.writeNext(row);
             });
 
@@ -183,45 +236,37 @@ public class DictionaryCSVService {
         if (valuesMetaData.isEmpty()) {
             return "";
         }
-
         ConceptMetadataModel conceptMetadataModel = valuesMetaData.get();
         String data = conceptMetadataModel.getValue();
         String values = "";
-        if (conceptType.equals("categorical")) {
-            List<String> strings = this.columnMetaUtility.parseValues(data);
-            values = String.join("µ", strings);
-        } else {
-            Float max = this.columnMetaUtility.parseMax(data);
-            Float min = this.columnMetaUtility.parseMin(data);
-            values = min + "µ" + max;
+        try {
+            if (conceptType.equals("categorical")) {
+                List<String> strings = this.columnMetaUtility.parseValues(data);
+                values = String.join("µ", strings);
+            } else {
+                Float max = this.columnMetaUtility.parseMax(data);
+                Float min = this.columnMetaUtility.parseMin(data);
+                values = min + "µ" + max;
+            }
+        } catch (Exception e) {
+            return data;
         }
 
         return values;
     }
 
-    private void generateConsentsCSV(String path) {
-        String csvName = "Dataset.csv";
-        List<String> headers = new ArrayList<>(List.of("dataset_ref", "consent_code", "description", "participant count", "variable count", "sample count", "authz"));
-        List<String> metadataKeys = this.datasetMetadataService.getAllKeyNames();
-        Collections.sort(metadataKeys);
-        headers.addAll(metadataKeys);
-        try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
-            List<DatasetModel> datasets = this.datasetService.findAll();
-            datasets.forEach(datasetModel -> {
-                List<DatasetMetadataModel> metadata = this.datasetMetadataService.findByDatasetID(datasetModel.getDatasetId());
-                String[] row = new String[headers.size()];
-                row[0] = datasetModel.getRef();
-                row[1] = datasetModel.getFullName();
-                row[2] = datasetModel.getAbbreviation();
-                row[3] = datasetModel.getDescription();
-                final int[] col = {4};
-                // Metadata keys is sorted so we should always end up with the keys as columns in sorted order.
-                metadataKeys.forEach(key -> {
-                    Optional<DatasetMetadataModel> datasetMetaDataByKey =
-                            metadata.stream().filter(meta -> meta.getKey().equals(key)).findFirst();
-                    row[col[0]] = datasetMetaDataByKey.isPresent() ? datasetMetaDataByKey.get().getValue() : "";
-                    col[0]++;
-                });
+    private void generateConsentsCSV(String fullPath, DataSetRefDto dataSetRefDto, String[] consentCSVHeaders) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath, true))) {
+            List<ConsentModel> consents = this.consentService.findByDatasetID(dataSetRefDto.getDatasetId());
+            consents.forEach(consent -> {
+                String[] row = new String[consentCSVHeaders.length];
+                row[0] = dataSetRefDto.getRef();
+                row[1] = consent.getConsentCode();
+                row[2] = consent.getDescription();
+                row[3] = consent.getParticipantCount().toString();
+                row[4] = consent.getVariableCount().toString();
+                row[5] = consent.getSampleCount().toString();
+                row[6] = consent.getAuthz();
 
                 writer.writeNext(row);
             });
@@ -230,34 +275,37 @@ public class DictionaryCSVService {
         }
     }
 
-    public void generateDatasetsCSV(String path, List<String> headers) {
-        String csvName = "Dataset.csv";
+    public void generateDatasetsCSV(String fullPath, List<String> metadataKeys, List<DataSetRefDto> dataSetRefDtos) {
+        log.info("Creating Datasets.csv");
+        String[] datasetCSVHeaders = getDatasetCSVHeaders(metadataKeys);
+        this.csvUtility.createCSVFile(fullPath, datasetCSVHeaders);
 
-        try (CSVWriter writer = new CSVWriter(new FileWriter(path + csvName))) {
-            List<DatasetModel> datasets = this.datasetService.findAll();
-            datasets.forEach(datasetModel -> {
-                List<DatasetMetadataModel> metadata = this.datasetMetadataService.findByDatasetID(datasetModel.getDatasetId());
-                String[] row = new String[headers.size()];
-                row[0] = datasetModel.getRef();
-                row[1] = datasetModel.getFullName();
-                row[2] = datasetModel.getAbbreviation();
-                row[3] = datasetModel.getDescription();
-                final int[] col = {4};
-                // Metadata keys is sorted so we should always end up with the keys as columns in sorted order.
-                metadataKeys.forEach(key -> {
-                    Optional<DatasetMetadataModel> datasetMetaDataByKey =
-                            metadata.stream().filter(meta -> meta.getKey().equals(key)).findFirst();
-                    row[col[0]] = datasetMetaDataByKey.isPresent() ? datasetMetaDataByKey.get().getValue() : "";
-                    col[0]++;
-                });
+        try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath, true))) {
+            dataSetRefDtos.forEach(dataSetRefDto -> {
+                Optional<DatasetModel> datasetByRef = this.datasetService.findByRef(dataSetRefDto.getRef());
+                if (datasetByRef.isPresent()) {
+                    DatasetModel dataset = datasetByRef.get();
+                    List<DatasetMetadataModel> metadata = this.datasetMetadataService.findByDatasetID(dataSetRefDto.getDatasetId());
+                    String[] row = new String[datasetCSVHeaders.length];
+                    row[0] = dataset.getRef();
+                    row[1] = dataset.getFullName();
+                    row[2] = dataset.getAbbreviation();
+                    row[3] = dataset.getDescription();
+                    final int[] col = {4};
+                    // Metadata keys is sorted so we should always end up with the keys as columns in sorted order.
+                    metadataKeys.forEach(key -> {
+                        Optional<DatasetMetadataModel> datasetMetaDataByKey =
+                                metadata.stream().filter(meta -> meta.getKey().equals(key)).findFirst();
+                        row[col[0]] = datasetMetaDataByKey.isPresent() ? datasetMetaDataByKey.get().getValue() : "";
+                        col[0]++;
+                    });
 
-                writer.writeNext(row);
+                    writer.writeNext(row);
+                }
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
-
 
 }

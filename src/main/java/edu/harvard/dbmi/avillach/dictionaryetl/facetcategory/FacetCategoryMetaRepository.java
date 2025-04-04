@@ -12,4 +12,10 @@ public interface FacetCategoryMetaRepository extends JpaRepository<FacetCategory
     @Query(value = "select key FROM dict.facet_category_meta group by key;", nativeQuery = true)
     List<String> getFacetCategoryMetadataKeyNames();
 
+    @Query(value = """
+            select * from dict.facet_category_meta
+            where facet_category_id in (select facet_category_id from dict.facet_category);
+    """, nativeQuery = true)
+    List<FacetCategoryMeta> findByFacetCategoryID(Long[] facetCategoryIDs);
+
 }

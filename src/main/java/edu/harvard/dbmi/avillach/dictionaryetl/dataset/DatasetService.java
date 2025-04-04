@@ -49,4 +49,8 @@ public class DatasetService {
     public List<DataSetRefDto> getAllDatasetRefsSorted() {
         return this.datasetRepository.getAllDatasetRefsSorted();
     }
+
+    public List<DataSetRefDto> getDatasetRefsSorted(String[] datasetRefs) {
+        return this.datasetRepository.getDatasetRefsSorted(datasetRefs);
+    }
 }

@@ -30,4 +30,12 @@ public class FacetCategoryService {
         return this.facetCategoryMetaRepository.getFacetCategoryMetadataKeyNames();
     }
 
+    public List<FacetCategoryModel> findAll() {
+        return this.facetCategoryRepository.findAll();
+    }
+
+    public List<FacetCategoryMeta> findFacetCategoryMetaByFacetCategoriesID(Long[] facetCategoryID) {
+        return this.facetCategoryMetaRepository.findByFacetCategoryID(facetCategoryID);
+    }
+
 }
