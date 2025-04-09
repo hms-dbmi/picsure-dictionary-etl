@@ -2,7 +2,6 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,4 +42,18 @@ public class DatasetService {
     }
 
 
+    public Optional<DatasetModel> findByID(Long datasetId) {
+        if (datasetId == null) {
+            return Optional.empty();
+        }
+        return this.datasetRepository.findById(datasetId);
+    }
+
+    public List<DataSetRefDto> getAllDatasetRefsSorted() {
+        return this.datasetRepository.getAllDatasetRefsSorted();
+    }
+
+    public List<DataSetRefDto> getDatasetRefsSorted(String[] datasetRefs) {
+        return this.datasetRepository.getDatasetRefsSorted(datasetRefs);
+    }
 }

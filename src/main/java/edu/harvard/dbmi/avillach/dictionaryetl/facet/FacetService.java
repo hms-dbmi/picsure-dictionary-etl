@@ -5,6 +5,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryServic
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -13,12 +14,14 @@ public class FacetService {
     private final FacetRepository facetRepository;
     private final FacetCategoryService facetCategoryService;
     private final FacetConceptService facetConceptService;
+    private final FacetMetadataRepository facetMetadataRepository;
 
     @Autowired
-    public FacetService(FacetRepository facetRepository, FacetCategoryService facetCategoryService, FacetConceptService facetConceptService) {
+    public FacetService(FacetRepository facetRepository, FacetCategoryService facetCategoryService, FacetConceptService facetConceptService, FacetMetadataRepository facetMetadataRepository) {
         this.facetRepository = facetRepository;
         this.facetCategoryService = facetCategoryService;
         this.facetConceptService = facetConceptService;
+        this.facetMetadataRepository = facetMetadataRepository;
     }
 
     public FacetModel save(FacetModel facetModel) {
@@ -50,5 +53,31 @@ public class FacetService {
         this.facetConceptService.mapConceptConceptTypeToFacet(continuous.getFacetId(), "continuous");
     }
 
+    public List<String> getFacetMetadataKeyNames() {
+        return this.facetMetadataRepository.getFacetMetadataKeyNames();
+    }
 
+    public List<String> getFacetNames() {
+        return this.facetRepository.getAllFacetNames();
+    }
+
+    public List<FacetModel> findAllFacetsByDatasetIDs(Long[] datasetIDs) {
+        return this.facetRepository.findAllFacetsByDatasetIDs(datasetIDs);
+    }
+
+    public List<FacetModel> findAll() {
+        return this.facetRepository.findAll();
+    }
+
+    public Optional<FacetModel> findByID(Long parentId) {
+        return this.facetRepository.findById(parentId);
+    }
+
+    public Optional<FacetMetadataModel> findFacetMetadataByFacetIDAndKey(Long facetId, String key) {
+        return this.facetMetadataRepository.findByFacetIdAndKey(facetId, key);
+    }
+
+    public List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(Long datasetID) {
+        return this.facetRepository.findFacetToConceptRelationshipsByDatasetID(datasetID);
+    }
 }
