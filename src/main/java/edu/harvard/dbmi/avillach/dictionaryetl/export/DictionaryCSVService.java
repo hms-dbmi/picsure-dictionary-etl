@@ -145,21 +145,13 @@ public class DictionaryCSVService {
         String fullFacetConceptListDatasetCSVDir = path + "/Facet_Concept_List_Dataset_CSVs/";
         String fullFacetConceptListPath = path + "/Facet_Concept_List.csv";
 
-        String[] facetConceptListHeaders = new String[datasets.size() + facetModels.size()];
-        System.arraycopy(datasets.stream().map(DataSetRefDto::getRef).toArray(String[]::new), 0, facetConceptListHeaders, 0, datasets.size());
-        System.arraycopy(facetModels.stream().map(FacetModel::getName).toArray(String[]::new), 0, facetConceptListHeaders, datasets.size(), facetModels.size());
-
+        String[] facetConceptListHeaders = facetModels.stream().map(FacetModel::getName).toArray(String[]::new);
         this.csvUtility.createCSVFile(fullFacetConceptListPath, facetConceptListHeaders);
         // ------------------------------------------------------------------------------------------
 
-        Map<String, Integer> datasetRefToPosition = new HashMap<>();
-        for (int i = 0; i < datasets.size(); i++) {
-            datasetRefToPosition.put(datasets.get(i).getRef(), i);
-        }
-
         Map<String, Integer> facetNameToPosition = new HashMap<>();
         for (int i = 0; i < facetModels.size(); i++) {
-            facetNameToPosition.put(facetModels.get(i).getName(), datasets.size() + i);
+            facetNameToPosition.put(facetModels.get(i).getName(), i);
         }
 
         Thread mergeConceptCSVsThread = this.startMergingConceptCSVs(fullConceptPath);
@@ -171,10 +163,10 @@ public class DictionaryCSVService {
             List<ConceptModel> conceptModels = this.conceptService.findByDatasetID(dataset.getDatasetId());
             if (maxConnections > 5) {
                 this.fixedThreadPool.submit(() -> generateConceptsCSV(fullConceptPathDatasetCSVDir, conceptCSVHeaders, conceptMetadataKeys, dataset, conceptModels));
-                this.fixedThreadPool.submit(() -> generateFacetConceptListCSVForDataset(fullFacetConceptListDatasetCSVDir, dataset, facetConceptListHeaders, conceptModels, datasetRefToPosition, facetNameToPosition));
+                this.fixedThreadPool.submit(() -> generateFacetConceptListCSVForDataset(fullFacetConceptListDatasetCSVDir, dataset, facetConceptListHeaders, conceptModels, facetNameToPosition));
             } else {
                 generateConceptsCSV(fullConceptPathDatasetCSVDir, conceptCSVHeaders, conceptMetadataKeys, dataset, conceptModels);
-                generateFacetConceptListCSVForDataset(fullFacetConceptListDatasetCSVDir, dataset, facetConceptListHeaders, conceptModels, datasetRefToPosition, facetNameToPosition);
+                generateFacetConceptListCSVForDataset(fullFacetConceptListDatasetCSVDir, dataset, facetConceptListHeaders, conceptModels, facetNameToPosition);
             }
         }
 
@@ -331,7 +323,6 @@ public class DictionaryCSVService {
      * @param dataset                           DataSetRefDto for the dataset to create the CSV for.
      * @param facetConceptListHeaders           The headers for the Facet_Concept_List.csv file.
      * @param conceptModels                     The list of ConceptModels for the dataset.
-     * @param datasetRefToPosition              A map of dataset ref to position in the header.
      * @param facetNameToPosition               A map of facet name to position in the header.
      */
     private void generateFacetConceptListCSVForDataset(
@@ -339,31 +330,28 @@ public class DictionaryCSVService {
             DataSetRefDto dataset,
             String[] facetConceptListHeaders,
             List<ConceptModel> conceptModels,
-            Map<String, Integer> datasetRefToPosition,
             Map<String, Integer> facetNameToPosition) {
 
         String datasetCSVPath = fullFacetConceptListDatasetCSVDir + dataset.getRef() + ".csv";
         this.csvUtility.createCSVFile(datasetCSVPath, facetConceptListHeaders);
         try (CSVWriter writer = new CSVWriter(new FileWriter(datasetCSVPath, true))) {
-            // batch
             int batchSize = 1000;
             List<String[]> batch = new ArrayList<>(batchSize);
 
             // the list of facet_concept_node is lighter weight and should
-            Map<Long, List<ConceptToFacetDTO>> conceptToFacets = this.facetService.findFacetToConceptRelationshipsByDatasetID(dataset.getDatasetId())
+            List<ConceptToFacetDTO> facetToConceptRelationshipsByDatasetID = this.facetService.findFacetToConceptRelationshipsByDatasetID(dataset.getDatasetId());
+
+            Map<Long, List<ConceptToFacetDTO>> conceptToFacets = facetToConceptRelationshipsByDatasetID
                     .stream()
                     .filter(conceptToFacetDTO -> conceptToFacetDTO.getConceptNodeId() != null)
                     .collect(Collectors.groupingBy(ConceptToFacetDTO::getConceptNodeId));
 
             for (ConceptModel concept : conceptModels) {
                 String[] row = new String[facetConceptListHeaders.length];
-                row[datasetRefToPosition.get(dataset.getRef())] = concept.getName().replace("\\", "\\\\");
-                // for all the facets for this concept find the facet name and set the column
                 List<ConceptToFacetDTO> conceptToFacetDTOs = conceptToFacets.get(concept.getConceptNodeId());
                 if (conceptToFacetDTOs != null) {
                     for (ConceptToFacetDTO conceptToFacetDTO : conceptToFacetDTOs) {
-                        // The facets are offset by the length of the datasets
-                        row[datasetRefToPosition.size() + facetNameToPosition.get(conceptToFacetDTO.getFacetName())] = "X";
+                        row[facetNameToPosition.get(conceptToFacetDTO.getFacetName())] = concept.getConceptPath().replace("\\", "\\\\");
                     }
                 }
 

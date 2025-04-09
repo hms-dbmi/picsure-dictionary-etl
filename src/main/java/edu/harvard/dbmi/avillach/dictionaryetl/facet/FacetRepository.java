@@ -39,11 +39,13 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     List<FacetModel> findAllFacetsByDatasetIDs(Long[] datasetIDs);
 
     @Query(value = """
-            SELECT f.facet_id, cn.concept_node_id, f.name
-            FROM dict.facet f
-                     JOIN dict.facet__concept_node fcn ON f.facet_id = fcn.facet_id
-                     JOIN dict.concept_node cn ON fcn.concept_node_id = cn.concept_node_id
-            WHERE cn.dataset_id = :datasetID
-            """, nativeQuery = true)
-    List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(Long datasetID);
+        SELECT f.facet_id AS facetId,
+               cn.concept_node_id AS conceptNodeId,
+               f.name AS facetName
+        FROM dict.facet f
+                 JOIN dict.facet__concept_node fcn ON f.facet_id = fcn.facet_id
+                 JOIN dict.concept_node cn ON fcn.concept_node_id = cn.concept_node_id
+        WHERE cn.dataset_id = :datasetID
+        """, nativeQuery = true)
+    List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(@Param("datasetID") Long datasetID);
 }
