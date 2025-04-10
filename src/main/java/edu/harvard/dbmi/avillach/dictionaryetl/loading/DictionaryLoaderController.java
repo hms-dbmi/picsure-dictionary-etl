@@ -43,8 +43,7 @@ public class DictionaryLoaderController {
     public ResponseEntity<String> initialDatabaseHydration(
             @RequestBody InitializeRequest request
     ) {
-        log.info("initialDatabaseHydration __ datasetName: {}, csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}, clearDatabase: {}",
-                request.datasetName(),
+        log.info("initialDatabaseHydration __ csvPath: {}, errorDictionary: {}, includeDefaultFacets: {}, clearDatabase: {}",
                 request.csvPath(),
                 request.errorDirectory(),
                 request.includeDefaultFacets(),
@@ -58,8 +57,7 @@ public class DictionaryLoaderController {
                 if (clearDatabase) {
                     databaseCleanupUtility.truncateTablesAllTables();
                 }
-                response = this.dictionaryLoaderService.processColumnMetaCSV(request.csvPath(), request.datasetName(),
-                        request.errorDirectory());
+                response = this.dictionaryLoaderService.processColumnMetaCSV(request.csvPath(), request.errorDirectory());
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
                 }

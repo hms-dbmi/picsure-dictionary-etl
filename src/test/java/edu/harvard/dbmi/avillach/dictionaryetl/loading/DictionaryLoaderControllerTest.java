@@ -94,7 +94,6 @@ class DictionaryLoaderControllerTest {
     @Test
     void initialDatabaseHydration_onlyDatasetNhanes_shouldMapFacets() {
         this.dictionaryLoaderController.initialDatabaseHydration(new InitializeRequest(
-                "NHANES",
                         filePath,
                         resourcePath + "/columnMetaErrors.csv",
                         true,
@@ -103,8 +102,6 @@ class DictionaryLoaderControllerTest {
 
         List<DatasetModel> all = this.datasetService.findAll();
         assertFalse(all.isEmpty());
-        assertEquals(1, all.size());
-        assertEquals("NHANES", all.getFirst().getRef());
 
         Optional<FacetModel> categorical = this.facetService.findByName("categorical");
         Optional<FacetModel> continuous = this.facetService.findByName("continuous");
