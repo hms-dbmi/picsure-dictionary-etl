@@ -152,4 +152,7 @@ public class ConceptService {
                 return inputsHeaders;
         }
 
+        public List<ConceptModel> findByDatasetID(Long datasetId) {
+                return this.conceptRepository.findByDatasetId(datasetId);
+        }
 }
