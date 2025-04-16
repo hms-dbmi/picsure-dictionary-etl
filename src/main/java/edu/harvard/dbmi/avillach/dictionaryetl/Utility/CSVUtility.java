@@ -24,7 +24,7 @@ public class CSVUtility {
         }
 
         try {
-            log.info("Creating CSV file: {}", fullPath);
+            log.debug("Creating CSV file: {}", fullPath);
             // create the parent directories if they do not exist
             File parentDir = file.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
@@ -39,8 +39,8 @@ public class CSVUtility {
             }
 
             try (CSVWriter writer = new CSVWriter(new FileWriter(fullPath))) {
-                log.info("Writing headers to CSV file: {}", fullPath);
-                log.info("Headers: {}", String.join(", ", headers));
+                log.debug("Writing headers to CSV file: {}", fullPath);
+                log.debug("Headers: {}", String.join(", ", headers));
                 writer.writeNext(headers);
             }
         } catch (IOException e) {

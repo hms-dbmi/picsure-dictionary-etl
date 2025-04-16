@@ -34,7 +34,6 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
                      JOIN dict.facet__concept_node fcn ON f.facet_id = fcn.facet_id
                      JOIN dict.concept_node cn ON fcn.concept_node_id = cn.concept_node_id
             WHERE cn.dataset_id in (:datasetIDs)
-            group by f.facet_id, facet_category_id, f.name, f.display, description, f.parent_id
             """, nativeQuery = true)
     List<FacetModel> findAllFacetsByDatasetIDs(Long[] datasetIDs);
 

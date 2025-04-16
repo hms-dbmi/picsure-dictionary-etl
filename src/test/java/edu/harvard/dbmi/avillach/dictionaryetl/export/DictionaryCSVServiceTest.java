@@ -1,9 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.DictionaryLoaderService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -12,8 +15,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testcontainers
 @ActiveProfiles("test")
@@ -25,14 +33,17 @@ class DictionaryCSVServiceTest {
     @Autowired
     private DictionaryCSVService dictionaryCSVService;
 
+    @Autowired
+    private DictionaryLoaderService dictionaryLoaderService;
+
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
-            .withUsername("username")
-            .withPassword("password")
+            .withUsername("testuser")
+            .withPassword("testpass")
             .withCopyFileToContainer(
-                    MountableFile.forClasspathResource("2025_04_09_15_33_11-dump.sql"),
-                    "/docker-entrypoint-initdb.d/2025_04_09_15_33_11-dump.sql"
+                    MountableFile.forClasspathResource("schema.sql"),
+                    "/docker-entrypoint-initdb.d/schema.sql"
             );
 
     @DynamicPropertySource
@@ -49,18 +60,48 @@ class DictionaryCSVServiceTest {
     }
 
     @Test
-    void generateFullIngestCSVs_WithSinglePHS() {
-        //this.dictionaryCSVService.generateFullIngestCSVs(resourcePath, "phs002205");
-    }
+    void generateFullIngestCSVs_WithSinglePHS() throws IOException {
+        ClassPathResource syntheaResource = new ClassPathResource("columnMeta_synthea.csv");
+        assertNotNull(syntheaResource);
+        String syntheaFilePath = syntheaResource.getFile().toPath().toString();
+        this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
+                                                                                     "/columnMetaErrors" +
+                                                                                     ".csv");
+        // make a directory for the generated files
+        String generatedFilePath = resourcePath + "/generatedFiles/";
+        // Make the directory
+        File generatedFile = new File(generatedFilePath);
+        if (generatedFile.exists()) {
+            boolean delete = generatedFile.delete();
+            assertTrue(delete, "Directory should be deleted");
+        }
 
-    @Test
-    void generateFullIngestCSVs_WithMultiplePHS() {
-        //this.dictionaryCSVService.generateFullIngestCSVs(resourcePath, "phs000007", "open_access-1000Genomes");
-    }
+        boolean created = generatedFile.mkdir();
+        assertTrue(created, "Directory should be created");
 
-    @Test
-    void generateFullIngestCSVs_WithNoPHS() {
-        //this.dictionaryCSVService.generateFullIngestCSVs(resourcePath);
+        Assertions.assertDoesNotThrow(() -> this.dictionaryCSVService.generateFullIngestCSVs(generatedFilePath));
+
+        Path generatedFilesPath = Paths.get(resourcePath, "generatedFiles");
+        // verify that all 6 files are created
+        Assertions.assertTrue(generatedFilesPath.resolve("Facet.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Concept_List.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Categories.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Concept.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Consents.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Datasets.csv").toFile().exists());
+
+        // delete all the generated files
+        File[] files = generatedFile.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                boolean deleted = file.delete();
+                assertTrue(deleted, "File should be deleted");
+            }
+        }
+
+        // delete the directory
+        boolean deleted = generatedFile.delete();
+        assertTrue(deleted, "Directory should be deleted");
     }
 
 }
