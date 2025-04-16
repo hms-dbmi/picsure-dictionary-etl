@@ -1,6 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
@@ -24,11 +25,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class DictionaryLoaderControllerTest {
 
-    private static String filePath;
+    private static String columnMetaFilePath;
     private static String resourcePath;
+
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
 
@@ -79,8 +80,8 @@ class DictionaryLoaderControllerTest {
     public static void init() throws IOException {
         ClassPathResource columnMetaResource = new ClassPathResource("columnMeta.csv");
         assertNotNull(columnMetaResource);
+        columnMetaFilePath = columnMetaResource.getFile().toPath().toString();
 
-        filePath = columnMetaResource.getFile().toPath().toString();
         Path testResourcePath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources");
         resourcePath = testResourcePath.toString();
     }
@@ -93,8 +94,7 @@ class DictionaryLoaderControllerTest {
     @Test
     void initialDatabaseHydration_onlyDatasetNhanes_shouldMapFacets() {
         this.dictionaryLoaderController.initialDatabaseHydration(new InitializeRequest(
-                "NHANES",
-                        filePath,
+                columnMetaFilePath,
                         resourcePath + "/columnMetaErrors.csv",
                         true,
                         true));
@@ -102,8 +102,6 @@ class DictionaryLoaderControllerTest {
 
         List<DatasetModel> all = this.datasetService.findAll();
         assertFalse(all.isEmpty());
-        assertEquals(1, all.size());
-        assertEquals("NHANES", all.getFirst().getRef());
 
         Optional<FacetModel> categorical = this.facetService.findByName("categorical");
         Optional<FacetModel> continuous = this.facetService.findByName("continuous");
