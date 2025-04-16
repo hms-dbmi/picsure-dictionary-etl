@@ -16,24 +16,37 @@ import java.util.Optional;
 public class ColumnMetaMapper {
 
     private final CSVParser parser =
-            new CSVParserBuilder().withSeparator(',').withQuoteChar('"').withEscapeChar('\0').build();
+            new CSVParserBuilder().withSeparator(',').withQuoteChar('"').withEscapeChar(CSVParser.NULL_CHARACTER).build();
     private final Logger log = LoggerFactory.getLogger(ColumnMetaMapper.class);
+    private static final String NULL = "null";
 
     public Optional<ColumnMeta> mapCSVRowToColumnMeta(String csvRow) {
-        String[] columns;
         try {
-            columns = parser.parseLine(csvRow);
+            String[] columns = parser.parseLine(csvRow);
+            boolean isCategorical = columns[3].charAt(0) == 't';
             List<String> categoryValues = parseCategoryValuesToList(columns[4]);
-            boolean isCategorical = Boolean.parseBoolean(columns[3]);
-            String conceptPath = columns[0];
+
+            String conceptPath = columns[0].replace("µ", "\\");
             if (isCategorical && categoryValues.size() == 1) {
-                // split the concept path on \\ so we can remove the trailing value.
-                // Example concept path: \demographics\RACE\black\
-                // "black" is actually the categorical value.
-                conceptPath = conceptPath.replace(categoryValues.getFirst() + "\\", "");
+                int lastBackslash = conceptPath.lastIndexOf("\\");
+                int secondLastBackslash = conceptPath.lastIndexOf("\\", lastBackslash - 1);
+                String lastNode = conceptPath.substring(secondLastBackslash + 1).replace("\\", "");
+                if (lastNode.equals(categoryValues.getFirst())) {
+                    // remove the last node from the concept path
+                    conceptPath = conceptPath.substring(0, secondLastBackslash + 1);
+                }
             }
-            // A Thousand Genomes has µ character in concept paths.
-            conceptPath = conceptPath.replace("µ", " ");
+
+            double min = 0;
+            double max = 0;
+            if (!isCategorical) {
+                if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
+                    min = Double.parseDouble(columns[5]);
+                }
+                if (StringUtils.hasLength(columns[6]) && !NULL.equals(columns[6])) {
+                    max = Double.parseDouble(columns[6]);
+                }
+            }
 
             return Optional.of(new ColumnMeta(
                     conceptPath,
@@ -41,20 +54,16 @@ public class ColumnMetaMapper {
                     columns[2],
                     isCategorical,
                     categoryValues,
-                    !isCategorical && StringUtils.hasLength(columns[5]) && !columns[5].equals("null") ?
-                            Double.parseDouble(columns[5]) : 0,
-                    !isCategorical && StringUtils.hasLength(columns[6]) && !columns[6].equals("null") ?
-                            Double.parseDouble(columns[6]) : 0,
+                    min,
+                    max,
                     columns[7],
                     columns[8],
                     columns[9],
                     columns[10]
             ));
-
         } catch (IOException e) {
             log.error("Unable to parse line {}", csvRow);
         }
-
         return Optional.empty();
     }
 
