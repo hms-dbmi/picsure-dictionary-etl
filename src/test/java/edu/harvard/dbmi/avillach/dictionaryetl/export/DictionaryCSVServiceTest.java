@@ -68,7 +68,7 @@ class DictionaryCSVServiceTest {
         ClassPathResource syntheaResource = new ClassPathResource("columnMeta_synthea.csv");
         assertNotNull(syntheaResource);
         String syntheaFilePath = syntheaResource.getFile().toPath().toString();
-        this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, "NHANES", resourcePath +
+        this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath +
                                                                                      "/columnMetaErrors" +
                                                                                      ".csv");
         // make a directory for the generated files
