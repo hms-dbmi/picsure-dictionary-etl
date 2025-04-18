@@ -33,8 +33,8 @@ create table concept_node
     dataset_id        integer                                              not null
         constraint fk_study
             references dataset,
-    name              varchar(512)                                         not null,
-    display           varchar(512)                                         not null,
+    name              varchar                                         not null,
+    display           varchar                                        not null,
     concept_type      varchar(32)    default 'Interior'::character varying not null,
     concept_path      varchar(10000) default 'INVALID'::character varying  not null,
     parent_id         integer

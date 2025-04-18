@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.opencsv.CSVWriter;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
@@ -8,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -26,13 +27,15 @@ public class DictionaryLoaderService {
     private final DatasetService datasetService;
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
+    private final ColumnMetaUtility columnMetaUtility;
 
     @Autowired
-    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource) throws SQLException {
+    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility) throws SQLException {
         this.columnMetaMapper = columnMetaMapper;
         this.datasetService = datasetService;
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
+        this.columnMetaUtility = columnMetaUtility;
 
         int maxConnections = dataSource.getConnection().getMetaData().getMaxConnections();
         this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
@@ -40,7 +43,6 @@ public class DictionaryLoaderService {
 
     private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
-    private volatile DatasetModel userDefinedDataset;
     private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
     private final ExecutorService fixedThreadPool;
@@ -58,7 +60,7 @@ public class DictionaryLoaderService {
      * Uses the columnMeta.csv that is created as part of the HPDS ETL to hydrate the data-dictionary database.
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
      */
-    public String processColumnMetaCSV(String csvPath, String datasetName, String errorFile) throws RuntimeException {
+    public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
         } else if (!errorFile.endsWith(".csv")) {
@@ -67,11 +69,6 @@ public class DictionaryLoaderService {
 
         if (csvPath == null) {
             csvPath = "/opt/local/hpds/columnMeta.csv";
-        }
-
-        if (StringUtils.hasLength(datasetName)) {
-            this.userDefinedDataset = this.datasetService.save(new DatasetModel(datasetName, "", "", ""));
-            log.info("Loaded dataset: {}", datasetName);
         }
 
         this.startProcessing();
@@ -302,13 +299,7 @@ public class DictionaryLoaderService {
     }
 
     protected void createDatabaseEntries(ConceptNode rootConceptNode, ColumnMeta columnMeta) {
-        Long datasetID;
-        if (this.userDefinedDataset != null) {
-            datasetID = this.userDefinedDataset.getDatasetId();
-        } else {
-            datasetID = this.getDatasetRefID(rootConceptNode.getName());
-        }
-
+        Long datasetID = this.getDatasetRefID(rootConceptNode.getName());
         ConceptNode currentNode = rootConceptNode;
         Long parentConceptID = null;
         while (currentNode != null) {
@@ -349,12 +340,18 @@ public class DictionaryLoaderService {
     }
 
     protected void buildValuesMetadata(ColumnMeta columnMeta, Long conceptID) {
-        List<String> values = columnMeta.categoryValues();
-        if (!columnMeta.categorical()) {
-            values = List.of(String.valueOf(columnMeta.min()), String.valueOf(columnMeta.max()));
-        }
+        try {
+            List<String> values = columnMeta.categoryValues();
+            if (!columnMeta.categorical()) {
+                values = List.of(String.valueOf(columnMeta.min()), String.valueOf(columnMeta.max()));
+            }
 
-        this.conceptMetadataService.save(new ConceptMetadataModel(conceptID, "values", values.toString()));
+            String valuesJson = this.columnMetaUtility.listToJson(values);
+            ConceptMetadataModel metadataModel = new ConceptMetadataModel(conceptID, "values", valuesJson);
+            this.conceptMetadataService.save(metadataModel);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Long getDatasetRefID(String datasetRef) {
@@ -364,7 +361,7 @@ public class DictionaryLoaderService {
             if (optDatasetModel.isPresent()) {
                 datasetModel = optDatasetModel.get();
             } else {
-                datasetModel = new DatasetModel(ref, "", "", "");
+                datasetModel = new DatasetModel(ref, "", "","");
                 datasetModel = this.datasetService.save(datasetModel); // Blocking call
             }
 

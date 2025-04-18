@@ -35,11 +35,11 @@ public class ColumnMetaUtility {
         }
     }
 
-    public Float parseMin(String valuesArr) {
+    public Float parseMin(String valuesArr) throws NumberFormatException {
         return parseFromIndex(valuesArr, 0);
     }
 
-    private Float parseFromIndex(String valuesArr, int index) {
+    private Float parseFromIndex(String valuesArr, int index) throws NumberFormatException {
         try {
             JSONArray arr = new JSONArray(valuesArr);
             if (arr.length() != 2) {
@@ -63,7 +63,7 @@ public class ColumnMetaUtility {
         }
     }
 
-    public Float parseMax(String valuesArr) {
+    public Float parseMax(String valuesArr) throws NumberFormatException {
         return parseFromIndex(valuesArr, 1);
     }
 
@@ -87,6 +87,10 @@ public class ColumnMetaUtility {
         }
 
         return metadata;
+    }
+
+    public String listToJson(List<String> list) throws JsonProcessingException {
+        return this.objectMapper.writeValueAsString(list);
     }
 
 }
