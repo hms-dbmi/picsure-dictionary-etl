@@ -181,7 +181,7 @@ public class DatasetController {
     }
 
     @DeleteMapping("/dataset")
-    public ResponseEntity<DatasetModel> deleteDataset(@RequestParam String datasetRef) {
+    public ResponseEntity<String> deleteDataset(@RequestParam String datasetRef) {
 
         Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
 
@@ -221,9 +221,9 @@ public class DatasetController {
                 datasetHarmonizationRepository.delete(dh);
             });
             datasetRepository.delete(datasetData.get());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
         }
     }
 

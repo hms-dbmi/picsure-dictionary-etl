@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.opencsv.CSVParserBuilder;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.StatelessSession;
@@ -66,8 +68,7 @@ public class ConceptController {
     DatasetRepository datasetRepository;
     @Autowired
     FacetConceptRepository facetConceptRepository;
-    @Autowired
-    SessionFactory sessionFactory;
+
     @PersistenceContext
     private EntityManager entityManager;
     private int BATCH_SIZE = 100;
@@ -586,12 +587,25 @@ public class ConceptController {
     @PutMapping("/concept/metadata/stigvars")
     public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate,
             @RequestParam String value) {
-        String[] concepts = conceptsToUpdate.split("\n");
-        System.out.println("concept size:" + concepts.length);
-        int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
-        System.out.println("count:" + upsertCount);
-        return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
-                HttpStatus.CREATED);
+        try {
+            CSVParser csvParser =  new CSVParserBuilder().withEscapeChar('φ').build();
+            List<String> conceptList = new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream().map(line -> {
+                                                  return line[0];
+                                              }).toList();
+
+            String[] concepts = conceptList.toArray(new String[0]);
+            int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
+                   System.out.println("count:" + upsertCount);
+                   return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
+                           HttpStatus.CREATED);
+
+        }
+        catch (IOException | CsvException e) {
+                    return new ResponseEntity<>(
+                            "Error reading conceptstoupdate csv. Error: \n" + e.getStackTrace(),
+                            HttpStatus.BAD_REQUEST);
+                }
+
     }
 
     // gets all fields needed for stigvar identification
