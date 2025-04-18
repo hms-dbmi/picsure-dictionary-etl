@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.DictionaryLoaderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +36,9 @@ class DictionaryCSVServiceTest {
 
     @Autowired
     private DictionaryLoaderService dictionaryLoaderService;
+
+    @Autowired
+    private CSVUtility csvUtility;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -72,7 +76,7 @@ class DictionaryCSVServiceTest {
         // Make the directory
         File generatedFile = new File(generatedFilePath);
         if (generatedFile.exists()) {
-            boolean delete = generatedFile.delete();
+            boolean delete = this.csvUtility.removeDirectoryIfExists(generatedFilePath);
             assertTrue(delete, "Directory should be deleted");
         }
 
@@ -82,7 +86,6 @@ class DictionaryCSVServiceTest {
         Assertions.assertDoesNotThrow(() -> this.dictionaryCSVService.generateFullIngestCSVs(generatedFilePath));
 
         Path generatedFilesPath = Paths.get(resourcePath, "generatedFiles");
-        // verify that all 6 files are created
         Assertions.assertTrue(generatedFilesPath.resolve("Facet.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Facet_Concept_List.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Facet_Categories.csv").toFile().exists());
@@ -90,17 +93,7 @@ class DictionaryCSVServiceTest {
         Assertions.assertTrue(generatedFilesPath.resolve("Consents.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Datasets.csv").toFile().exists());
 
-        // delete all the generated files
-        File[] files = generatedFile.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                boolean deleted = file.delete();
-                assertTrue(deleted, "File should be deleted");
-            }
-        }
-
-        // delete the directory
-        boolean deleted = generatedFile.delete();
+        boolean deleted = this.csvUtility.removeDirectoryIfExists(generatedFilePath);
         assertTrue(deleted, "Directory should be deleted");
     }
 
