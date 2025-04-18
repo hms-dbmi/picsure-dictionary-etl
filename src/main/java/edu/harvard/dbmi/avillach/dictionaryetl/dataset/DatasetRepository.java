@@ -31,4 +31,10 @@ public interface DatasetRepository extends JpaRepository<DatasetModel, Long> {
     """, nativeQuery = true)
     List<String> findValuesNotInRef(@Param("refs") String[] refs);
 
+    @Query(value = "SELECT dataset.dataset_id AS datasetId, dataset.ref AS ref FROM dict.dataset ORDER BY ref", nativeQuery = true)
+    List<DataSetRefDto> getAllDatasetRefsSorted();
+
+    @Query(value = "SELECT dataset.dataset_id AS datasetId, dataset.ref AS ref FROM dict.dataset WHERE ref IN (:datasetRefs) ORDER BY ref", nativeQuery = true)
+    List<DataSetRefDto> getDatasetRefsSorted(String[] datasetRefs);
 }
+
