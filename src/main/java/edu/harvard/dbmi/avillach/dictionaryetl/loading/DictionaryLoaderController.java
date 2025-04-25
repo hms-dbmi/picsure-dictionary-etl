@@ -1,6 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetFacetRefreshService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +24,14 @@ public class DictionaryLoaderController {
     private final FacetService facetService;
     private final DatabaseCleanupUtility databaseCleanupUtility;
     private final ReentrantLock reentrantLock = new ReentrantLock();
+    private final DatasetFacetRefreshService datasetFacetRefreshService;
 
     @Autowired
-    public DictionaryLoaderController(DictionaryLoaderService dictionaryLoaderService, FacetService facetService, DatabaseCleanupUtility databaseCleanupUtility) {
+    public DictionaryLoaderController(DictionaryLoaderService dictionaryLoaderService, FacetService facetService, DatabaseCleanupUtility databaseCleanupUtility, DatasetFacetRefreshService datasetFacetRefreshService) {
         this.dictionaryLoaderService = dictionaryLoaderService;
         this.facetService = facetService;
         this.databaseCleanupUtility = databaseCleanupUtility;
+        this.datasetFacetRefreshService = datasetFacetRefreshService;
     }
 
     /**
@@ -61,6 +64,7 @@ public class DictionaryLoaderController {
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
                 }
+                datasetFacetRefreshService.refreshDatasetFacet();
             } finally {
                 reentrantLock.unlock();
             }

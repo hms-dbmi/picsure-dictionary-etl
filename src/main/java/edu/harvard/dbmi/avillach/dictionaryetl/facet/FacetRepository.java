@@ -47,4 +47,18 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
         WHERE cn.dataset_id = :datasetID
         """, nativeQuery = true)
     List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(@Param("datasetID") Long datasetID);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM dict.facet WHERE facet_category_id = :catId", nativeQuery = true)
+    void deleteAllForCategory(@Param("catId") Long catId);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
+        SELECT :catId, REF, REF, COALESCE(FULL_NAME, '')
+        FROM dict.dataset
+        """, nativeQuery = true)
+    void createFacetForEachDatasetForCategory(@Param("catId") Long catId);
 }
