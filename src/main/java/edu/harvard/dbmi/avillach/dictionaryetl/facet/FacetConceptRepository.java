@@ -52,4 +52,24 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       """, nativeQuery = true)
   void mapConceptDisplayToFacet(@Param("facetID") Long facetID, @Param("display") String display);
 
+  @Modifying
+  @Transactional
+  @Query(value = """
+      DELETE FROM dict.facet__concept_node WHERE facet_id IN (
+          SELECT facet_id FROM dict.facet WHERE facet.facet_category_id = :facetCategoryId
+      );
+      """, nativeQuery = true)
+  void deleteAllForCategory(@Param("facetCategoryId") Long facetCategoryId);
+
+  @Modifying
+  @Transactional
+  @Query(value = """
+      INSERT INTO dict.facet__concept_node (concept_node_id, facet_id)
+      SELECT concept_node.concept_node_id, facet.facet_id
+      FROM dict.concept_node
+          JOIN dict.dataset ON concept_node.dataset_id = dataset.dataset_id
+          JOIN dict.facet ON dataset.REF = facet.NAME
+      WHERE concept_node_id NOT IN (SELECT distinct parent_id FROM dict.concept_node WHERE parent_id IS NOT NULL);
+      """, nativeQuery = true)
+  void createDatasetPairForEachLeafConcept(@Param("facetCategoryId") Long facetCategoryId);
 }
