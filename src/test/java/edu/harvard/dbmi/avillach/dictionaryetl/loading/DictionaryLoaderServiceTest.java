@@ -261,8 +261,6 @@ public class DictionaryLoaderServiceTest {
 
         // find all concepts
         List<ConceptModel> all = this.conceptService.findAll();
-        System.out.println(all);
-
         Optional<ConceptModel> demographics = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(demographics.isPresent());
         assertEquals("laboratory", demographics.get().getName());
