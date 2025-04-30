@@ -441,9 +441,4 @@ public class DictionaryLoaderServiceTest {
         assertEquals(strings.size(), columnMeta.get().categoryValues().size());
     }
 
-    // \Synthea\ACT Demographics\Age\,8,0,false,,0.0,111.0,177730360,178173559,11644,11644
-    // \Nhanes\demographics\AGE\,8,0,false,,0.0,85.0,5082241,5462925,9999,9999
-    // \Synthea\ACT Demographics\Sex\,6,0,true,FemaleµMale,null,null,179145090,179634888,11644,11644
-    // \Nhanes\demographics\SEX\,6,0,true,femaleµmale,null,null,8362778,8783860,9999,9999
-
 }
