@@ -258,21 +258,30 @@ public class DictionaryLoaderServiceTest {
                                                                     " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                     "12069274,5,5").get());
         this.dictionaryLoaderService.processColumnMetas(columnMetas);
+
+        // find all concepts
+        List<ConceptModel> all = this.conceptService.findAll();
+        System.out.println(all);
+
         Optional<ConceptModel> demographics = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(demographics.isPresent());
         assertEquals("laboratory", demographics.get().getName());
 
-        Optional<ConceptModel> demographicsArea =
+        Optional<ConceptModel> acrylamideGHB =
                 this.conceptService.findByConcept("\\laboratory\\acrylamide\\Acrylamide (pmoL per G Hb)\\");
-        assertTrue(demographicsArea.isPresent());
-        assertEquals("Acrylamide (pmoL per G Hb)", demographicsArea.get().getName());
+        assertTrue(acrylamideGHB.isPresent());
+        assertEquals("Acrylamide (pmoL per G Hb)", acrylamideGHB.get().getName());
 
-        List<ConceptMetadataModel> demographicsAreaMeta =
-                this.conceptMetadataService.findByConceptID(demographicsArea.get().getConceptNodeId());
-        assertFalse(demographicsAreaMeta.isEmpty());
-        assertEquals("values", demographicsAreaMeta.getFirst().getKey());
+        Optional<ConceptModel> acrylamide = this.conceptService.findByConcept("\\laboratory\\acrylamide\\");
+        assertTrue(acrylamide.isPresent());
+        assertEquals("acrylamide", acrylamide.get().getName());
+
+        List<ConceptMetadataModel> acrylamideMeta =
+                this.conceptMetadataService.findByConceptID(acrylamideGHB.get().getConceptNodeId());
+        assertFalse(acrylamideMeta.isEmpty());
+        assertEquals("values", acrylamideMeta.getFirst().getKey());
         assertEquals(List.of("100", "101", "103"),
-                this.columnMetaUtility.parseValues(demographicsAreaMeta.getFirst().getValue()));
+                this.columnMetaUtility.parseValues(acrylamideMeta.getFirst().getValue()));
     }
 
     @Test
@@ -431,5 +440,10 @@ public class DictionaryLoaderServiceTest {
         List<String> strings = this.columnMetaUtility.parseValues(conceptMetadataModel.getValue());
         assertEquals(strings.size(), columnMeta.get().categoryValues().size());
     }
+
+    // \Synthea\ACT Demographics\Age\,8,0,false,,0.0,111.0,177730360,178173559,11644,11644
+    // \Nhanes\demographics\AGE\,8,0,false,,0.0,85.0,5082241,5462925,9999,9999
+    // \Synthea\ACT Demographics\Sex\,6,0,true,FemaleµMale,null,null,179145090,179634888,11644,11644
+    // \Nhanes\demographics\SEX\,6,0,true,femaleµmale,null,null,8362778,8783860,9999,9999
 
 }
