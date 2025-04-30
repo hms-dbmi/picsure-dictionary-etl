@@ -303,11 +303,15 @@ public class DictionaryLoaderService {
         ConceptNode currentNode = rootConceptNode;
         Long parentConceptID = null;
         while (currentNode != null) {
-            Long conceptNodeID = createConceptModel(currentNode, columnMeta, datasetID, parentConceptID);
+            Long conceptNodeID = null;
             if (currentNode.getChild() == null) {
                 // We have reached the leaf node. We can create concept metadata
                 buildValuesMetadata(columnMeta, conceptNodeID);
+                conceptNodeID = createConceptModel(currentNode, columnMeta, datasetID, parentConceptID);
+            } else {
+                conceptNodeID = createConceptModel(currentNode, null, datasetID, parentConceptID);
             }
+
 
             currentNode = currentNode.getChild();
             parentConceptID = conceptNodeID;
@@ -316,6 +320,7 @@ public class DictionaryLoaderService {
 
     private Long createConceptModel(ConceptNode currentNode, ColumnMeta columnMeta, Long datasetID,
                                     Long parentConceptID) {
+        log.info("Creating concept model for concept path: {}", currentNode.getName());
         return this.conceptPaths.computeIfAbsent(currentNode.getName(), name -> {
             Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(name);
             ConceptModel conceptModel;
@@ -325,7 +330,7 @@ public class DictionaryLoaderService {
                         datasetID,
                         name,
                         "",
-                        ConceptTypes.CATEGORICAL.conceptType(columnMeta.categorical()),
+                        columnMeta != null ? ConceptTypes.CATEGORICAL.conceptType(columnMeta.categorical()) : null, // will default to `Interior` if null
                         conceptPath,
                         parentConceptID
                 );
