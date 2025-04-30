@@ -4,6 +4,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
@@ -114,15 +115,26 @@ class DictionaryLoaderControllerTest {
         // Verify all concepts have been appropriately mapped
         allConcepts.forEach(concept -> {
             Optional<FacetConceptModel> byFacetAndConcept;
-            if (concept.getConceptType().equals("continuous")) {
+            if (concept.getConceptType().equals(ConceptTypes.CONTINUOUS.getConceptType())) {
                 byFacetAndConcept = this.facetConceptService.findByFacetAndConcept(continuous.get().getFacetId(),
                         concept.getConceptNodeId());
-            } else {
-                byFacetAndConcept = this.facetConceptService.findByFacetAndConcept(categorical.get().getFacetId(),
-                        concept.getConceptNodeId());
+
+                assertTrue(byFacetAndConcept.isPresent());
             }
 
-            assertTrue(byFacetAndConcept.isPresent());
+            if (concept.getConceptType().equals(ConceptTypes.CATEGORICAL.getConceptType())) {
+                byFacetAndConcept = this.facetConceptService.findByFacetAndConcept(categorical.get().getFacetId(),
+                        concept.getConceptNodeId());
+
+                assertTrue(byFacetAndConcept.isPresent());
+            }
+
+            if (concept.getConceptType().equals(ConceptTypes.INTERIOR.getConceptType())) {
+                byFacetAndConcept = this.facetConceptService.findByFacetAndConcept(categorical.get().getFacetId(),
+                        concept.getConceptNodeId());
+
+                assertTrue(byFacetAndConcept.isEmpty());
+            }
         });
     }
 }

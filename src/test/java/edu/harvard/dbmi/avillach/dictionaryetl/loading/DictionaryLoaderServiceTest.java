@@ -2,10 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import org.junit.jupiter.api.BeforeAll;
@@ -261,9 +258,9 @@ public class DictionaryLoaderServiceTest {
 
         // find all concepts
         List<ConceptModel> all = this.conceptService.findAll();
-        Optional<ConceptModel> demographics = this.conceptService.findByConcept("\\laboratory\\");
-        assertTrue(demographics.isPresent());
-        assertEquals("laboratory", demographics.get().getName());
+        Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
+        assertTrue(laboratory.isPresent());
+        assertEquals("laboratory", laboratory.get().getName());
 
         Optional<ConceptModel> acrylamideGHB =
                 this.conceptService.findByConcept("\\laboratory\\acrylamide\\Acrylamide (pmoL per G Hb)\\");
@@ -437,6 +434,38 @@ public class DictionaryLoaderServiceTest {
         ConceptMetadataModel conceptMetadataModel = byConceptID.getFirst();
         List<String> strings = this.columnMetaUtility.parseValues(conceptMetadataModel.getValue());
         assertEquals(strings.size(), columnMeta.get().categoryValues().size());
+    }
+
+    @Test
+    void shouldMarkNonLeafNodesAsIntermediate() {
+        List<ColumnMeta> columnMetas = new ArrayList<>();
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
+                                                                    " Hb)\\100\\,3,0,true,100,null,null,12066159," +
+                                                                    "12067144,2,2").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
+                                                                    " Hb)\\101\\,3,0,true,101,null,null,12067144," +
+                                                                    "12068169,3,3").get());
+        columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
+                                                                    " Hb)\\103\\,3,0,true,103,null,null,12068169," +
+                                                                    "12069274,5,5").get());
+        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+
+        // find all concepts
+        Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
+        assertTrue(laboratory.isPresent());
+        assertEquals("laboratory", laboratory.get().getName());
+        assertEquals(laboratory.get().getConceptType(), ConceptTypes.INTERIOR.getConceptType());
+
+        Optional<ConceptModel> acrylamideGHB =
+                this.conceptService.findByConcept("\\laboratory\\acrylamide\\Acrylamide (pmoL per G Hb)\\");
+        assertTrue(acrylamideGHB.isPresent());
+        assertEquals("Acrylamide (pmoL per G Hb)", acrylamideGHB.get().getName());
+        assertEquals(acrylamideGHB.get().getConceptType(), ConceptTypes.CATEGORICAL.getConceptType());
+
+        Optional<ConceptModel> acrylamide = this.conceptService.findByConcept("\\laboratory\\acrylamide\\");
+        assertTrue(acrylamide.isPresent());
+        assertEquals("acrylamide", acrylamide.get().getName());
+        assertEquals(acrylamide.get().getConceptType(), ConceptTypes.INTERIOR.getConceptType());
     }
 
 }
