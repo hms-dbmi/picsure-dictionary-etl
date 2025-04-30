@@ -319,7 +319,7 @@ public class DictionaryLoaderService {
 
     private Long createConceptModel(ConceptNode currentNode, ColumnMeta columnMeta, Long datasetID,
                                     Long parentConceptID) {
-        log.info("Creating concept model for concept path: {}", currentNode.getName());
+        log.debug("Creating concept model for concept path: {}", currentNode.getName());
         return this.conceptPaths.computeIfAbsent(currentNode.getName(), name -> {
             Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(name);
             ConceptModel conceptModel;
@@ -329,8 +329,7 @@ public class DictionaryLoaderService {
                         datasetID,
                         name,
                         "",
-                         // will default to `Interior` if null
-                        columnMeta != null ? ConceptTypes.CATEGORICAL.conceptType(columnMeta.categorical()) : null,
+                        ConceptTypes.conceptTypeFromColumnMeta(columnMeta),
                         conceptPath,
                         parentConceptID
                 );
