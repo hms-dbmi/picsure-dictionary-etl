@@ -1,8 +1,11 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
+
 public enum ConceptTypes {
     CATEGORICAL("categorical"),
-    CONTINUOUS("continuous");
+    CONTINUOUS("continuous"),
+    INTERIOR("Interior");
     private String conceptType;
 
     ConceptTypes(String conceptType) {
@@ -17,7 +20,15 @@ public enum ConceptTypes {
         this.conceptType = conceptType;
     }
 
-    public String conceptType(boolean isCategorical) {
+    public static String conceptType(boolean isCategorical) {
         return isCategorical ? CATEGORICAL.conceptType : CONTINUOUS.conceptType;
+    }
+
+    public static String conceptTypeFromColumnMeta(ColumnMeta columnMeta) {
+        if (columnMeta == null) {
+            return INTERIOR.conceptType;
+        }
+
+        return conceptType(columnMeta.categorical());
     }
 }
