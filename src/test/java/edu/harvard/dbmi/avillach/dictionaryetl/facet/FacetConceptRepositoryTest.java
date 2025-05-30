@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
@@ -44,6 +46,9 @@ class FacetConceptRepositoryTest {
 
     @Autowired
     DatasetRepository datasetRepository;
+
+    @Autowired
+    ConceptMetadataRepository conceptMetadataRepository;
 
     @Autowired
     FacetConceptRepository subject;
@@ -133,6 +138,11 @@ class FacetConceptRepositoryTest {
         conceptRepository.save(cA);
         conceptRepository.save(cB);
         conceptRepository.save(cC);
+        ConceptMetadataModel metaA = new ConceptMetadataModel(cA.getConceptNodeId(), "min", "0");
+        ConceptMetadataModel metaB = new ConceptMetadataModel(cB.getConceptNodeId(), "values", "[\"a\"]");
+        // no meta for C, expect it not to be added to facet, as it does not show in search
+        conceptMetadataRepository.save(metaA);
+        conceptMetadataRepository.save(metaB);
 
         FacetCategoryModel cat = new FacetCategoryModel("dataset_id", "Datasets", "category");
         facetCategoryRepository.save(cat);
@@ -140,6 +150,6 @@ class FacetConceptRepositoryTest {
 
         subject.createDatasetPairForEachLeafConcept(cat.getFacetCategoryId());
 
-        Assertions.assertEquals(3, subject.findAll().size());
+        Assertions.assertEquals(2, subject.findAll().size());
     }
 }
