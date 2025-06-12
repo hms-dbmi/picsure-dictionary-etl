@@ -337,10 +337,8 @@ public class ConceptController {
                 String key = metaColumnNames.get(j);
                 String value = var[headerMap.get(key)];
                 if (!value.isBlank() && value != null) {
-                    System.out.println("Value for key " + key + " and path " + conceptPath + " is " + value);
                     metaVals.put(key, value);
-                } else
-                    System.out.println("No value for key " + key + " and path " + conceptPath);
+                }
             }
             metaMap.put(conceptPath, metaVals);
 
@@ -388,7 +386,6 @@ public class ConceptController {
                 List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
                 idMetaMap.entrySet().forEach(entry -> {
                     Long id = entry.getKey();
-                    System.out.println("Id: " + id);
                     Map<String, String> metaEntries = entry.getValue();
                     metaEntries.keySet().forEach(metaKey -> {
                         ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
@@ -398,12 +395,10 @@ public class ConceptController {
                         metaList.add(conceptMeta);
                     });
                 });
-                System.out.println("list size " + metaList.size());
                 Query metaQuery = entityManager.createNativeQuery(service.getUpsertConceptMetaBatchQuery(metaList));
                 metaUpdateCount += metaQuery.executeUpdate();
 
                 // clear all dataobjects for next batch
-                System.out.println("batch complete, resetting");
                 conceptModels = new ArrayList<>();
                 parentMap.clear();
                 metaMap.clear();
