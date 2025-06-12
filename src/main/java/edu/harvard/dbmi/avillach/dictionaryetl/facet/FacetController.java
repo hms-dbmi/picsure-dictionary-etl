@@ -249,7 +249,9 @@ public class FacetController {
         facetConceptRepository.mapConceptConceptTypeToFacet(catFacetId, catFacet.getName());
         facetConceptRepository.mapConceptConceptTypeToFacet(conFacetId, conFacet.getName());
 
-        //create/update data_source category and data_source_genomic facet
+   /*
+   TODO ADD TOGGLE FOR BDC OR SPLIT OUT TO NEW CALL
+    //create/update data_source category and data_source_genomic facet
         FacetCategoryModel dataSourceCategoryModel = facetCategoryRepository.findByName("data_source")
                 .orElse(new FacetCategoryModel("data_source", "Data Type",
                         "Associated metadata source"));
@@ -259,7 +261,7 @@ public class FacetController {
                 new FacetModel(dataSourceFacetCategoryId, "data_source_genomic", "Genomic", "Associated with genomic data", null));
         entityManager.persist(genomicSourceFacet);
         Long genomicSourceFacetId = genomicSourceFacet.getFacetId();
-        facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");
+        facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");*/
     
         return new ResponseEntity<>("Successfully updated default facets\n", HttpStatus.OK);
     }
