@@ -452,6 +452,11 @@ public class ConceptController {
             JSONObject var = dictionaryJSON.getJSONObject(i);
             String name = var.getString("name").replaceAll("'", "''").replaceAll("\n", " ");
 
+            if (org.apache.commons.lang3.StringUtils.isBlank(name)) {
+                System.out.println("The name is blank for this json object:" + var);
+                throw new IllegalArgumentException("The name is blank for this json object: " + var);
+            }
+
             String conceptType = "Categorical";
 
             String conceptPath = var.getString("concept_path").replaceAll("'", "''").replaceAll("\n", " ");
