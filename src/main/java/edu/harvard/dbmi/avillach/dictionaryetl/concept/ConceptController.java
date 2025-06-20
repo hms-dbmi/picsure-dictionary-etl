@@ -5,14 +5,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -447,7 +440,7 @@ public class ConceptController {
         int metaUpdateCount = 0;
         final Map<String, JSONObject> conceptMetaMap = new HashMap<String, JSONObject>();
         List<ConceptModel> conceptModels = new ArrayList<>();
-
+        Set<String> conceptPaths = new HashSet<>();
         for (int i = 0; i < varcount; i++) {
             JSONObject var = dictionaryJSON.getJSONObject(i);
 
@@ -475,8 +468,13 @@ public class ConceptController {
             newConceptModel.setDatasetId(datasetId);
             newConceptModel.setDisplay(display);
             newConceptModel.setName(name);
-            conceptModels.add(newConceptModel);
+            if (!conceptMetaMap.containsKey(conceptPath)) {
+                conceptModels.add(newConceptModel);
+            } else {
+                throw new RuntimeException("Duplicate concept path: " + conceptPath + " this will cause a constraint failure. " + conceptModels);
+            }
             conceptMetaMap.put(conceptPath, var.getJSONObject("metadata"));
+
             if ((i % BATCH_SIZE == 0 && i != 0) || i == varcount - 1) {
                 // bulk update concept_node
 
