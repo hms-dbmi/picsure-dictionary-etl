@@ -1,32 +1,22 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.opencsv.CSVParserBuilder;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
-import org.hibernate.Transaction;
-import org.hibernate.transform.AliasToEntityMapResultTransformer;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.csv.ConceptCSVManifest;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.csv.ConceptCSVService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -38,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
@@ -50,28 +39,33 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TupleElement;
 import jakarta.transaction.Transactional;
-import org.springframework.transaction.support.*;
 import org.springframework.util.StringUtils;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api")
 public class ConceptController {
-    @Autowired
-    ConceptRepository conceptRepository;
-    @Autowired
-    ConceptMetadataRepository conceptMetadataRepository;
-    @Autowired
-    DatasetRepository datasetRepository;
-    @Autowired
-    FacetConceptRepository facetConceptRepository;
+
+    private final ConceptRepository conceptRepository;
+    private final ConceptMetadataRepository conceptMetadataRepository;
+    private final DatasetRepository datasetRepository;
+    private final FacetConceptRepository facetConceptRepository;
+    private final ConceptCSVService csvService;
 
     @PersistenceContext
-    private EntityManager entityManager;
-    private int BATCH_SIZE = 100;
+    private final EntityManager entityManager;
+    private final int BATCH_SIZE = 100;
+
+    @Autowired
+    public ConceptController(ConceptRepository conceptRepository, ConceptMetadataRepository conceptMetadataRepository, DatasetRepository datasetRepository, FacetConceptRepository facetConceptRepository, ConceptCSVService csvService, EntityManager entityManager) {
+        this.conceptRepository = conceptRepository;
+        this.conceptMetadataRepository = conceptMetadataRepository;
+        this.datasetRepository = datasetRepository;
+        this.facetConceptRepository = facetConceptRepository;
+        this.csvService = csvService;
+        this.entityManager = entityManager;
+    }
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
@@ -246,6 +240,17 @@ public class ConceptController {
             deleteConcept(concept.getConceptPath());
         });
         return new ResponseEntity<>("removed " + obsoleteConcepts.size() + " obsolete concepts", HttpStatus.OK);
+    }
+
+    @Transactional
+    @PutMapping("/concept/csv2")
+    public ResponseEntity<ConceptCSVManifest> loadConceptsFromCSV(
+        @RequestParam String datasetRef, @RequestBody String input
+    ) {
+        return datasetRepository.findByRef(datasetRef)
+            .map(ds -> csvService.process(ds, input))
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 
     // Bulk insert/update from "ideal ingest" csv.
