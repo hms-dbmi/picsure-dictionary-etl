@@ -5,5 +5,7 @@ import org.springframework.data.util.Pair;
 
 import java.util.List;
 
-public record ConceptAndMetas(ConceptModel concept, List<Pair<String, String>> metas, String parentPath) {
+public record ParsedCSVConceptRow(
+    ConceptModel concept, List<Pair<String, String>> metas, String parentPath,
+    List<FacetsAndPairs> facetsAndPairs) {
 }

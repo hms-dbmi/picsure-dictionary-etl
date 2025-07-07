@@ -75,4 +75,18 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       WHERE (continuous_min.value <> '' OR continuous_max.value <> '' OR categorical_values.value <> '')
       """, nativeQuery = true)
   void createDatasetPairForEachLeafConcept(@Param("facetCategoryId") Long facetCategoryId);
+
+  @Modifying
+  @Transactional
+  @Query(value = """
+      INSERT INTO dict.facet__concept_node (concept_node_id, facet_id)
+      SELECT concept_node.concept_node_id, :facetID
+      FROM dict.concept_node
+          LEFT JOIN dict.concept_node_meta AS continuous_min ON dict.concept_node.concept_node_id = continuous_min.concept_node_id AND continuous_min.KEY = 'min'
+          LEFT JOIN dict.concept_node_meta AS continuous_max ON dict.concept_node.concept_node_id = continuous_max.concept_node_id AND continuous_max.KEY = 'max'
+          LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
+      WHERE concept_node.concept_path_md5 = md5(:conceptPath)
+          AND (continuous_min.value <> '' OR continuous_max.value <> '' OR categorical_values.value <> '')
+  """, nativeQuery = true)
+  void createFacetConceptForFacetAndConceptWithPath(@Param("facetID") Long facetID, @Param("conceptPath") String conceptPath);
 }

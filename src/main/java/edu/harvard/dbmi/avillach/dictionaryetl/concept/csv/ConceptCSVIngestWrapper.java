@@ -10,21 +10,19 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class ConceptCSVIngestWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ConceptCSVIngestWrapper.class);
     private final CSVReader reader;
     private final long datasetId;
-    private int badRows = 0, totalRows = 0 , concepts = 0, metas = 0;
+    private int badRows = 0, totalRows = 0 , concepts = 0, metas = 0, facetCount = 0;
     private boolean headersValid = true;
     private boolean readerHappy = true;
     private boolean rowsRemaining = true;
@@ -33,10 +31,15 @@ public class ConceptCSVIngestWrapper {
     private final Map<String, Integer> headerMap;
     private static final List<String> REQUIRED_HEADERS =
         List.of("dataset_ref", "name", "display", "concept_type", "concept_path", "parent_concept_path");
+    private final boolean includeCategoryFacet, includeConceptTypeFacet;
+    private final List<String> metaFacets;
 
-    public ConceptCSVIngestWrapper(String input, long datasetId) {
+    public ConceptCSVIngestWrapper(String input, long datasetId, boolean includeCategoryFacet, boolean includeConceptTypeFacet, List<String> metaFacets) {
         this.reader = new CSVReader(new StringReader(input));
         this.datasetId = datasetId;
+        this.includeCategoryFacet = includeCategoryFacet;
+        this.includeConceptTypeFacet = includeConceptTypeFacet;
+        this.metaFacets = metaFacets;
         this.headers = validateAndSetHeaders(reader);
         this.metaHeaders = headers.stream()
             .filter(Predicate.not(REQUIRED_HEADERS::contains))
@@ -58,7 +61,7 @@ public class ConceptCSVIngestWrapper {
         }
     }
 
-    public Optional<ConceptAndMetas> next() {
+    public Optional<ParsedCSVConceptRow> next() {
         try {
             String[] row = reader.readNext();
             if (row == null) { // EOF
@@ -79,7 +82,7 @@ public class ConceptCSVIngestWrapper {
         }
     }
 
-    private ConceptAndMetas process(String[] row) {
+    private ParsedCSVConceptRow process(String[] row) {
         String conceptType = row[headerMap.get("concept_type")];
         String conceptPath = row[headerMap.get("concept_path")];
         String name = row[headerMap.get("name")];
@@ -98,8 +101,66 @@ public class ConceptCSVIngestWrapper {
             ))
             .filter(pair -> StringUtils.hasLength(pair.getSecond()))
             .toList();
+        List<FacetsAndPairs> facets = Stream.concat(
+            Stream.of(extractCategoryFacet(conceptPath), extractDataTypeFacet(conceptPath, row)),
+            extractMetadataFacets(conceptPath, row).stream()
+        ).filter(Objects::nonNull).toList();
+        facetCount = Math.max(facets.size(), (int) facets.stream().mapToLong(f -> f.facets().size()).sum());
         totalRows++; concepts++; metas+=pairs.size();
-        return new ConceptAndMetas(concept, pairs, parent);
+        return new ParsedCSVConceptRow(concept, pairs, parent, facets);
+    }
+
+    private FacetsAndPairs extractCategoryFacet(String conceptPath) {
+        List<String> nodes = Arrays.stream(conceptPath.split("\\\\")).filter(StringUtils::hasLength).toList();
+        if (nodes.size() >= 4) {
+            // create nested facet, assign node to child
+            String parent = nodes.get(0);
+            String child = nodes.get(1);
+            return new FacetsAndPairs(
+                "category",
+                List.of(
+                    // append category to name to guarantee uniqueness
+                    new NameDisplayCategory("category_" + parent.toLowerCase().replaceAll(" ", "_"), parent, "category"),
+                    new NameDisplayCategory("category_" + child.toLowerCase().replaceAll(" ", "_"), child, "category")
+                ),
+                conceptPath
+            );
+        }
+        if (nodes.size() == 3) {
+            // create non nested facet
+            String parent = nodes.getFirst();
+            return new FacetsAndPairs(
+                "category",
+                List.of(new NameDisplayCategory("category_" + parent.toLowerCase().replaceAll(" ", "_"), parent, "category")),
+                conceptPath
+            );
+        }
+        return null;
+    }
+
+    private FacetsAndPairs extractDataTypeFacet(String conceptPath, String[] row) {
+        String conceptType = row[headerMap.get("concept_type")];
+        return new FacetsAndPairs(
+            "data_type",
+            List.of(new NameDisplayCategory("data_type_" + conceptType.toLowerCase().replaceAll(" ", "_"), conceptType, "data_type")),
+            conceptPath
+        );
+    }
+
+    private List<FacetsAndPairs> extractMetadataFacets(String conceptPath, String[] row) {
+        return metaFacets.stream()
+            .filter(metaHeaders::contains)
+            .filter(key -> StringUtils.hasLength(row[headerMap.get(key)]))
+            .map(key -> {
+                String value = row[headerMap.get(key)];
+                String category = key.toLowerCase().replaceAll(" ", "_");
+                return new FacetsAndPairs(
+                    category,
+                    List.of(new NameDisplayCategory(category + "_" + value.toLowerCase().replaceAll(" ", "_"), value, "category")),
+                    conceptPath
+                );
+            })
+            .toList();
     }
 
     public boolean shouldContinue() {
@@ -108,7 +169,7 @@ public class ConceptCSVIngestWrapper {
 
     public ConceptCSVManifest createManifest() {
         return new ConceptCSVManifest(
-            totalRows, badRows, concepts, metas,
+            totalRows, badRows, concepts, metas, facetCount,
             !shouldContinue(), headersValid, readerHappy
         );
     }

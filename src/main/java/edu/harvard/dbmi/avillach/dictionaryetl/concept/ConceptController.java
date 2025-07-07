@@ -248,7 +248,7 @@ public class ConceptController {
         @RequestParam String datasetRef, @RequestBody String input
     ) {
         return datasetRepository.findByRef(datasetRef)
-            .map(ds -> csvService.process(ds, input))
+            .map(ds -> csvService.process(ds, input, List.of()))
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
