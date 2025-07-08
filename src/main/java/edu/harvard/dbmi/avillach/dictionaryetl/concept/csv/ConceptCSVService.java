@@ -58,8 +58,8 @@ public class ConceptCSVService {
         }
         if (!batch.isEmpty()) {
             ingestConcepts(batch);
-            ingestFacets(batch);
         }
+        ingestFacets(batch);
         return ingest.createManifest();
     }
 
@@ -67,7 +67,10 @@ public class ConceptCSVService {
         // we don't want to add facets if the row will not show up in search
         // concepts with no values meta are excluded, so filter those out
         rows = rows.stream()
-            .filter(row -> row.metas().stream().filter(meta -> "values".equals(meta.getFirst())).findAny().isEmpty())
+            .filter(row -> row.metas()
+                .stream()
+                .anyMatch(meta -> "values".equals(meta.getFirst()) && StringUtils.hasLength(meta.getSecond()))
+            )
             .toList();
         if (rows.isEmpty()) {
             return;
@@ -112,7 +115,7 @@ public class ConceptCSVService {
             FacetModel current = facetRepository.findByName(facet.name())
                 .orElse(new FacetModel(categoryId, facet.name(), facet.display(), "", null));
             if (parent != null) {
-                current.setParentId(parent.getParentId());
+                current.setParentId(parent.getFacetId());
             }
             parent = facetRepository.save(current);
         }

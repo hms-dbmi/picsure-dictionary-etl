@@ -1,0 +1,1 @@
+These are wrapper classes for JPA entities. I use them in tests because I need custom 

@@ -7,14 +7,13 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.testwrappers.TestConceptMetadataModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.testwrappers.TestConceptModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.testwrappers.TestFacetCategoryModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.testwrappers.TestFacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.testwrappers.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +25,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,9 @@ class ConceptCSVServiceTest {
 
     @Autowired
     private ConceptMetadataRepository conceptMetadataRepository;
+
+    @Autowired
+    private FacetConceptRepository facetConceptRepository;
 
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
@@ -139,10 +145,10 @@ class ConceptCSVServiceTest {
     @Test
     void shouldMakeBaseFacetsAndCategories() {
         String csv = """
-            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,meta2
-            a,n,N,Categorical,\\\\Foo\\\\,,val1,val2
-            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,val2
-            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,val2
+            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,values
+            a,n,N,Categorical,\\\\Foo\\\\,,val1,["val2"]
+            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,["val2"]
+            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
         ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
         csvService.linkConceptNodes();
@@ -166,10 +172,10 @@ class ConceptCSVServiceTest {
     @Test
     void shouldMakeBaseFacetsAndCategoriesAndMetaFacets() {
         String csv = """
-            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,meta2
-            a,n,N,Categorical,\\\\Foo\\\\,,val1,val2
-            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,val2
-            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,val2
+            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,values
+            a,n,N,Categorical,\\\\Foo\\\\,,val1,["val2"]
+            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,["val2"]
+            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
         ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of("meta1"));
         csvService.linkConceptNodes();
@@ -195,11 +201,11 @@ class ConceptCSVServiceTest {
     @Test
     void shouldHandleNestedFacets() {
         String csv = """
-            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,meta2
-            a,n,N,Categorical,\\\\Foo\\\\,,val1,val2
-            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,val2
-            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\,\\\\Foo\\\\Bar\\\\,val1,val2
-            a,n3,N3,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\Qux\\\\,\\\\Foo\\\\Bar\\\\,val1,val2
+            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,values
+            a,n,N,Categorical,\\\\Foo\\\\,,val1,["val2"]
+            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,["val2"]
+            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\,\\\\Foo\\\\Bar\\\\,val1,["val2"]
+            a,n3,N3,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\Qux\\\\,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
         ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
         csvService.linkConceptNodes();
@@ -219,6 +225,70 @@ class ConceptCSVServiceTest {
             new FacetModel(actualFacetCategories.getFirst().getFacetCategoryId(), "category_bar", "Bar", "", null)
         );
         compareFacets(expectedFacets, actualFacets);
+    }
+
+    @Test
+    void shouldAddFacetsToConcepts() {
+        String csv = """
+            dataset_ref,name,display,concept_type,concept_path,parent_concept_path,values
+            a,n,N,Categorical,\\\\Foo\\\\,,
+            a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,
+            a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\,\\\\Foo\\\\Bar\\\\,
+            a,n3,N3,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\Qux\\\\,\\\\Foo\\\\Bar\\\\,["val1"]
+            """;
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        csvService.linkConceptNodes();
+        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(4, 0, 4, 1, 3, true, true, true);
+        Assertions.assertEquals(expectedManifest, actualManifest);
+
+        List<FacetConceptModel> actual = facetConceptRepository.findAll();
+        List<FacetConceptModel> expected = List.of(
+            new FacetConceptModel(2L, conceptRepository.findByConceptPath("\\Foo\\Bar\\Baz\\Qux\\").get().getConceptNodeId()),
+            new FacetConceptModel(3L, conceptRepository.findByConceptPath("\\Foo\\Bar\\Baz\\Qux\\").get().getConceptNodeId())
+        );
+
+        compareFacetConcepts(expected, actual);
+    }
+
+    @Test
+    void shouldDoGICIngest() throws IOException {
+        String csv = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("concepts.csv"));
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(99, 0, 99, 148, 2, true, true, true);
+        Assertions.assertEquals(expectedManifest, actualManifest);
+
+        List<FacetCategoryModel> actualFacetCategories = facetCategoryRepository.findAll();
+        List<FacetCategoryModel> expectedFacetCategories = List.of(
+            new FacetCategoryModel("data_type", "Data Type", ""),
+            new FacetCategoryModel("category", "Category", "")
+        );
+        compareFacetCategories(expectedFacetCategories, actualFacetCategories);
+
+        List<FacetModel> actualFacets = facetRepository.findAll();
+        Long parent = facetRepository.findByName("category_act_lab_test_results").map(FacetModel::getFacetId).orElse(null);
+        List<FacetModel> expectedFacets = List.of(
+            new FacetModel(actualFacetCategories.getFirst().getFacetCategoryId(), "data_type_continuous", "Continuous", "", null),
+            new FacetModel(actualFacetCategories.getFirst().getFacetCategoryId(), "data_type_categorical", "Categorical", "", null),
+            new FacetModel(actualFacetCategories.getLast().getFacetCategoryId(), "category_act_demographics", "ACT Demographics", "", null),
+            new FacetModel(actualFacetCategories.getLast().getFacetCategoryId(), "category_act_medications", "ACT Medications", "", null),
+            new FacetModel(actualFacetCategories.getLast().getFacetCategoryId(), "category_act_lab_test_results", "ACT Lab Test Results", "", null),
+            new FacetModel(actualFacetCategories.getLast().getFacetCategoryId(), "category_virus", "Virus", "", parent)
+        );
+        compareFacets(expectedFacets, actualFacets);
+    }
+
+    private void compareFacetConcepts(
+        List<? extends FacetConceptModel> expected, List<? extends FacetConceptModel> actual
+    ) {
+        expected = expected.stream()
+            .map(TestFacetConceptModel::new)
+            .sorted()
+            .toList();
+        actual = actual.stream()
+            .map(TestFacetConceptModel::new)
+            .sorted()
+            .toList();
+        Assertions.assertEquals(expected, actual);
     }
 
     private void compareFacets(List<? extends FacetModel> expected, List<? extends FacetModel> actual) {
