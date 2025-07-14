@@ -70,7 +70,7 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
           JOIN dict.dataset ON concept_node.dataset_id = dataset.dataset_id
           JOIN dict.facet ON dataset.REF = facet.NAME
           LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
-      WHERE (continuous_min.value <> '' OR continuous_max.value <> '' OR categorical_values.value <> '')
+      WHERE categorical_values.value <> ''
       """, nativeQuery = true)
   void createDatasetPairForEachLeafConcept(@Param("facetCategoryId") Long facetCategoryId);
 
@@ -80,8 +80,9 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       INSERT INTO dict.facet__concept_node (concept_node_id, facet_id)
       SELECT concept_node.concept_node_id, :facetID
       FROM dict.concept_node
-         LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
+          LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
       WHERE concept_node.concept_path_md5 = md5(:conceptPath)
+          AND categorical_values.value <> ''
   """, nativeQuery = true)
   void createFacetConceptForFacetAndConceptWithPath(@Param("facetID") Long facetID, @Param("conceptPath") String conceptPath);
 }

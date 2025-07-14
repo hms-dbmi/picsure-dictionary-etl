@@ -138,7 +138,7 @@ class FacetConceptRepositoryTest {
         conceptRepository.save(cA);
         conceptRepository.save(cB);
         conceptRepository.save(cC);
-        ConceptMetadataModel metaA = new ConceptMetadataModel(cA.getConceptNodeId(), "min", "0");
+        ConceptMetadataModel metaA = new ConceptMetadataModel(cA.getConceptNodeId(), "values", "[0]");
         ConceptMetadataModel metaB = new ConceptMetadataModel(cB.getConceptNodeId(), "values", "[\"a\"]");
         // no meta for C, expect it not to be added to facet, as it does not show in search
         conceptMetadataRepository.save(metaA);
