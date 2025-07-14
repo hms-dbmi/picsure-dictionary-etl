@@ -14,4 +14,4 @@ COPY --from=build target/dictionaryetl-*.jar /dictionaryetl.jar
 
 ENV TZ="US/Eastern"
 
-ENTRYPOINT java -Xmx8192m -jar /dictionaryetl.jar
+ENTRYPOINT java $DEBUG_VARS -Xmx8192m -jar /dictionaryetl.jar
