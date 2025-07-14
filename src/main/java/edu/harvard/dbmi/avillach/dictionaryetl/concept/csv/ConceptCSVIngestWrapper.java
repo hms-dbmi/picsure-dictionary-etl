@@ -111,6 +111,9 @@ public class ConceptCSVIngestWrapper {
     }
 
     private FacetsAndPairs extractCategoryFacet(String conceptPath) {
+        if(!includeCategoryFacet) {
+            return null;
+        }
         List<String> nodes = Arrays.stream(conceptPath.split("\\\\")).filter(StringUtils::hasLength).toList();
         if (nodes.size() >= 4) {
             // create nested facet, assign node to child
@@ -139,6 +142,9 @@ public class ConceptCSVIngestWrapper {
     }
 
     private FacetsAndPairs extractDataTypeFacet(String conceptPath, String[] row) {
+        if (!includeCategoryFacet) {
+            return null;
+        }
         String conceptType = row[headerMap.get("concept_type")];
         return new FacetsAndPairs(
             "data_type",

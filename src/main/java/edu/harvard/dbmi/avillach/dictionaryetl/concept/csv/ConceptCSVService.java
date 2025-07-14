@@ -30,7 +30,7 @@ public class ConceptCSVService {
     private final FacetCategoryRepository facetCategoryRepository;
     private final FacetRepository facetRepository;
     private final FacetConceptRepository facetConceptRepository;
-    private final int BATCH_SIZE = 100;
+    private final int BATCH_SIZE = 1000;
     private final Map<String, String> childParentPairs = new HashMap<>();
 
     public ConceptCSVService(ConceptRepository conceptRepository, ConceptMetadataRepository metadataRepository, FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository, FacetConceptRepository facetConceptRepository) {
@@ -41,8 +41,15 @@ public class ConceptCSVService {
         this.facetConceptRepository = facetConceptRepository;
     }
 
-    public ConceptCSVManifest process(DatasetModel dataset, String csv, List<String> metaFacets) {
-        ConceptCSVIngestWrapper ingest = new ConceptCSVIngestWrapper(csv, dataset.getDatasetId(), true, true, metaFacets);
+    public ConceptCSVManifest process(
+        DatasetModel dataset,
+          String csv,
+          List<String> metaFacets,
+          boolean conceptFacets,
+          boolean categoryFacets
+        ) {
+        ConceptCSVIngestWrapper ingest =
+            new ConceptCSVIngestWrapper(csv, dataset.getDatasetId(), conceptFacets, categoryFacets, metaFacets);
         List<ParsedCSVConceptRow> batch = new ArrayList<>();
         while (ingest.shouldContinue()) {
             Optional<ParsedCSVConceptRow> maybeConcept = ingest.next();

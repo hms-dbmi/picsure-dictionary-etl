@@ -101,9 +101,9 @@ class ConceptCSVServiceTest {
             dataset_ref,name,display,concept_type,concept_path,parent_concept_path,meta1,meta2
             a,n,N,Categorical,\\\\Foo\\\\,,val1,val2
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), false, false);
         csvService.linkConceptNodes();
-        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(1, 0, 1, 2, 1, true, true, true);
+        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(1, 0, 1, 2, 0, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
 
         List<ConceptModel> actualConcepts = conceptRepository.findAll();
@@ -128,9 +128,9 @@ class ConceptCSVServiceTest {
             a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,val2
             a,n2,N2,Categorical,\\\\Foo\\\\Baz\\\\,\\\\Foo\\\\,val1,val2
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), false, false);
         csvService.linkConceptNodes();
-        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(3, 0, 3, 6, 1, true, true, true);
+        ConceptCSVManifest expectedManifest = new ConceptCSVManifest(3, 0, 3, 6, 0, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
 
         List<ConceptModel> actualConcepts = conceptRepository.findAll();
@@ -150,7 +150,7 @@ class ConceptCSVServiceTest {
             a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,["val2"]
             a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), true, true);
         csvService.linkConceptNodes();
         ConceptCSVManifest expectedManifest = new ConceptCSVManifest(3, 0, 3, 6, 2, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
@@ -177,7 +177,7 @@ class ConceptCSVServiceTest {
             a,n1,N1,Categorical,\\\\Foo\\\\Bar\\\\,\\\\Foo\\\\,val1,["val2"]
             a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of("meta1"));
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of("meta1"), true, true);
         csvService.linkConceptNodes();
         ConceptCSVManifest expectedManifest = new ConceptCSVManifest(3, 0, 3, 6, 3, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
@@ -207,7 +207,7 @@ class ConceptCSVServiceTest {
             a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             a,n3,N3,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\Qux\\\\,\\\\Foo\\\\Bar\\\\,val1,["val2"]
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), true, true);
         csvService.linkConceptNodes();
         ConceptCSVManifest expectedManifest = new ConceptCSVManifest(4, 0, 4, 8, 3, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
@@ -236,7 +236,7 @@ class ConceptCSVServiceTest {
             a,n2,N2,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\,\\\\Foo\\\\Bar\\\\,
             a,n3,N3,Categorical,\\\\Foo\\\\Bar\\\\Baz\\\\Qux\\\\,\\\\Foo\\\\Bar\\\\,["val1"]
             """;
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), true, true);
         csvService.linkConceptNodes();
         ConceptCSVManifest expectedManifest = new ConceptCSVManifest(4, 0, 4, 1, 3, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
@@ -253,7 +253,7 @@ class ConceptCSVServiceTest {
     @Test
     void shouldDoGICIngest() throws IOException {
         String csv = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("concepts.csv"));
-        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of());
+        ConceptCSVManifest actualManifest = csvService.process(dataset, csv, List.of(), true, true);
         ConceptCSVManifest expectedManifest = new ConceptCSVManifest(99, 0, 99, 148, 2, true, true, true);
         Assertions.assertEquals(expectedManifest, actualManifest);
 

@@ -243,12 +243,14 @@ public class ConceptController {
     }
 
     @Transactional
-    @PutMapping("/concept/csv2")
+    @PutMapping("/concept/csv_with_facets")
     public ResponseEntity<ConceptCSVManifest> loadConceptsFromCSV(
-        @RequestParam String datasetRef, @RequestBody String input
+        @RequestParam String datasetRef, @RequestBody String csv,
+        @RequestParam(defaultValue = "false") boolean conceptFacets,
+        @RequestParam(defaultValue = "false") boolean categoryFacets
     ) {
         return datasetRepository.findByRef(datasetRef)
-            .map(ds -> csvService.process(ds, input, List.of()))
+            .map(ds -> csvService.process(ds, csv, List.of(), conceptFacets, categoryFacets))
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }

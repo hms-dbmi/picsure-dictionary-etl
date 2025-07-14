@@ -98,7 +98,7 @@ public class DictionaryLoaderServiceTest {
 
     @BeforeEach
     void cleanDatabase() {
-        this.databaseCleanupUtility.truncateTables();
+        this.databaseCleanupUtility.truncateTablesAllTables();
     }
 
     @Test

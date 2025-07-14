@@ -69,8 +69,6 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       FROM dict.concept_node
           JOIN dict.dataset ON concept_node.dataset_id = dataset.dataset_id
           JOIN dict.facet ON dataset.REF = facet.NAME
-          LEFT JOIN dict.concept_node_meta AS continuous_min ON dict.concept_node.concept_node_id = continuous_min.concept_node_id AND continuous_min.KEY = 'min'
-          LEFT JOIN dict.concept_node_meta AS continuous_max ON dict.concept_node.concept_node_id = continuous_max.concept_node_id AND continuous_max.KEY = 'max'
           LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
       WHERE (continuous_min.value <> '' OR continuous_max.value <> '' OR categorical_values.value <> '')
       """, nativeQuery = true)
@@ -82,9 +80,7 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
       INSERT INTO dict.facet__concept_node (concept_node_id, facet_id)
       SELECT concept_node.concept_node_id, :facetID
       FROM dict.concept_node
-          LEFT JOIN dict.concept_node_meta AS continuous_min ON dict.concept_node.concept_node_id = continuous_min.concept_node_id AND continuous_min.KEY = 'min'
-          LEFT JOIN dict.concept_node_meta AS continuous_max ON dict.concept_node.concept_node_id = continuous_max.concept_node_id AND continuous_max.KEY = 'max'
-          LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
+         LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
       WHERE concept_node.concept_path_md5 = md5(:conceptPath)
   """, nativeQuery = true)
   void createFacetConceptForFacetAndConceptWithPath(@Param("facetID") Long facetID, @Param("conceptPath") String conceptPath);
