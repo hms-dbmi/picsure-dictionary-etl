@@ -59,7 +59,6 @@ public class DictionaryLoaderServiceTest {
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
 
-
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
@@ -254,7 +253,10 @@ public class DictionaryLoaderServiceTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
                                                                     " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                     "12069274,5,5").get());
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        Optional<ColumnMeta> processedColumnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(processedColumnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(processedColumnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, processedColumnMeta.get());
 
         // find all concepts
         List<ConceptModel> all = this.conceptService.findAll();
@@ -284,7 +286,10 @@ public class DictionaryLoaderServiceTest {
         List<ColumnMeta> columnMetas = new ArrayList<>();
         String csvRow = "\\questionnaire\\pharmaceutical\\HYDROCHLOROTHIAZIDE__LOSARTAN\\,1,0,true,0µ1,null,null,182782403,182875293,2420,2420";
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(csvRow).get());
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        Optional<ColumnMeta> processedColumnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(processedColumnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(processedColumnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, processedColumnMeta.get());
         Optional<ConceptModel> questionnaire = this.conceptService.findByConcept("\\questionnaire\\");
         assertTrue(questionnaire.isPresent());
         assertEquals("questionnaire", questionnaire.get().getName());
@@ -313,7 +318,10 @@ public class DictionaryLoaderServiceTest {
                                                                     "(umol per L)\\10254\\\",5,0,true,10254,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        Optional<ColumnMeta> processedColumnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(processedColumnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(processedColumnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, processedColumnMeta.get());
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -342,7 +350,10 @@ public class DictionaryLoaderServiceTest {
                                                                     "(umol per L)\\76543\\\",5,0,true,76543,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        Optional<ColumnMeta> columnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(columnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(columnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, columnMeta.get());
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -371,7 +382,10 @@ public class DictionaryLoaderServiceTest {
                                                                     "(umol per L)\\76543\\\",5,0,true,76543,null," +
                                                                     "null,29178026,29179443,12,12").get());
 
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        Optional<ColumnMeta> columnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(columnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(columnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, columnMeta.get());
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -415,7 +429,10 @@ public class DictionaryLoaderServiceTest {
         assertTrue(columnMeta.isPresent());
         assertEquals("\\1000Genomes\\open_access-1000Genomes\\BIOSAMPLE ID\\", columnMeta.get().name());
 
-        this.dictionaryLoaderService.processColumnMetas(List.of(columnMeta.get()));
+        Optional<ColumnMeta> processedColumnMeta = this.dictionaryLoaderService.processColumnMetas(List.of(columnMeta.get()));
+        assertTrue(processedColumnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(processedColumnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, processedColumnMeta.get());
 
         // get the column meta from the dictionary
         List<ConceptModel> all = this.conceptService.findAll();
@@ -448,8 +465,10 @@ public class DictionaryLoaderServiceTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
                                                                     " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                     "12069274,5,5").get());
-        this.dictionaryLoaderService.processColumnMetas(columnMetas);
-
+        Optional<ColumnMeta> processedColumnMeta = this.dictionaryLoaderService.processColumnMetas(columnMetas);
+        assertTrue(processedColumnMeta.isPresent());
+        ConceptNode rootConceptNode = this.dictionaryLoaderService.buildConceptHierarchy(processedColumnMeta.get().name());
+        this.dictionaryLoaderService.createDatabaseEntries(rootConceptNode, processedColumnMeta.get());
         // find all concepts
         Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(laboratory.isPresent());
