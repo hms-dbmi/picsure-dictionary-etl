@@ -1,6 +1,5 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.metadata.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,16 +10,16 @@ import java.util.List;
 /**
  * Class representing a study's metadata, containing a list of JsonConcepts.
  */
-public class StudyMetadata {
+public class JsonStudyMetadata {
 
     private List<JsonConcept> concepts;
 
-    public StudyMetadata() {
+    public JsonStudyMetadata() {
         // Default constructor for Jackson
         this.concepts = new ArrayList<>();
     }
 
-    public StudyMetadata(List<JsonConcept> concepts) {
+    public JsonStudyMetadata(List<JsonConcept> concepts) {
         this.concepts = concepts;
     }
 
@@ -121,9 +120,9 @@ public class StudyMetadata {
      * @return the StudyMetadata object
      * @throws JsonProcessingException if deserialization fails
      */
-    public static StudyMetadata fromJson(String json) throws JsonProcessingException {
+    public static JsonStudyMetadata fromJson(String json) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         JsonConcept[] concepts = mapper.readValue(json, JsonConcept[].class);
-        return new StudyMetadata(List.of(concepts));
+        return new JsonStudyMetadata(List.of(concepts));
     }
 }

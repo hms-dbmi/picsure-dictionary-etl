@@ -39,7 +39,7 @@ class StudyMetadataTest {
                 "  }\n" +
                 "]";
 
-        StudyMetadata studyMetadata = StudyMetadata.fromJson(json);
+        JsonStudyMetadata studyMetadata = JsonStudyMetadata.fromJson(json);
 
         assertNotNull(studyMetadata);
         assertEquals(2, studyMetadata.getConcepts().size());
@@ -74,13 +74,13 @@ class StudyMetadataTest {
         concepts.add(concept1);
         concepts.add(concept2);
         
-        StudyMetadata studyMetadata = new StudyMetadata(concepts);
+        JsonStudyMetadata studyMetadata = new JsonStudyMetadata(concepts);
         
         // Serialize to JSON
         String json = studyMetadata.toJson();
         
         // Deserialize to verify
-        StudyMetadata deserializedStudyMetadata = StudyMetadata.fromJson(json);
+        JsonStudyMetadata deserializedStudyMetadata = JsonStudyMetadata.fromJson(json);
         
         assertEquals(2, deserializedStudyMetadata.getConcepts().size());
         
@@ -113,7 +113,7 @@ class StudyMetadataTest {
                 "  }\n" +
                 "]";
         
-        assertTrue(StudyMetadata.validateJson(validJson));
+        assertTrue(JsonStudyMetadata.validateJson(validJson));
         
         // Invalid JSON - missing required field
         String invalidJson1 = "[\n" +
@@ -128,7 +128,7 @@ class StudyMetadataTest {
                 "  }\n" +
                 "]";
         
-        assertFalse(StudyMetadata.validateJson(invalidJson1));
+        assertFalse(JsonStudyMetadata.validateJson(invalidJson1));
         
         // Invalid JSON - missing required metadata field
         String invalidJson2 = "[\n" +
@@ -143,7 +143,7 @@ class StudyMetadataTest {
                 "  }\n" +
                 "]";
         
-        assertFalse(StudyMetadata.validateJson(invalidJson2));
+        assertFalse(JsonStudyMetadata.validateJson(invalidJson2));
         
         // Invalid JSON - not an array
         String invalidJson3 = "{\n" +
@@ -157,7 +157,7 @@ class StudyMetadataTest {
                 "  }\n" +
                 "}";
         
-        assertFalse(StudyMetadata.validateJson(invalidJson3));
+        assertFalse(JsonStudyMetadata.validateJson(invalidJson3));
     }
 
     @Test
@@ -165,28 +165,28 @@ class StudyMetadataTest {
         // Valid study metadata
         JsonConceptMetadata validMetadata = new JsonConceptMetadata("Description", "drs-uri");
         JsonConcept validConcept = new JsonConcept("dataset", "name", "display", "\\path\\", validMetadata);
-        StudyMetadata validStudyMetadata = new StudyMetadata(List.of(validConcept));
+        JsonStudyMetadata validStudyMetadata = new JsonStudyMetadata(List.of(validConcept));
         
         assertTrue(validStudyMetadata.isValid());
         
         // Invalid - empty concepts
-        StudyMetadata emptyStudyMetadata = new StudyMetadata(new ArrayList<>());
+        JsonStudyMetadata emptyStudyMetadata = new JsonStudyMetadata(new ArrayList<>());
         assertFalse(emptyStudyMetadata.isValid());
         
         // Invalid - null metadata
         JsonConcept invalidConcept1 = new JsonConcept("dataset", "name", "display", "\\path\\", null);
-        StudyMetadata invalidStudyMetadata1 = new StudyMetadata(List.of(invalidConcept1));
+        JsonStudyMetadata invalidStudyMetadata1 = new JsonStudyMetadata(List.of(invalidConcept1));
         assertFalse(invalidStudyMetadata1.isValid());
         
         // Invalid - null required field in concept
         JsonConcept invalidConcept2 = new JsonConcept(null, "name", "display", "\\path\\", validMetadata);
-        StudyMetadata invalidStudyMetadata2 = new StudyMetadata(List.of(invalidConcept2));
+        JsonStudyMetadata invalidStudyMetadata2 = new JsonStudyMetadata(List.of(invalidConcept2));
         assertFalse(invalidStudyMetadata2.isValid());
         
         // Invalid - null required field in metadata
         JsonConceptMetadata invalidMetadata = new JsonConceptMetadata(null, "drs-uri");
         JsonConcept invalidConcept3 = new JsonConcept("dataset", "name", "display", "\\path\\", invalidMetadata);
-        StudyMetadata invalidStudyMetadata3 = new StudyMetadata(List.of(invalidConcept3));
+        JsonStudyMetadata invalidStudyMetadata3 = new JsonStudyMetadata(List.of(invalidConcept3));
         assertFalse(invalidStudyMetadata3.isValid());
     }
 }
