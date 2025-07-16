@@ -20,6 +20,7 @@ public class CompliantMetadataService extends AbstractColumnMetaProcessor {
     @Override
     protected void startProcessing() {
         // TODO: Implement compliant dictionary processing
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
