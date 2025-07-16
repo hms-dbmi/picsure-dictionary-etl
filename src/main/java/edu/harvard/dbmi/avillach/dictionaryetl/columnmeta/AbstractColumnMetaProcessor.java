@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 @Component
@@ -98,19 +99,19 @@ public abstract class AbstractColumnMetaProcessor {
         this.processGroupedColumnMetas();
         this.startProcessing();
         try (BufferedReader br = new BufferedReader(new FileReader(csvPath))) {
-            final String[] previousConceptPath = {""};
+            AtomicReference<String> previousConceptPath = new AtomicReference<>("");
             List<ColumnMeta> columnMetas = new ArrayList<>();
             Stream<String> lines = br.lines();
             lines.forEach(line -> {
                 Optional<ColumnMeta> columnMeta = this.columnMetaMapper.mapCSVRowToColumnMeta(line);
                 if (columnMeta.isPresent()) {
-                    if (!previousConceptPath[0].equals(columnMeta.get().name())) {
+                    if (!previousConceptPath.get().equals(columnMeta.get().name())) {
                         // We have reached a new concept path. We can add this list of column metas to the queue
                         // and start processing the next set of concept paths.
                         if (!columnMetas.isEmpty()) {
                             readyToLoadMetadata.add(new ArrayList<>(columnMetas));
                             columnMetas.clear();
-                            previousConceptPath[0] = columnMeta.get().name();
+                            previousConceptPath.set(columnMeta.get().name());
                             this.task.getAndAdd(1);
                         }
                     }
