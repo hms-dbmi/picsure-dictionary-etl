@@ -28,16 +28,10 @@ public class DBGAPDataDictionaryModel {
     private String description;
     private List<Variable> variables;
 
-    /**
-     * Default constructor
-     */
     public DBGAPDataDictionaryModel() {
         this.variables = new ArrayList<>();
     }
 
-    /**
-     * Constructor with all fields
-     */
     public DBGAPDataDictionaryModel(String id, String studyId, String participantSet, String dateCreated,
                                     String description, List<Variable> variables) {
         this.id = id;
@@ -146,7 +140,6 @@ public class DBGAPDataDictionaryModel {
                 conceptMetadata.setAdditionalProperty("values", variable.getValues());
             }
 
-            // Create the concept
             JsonConcept concept = new JsonConcept(
                 id,                  // dataset_ref
                 variable.getName(),  // name
@@ -232,8 +225,6 @@ public class DBGAPDataDictionaryModel {
             this.type = type;
             this.values = values;
         }
-
-        // Getters and setters
 
         public String getId() {
             return id;
