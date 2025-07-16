@@ -1,7 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.metadata.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -10,8 +9,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StudyMetadataTest {
-
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
     void testDeserializeStudyMetadata() throws JsonProcessingException {
