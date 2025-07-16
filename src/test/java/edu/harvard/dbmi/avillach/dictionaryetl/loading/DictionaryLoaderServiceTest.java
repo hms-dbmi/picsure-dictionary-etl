@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.columnmeta.ColumnMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.columnmeta.ColumnMetaMapper;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;

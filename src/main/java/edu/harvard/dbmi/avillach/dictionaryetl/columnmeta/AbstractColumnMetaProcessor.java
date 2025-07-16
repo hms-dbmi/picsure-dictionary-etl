@@ -1,15 +1,10 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.columnmeta;
 
 import com.opencsv.CSVWriter;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMetaMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;

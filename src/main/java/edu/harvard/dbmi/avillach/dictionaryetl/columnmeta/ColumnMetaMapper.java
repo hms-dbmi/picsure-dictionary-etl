@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.columnmeta;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
