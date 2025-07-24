@@ -60,6 +60,7 @@ public class ConceptCSVService {
             batch.add(conceptAndMetas);
             if (batch.size() >= BATCH_SIZE) {
                 ingestConcepts(batch);
+                ingestFacets(batch);
                 batch = new ArrayList<>();
             }
         }
