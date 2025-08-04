@@ -117,8 +117,8 @@ public class ConceptCSVIngestWrapper {
         List<String> nodes = Arrays.stream(conceptPath.split("\\\\")).filter(StringUtils::hasLength).toList();
         if (nodes.size() >= 4) {
             // create nested facet, assign node to child
-            String parent = nodes.get(0);
-            String child = nodes.get(1);
+            String parent = nodes.get(0).replaceAll("([\\[\\]])", "");
+            String child = nodes.get(1).replaceAll("([\\[\\]])", "");
             return new FacetsAndPairs(
                 "category",
                 List.of(
@@ -131,7 +131,7 @@ public class ConceptCSVIngestWrapper {
         }
         if (nodes.size() == 3) {
             // create non nested facet
-            String parent = nodes.getFirst();
+            String parent = nodes.getFirst().replaceAll("([\\[\\]])", "");
             return new FacetsAndPairs(
                 "category",
                 List.of(new NameDisplayCategory("category_" + parent.toLowerCase().replaceAll(" ", "_"), parent, "category")),

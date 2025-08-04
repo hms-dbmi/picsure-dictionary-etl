@@ -66,8 +66,8 @@ public class ConceptCSVService {
         }
         if (!batch.isEmpty()) {
             ingestConcepts(batch);
+            ingestFacets(batch);
         }
-        ingestFacets(batch);
         return ingest.createManifest();
     }
 
