@@ -17,6 +17,8 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
 
     Optional<FacetModel> findByName(String name);
 
+    boolean existsByName(String name);
+
     @Modifying
     @Transactional
     @Query(value = """

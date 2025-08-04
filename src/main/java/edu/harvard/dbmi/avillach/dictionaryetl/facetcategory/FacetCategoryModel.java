@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facetcategory;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "facet_category")
 public class FacetCategoryModel {

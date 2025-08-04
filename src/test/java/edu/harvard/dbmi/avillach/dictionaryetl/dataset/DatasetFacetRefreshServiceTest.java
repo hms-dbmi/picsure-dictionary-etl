@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
@@ -51,6 +53,9 @@ class DatasetFacetRefreshServiceTest {
 
     @Autowired
     FacetConceptRepository facetConceptRepository;
+
+    @Autowired
+    ConceptMetadataRepository conceptMetadataRepository;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -108,6 +113,10 @@ class DatasetFacetRefreshServiceTest {
         conceptRepository.save(cA);
         conceptRepository.save(cB);
         conceptRepository.save(cC);
+        List<ConceptMetadataModel> conceptMetas = Stream.of(cA, cB, cC)
+            .map(c -> new ConceptMetadataModel(c.getConceptNodeId(), "values", "[]"))
+            .toList();
+        conceptMetadataRepository.saveAll(conceptMetas);
 
         subject.refreshDatasetFacet();
 

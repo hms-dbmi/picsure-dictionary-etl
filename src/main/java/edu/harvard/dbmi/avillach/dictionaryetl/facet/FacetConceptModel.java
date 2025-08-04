@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "facet__concept_node")
 public class FacetConceptModel {

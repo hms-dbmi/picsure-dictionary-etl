@@ -1,32 +1,22 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.opencsv.CSVParserBuilder;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
-import org.hibernate.Transaction;
-import org.hibernate.transform.AliasToEntityMapResultTransformer;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.csv.ConceptCSVManifest;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.csv.ConceptCSVService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -38,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
@@ -50,28 +39,33 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TupleElement;
 import jakarta.transaction.Transactional;
-import org.springframework.transaction.support.*;
 import org.springframework.util.StringUtils;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api")
 public class ConceptController {
-    @Autowired
-    ConceptRepository conceptRepository;
-    @Autowired
-    ConceptMetadataRepository conceptMetadataRepository;
-    @Autowired
-    DatasetRepository datasetRepository;
-    @Autowired
-    FacetConceptRepository facetConceptRepository;
+
+    private final ConceptRepository conceptRepository;
+    private final ConceptMetadataRepository conceptMetadataRepository;
+    private final DatasetRepository datasetRepository;
+    private final FacetConceptRepository facetConceptRepository;
+    private final ConceptCSVService csvService;
 
     @PersistenceContext
-    private EntityManager entityManager;
-    private int BATCH_SIZE = 100;
+    private final EntityManager entityManager;
+    private final int BATCH_SIZE = 100;
+
+    @Autowired
+    public ConceptController(ConceptRepository conceptRepository, ConceptMetadataRepository conceptMetadataRepository, DatasetRepository datasetRepository, FacetConceptRepository facetConceptRepository, ConceptCSVService csvService, EntityManager entityManager) {
+        this.conceptRepository = conceptRepository;
+        this.conceptMetadataRepository = conceptMetadataRepository;
+        this.datasetRepository = datasetRepository;
+        this.facetConceptRepository = facetConceptRepository;
+        this.csvService = csvService;
+        this.entityManager = entityManager;
+    }
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
@@ -248,6 +242,19 @@ public class ConceptController {
         return new ResponseEntity<>("removed " + obsoleteConcepts.size() + " obsolete concepts", HttpStatus.OK);
     }
 
+    @Transactional
+    @PutMapping("/concept/csv_with_facets")
+    public ResponseEntity<ConceptCSVManifest> loadConceptsFromCSV(
+        @RequestParam String datasetRef, @RequestBody String csv,
+        @RequestParam(defaultValue = "false") boolean conceptFacets,
+        @RequestParam(defaultValue = "false") boolean categoryFacets
+    ) {
+        return datasetRepository.findByRef(datasetRef)
+            .map(ds -> csvService.process(ds, csv, List.of(), conceptFacets, categoryFacets))
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     // Bulk insert/update from "ideal ingest" csv.
     // Expected CSV Header:
     // dataset_ref concept name display name concept_type concept_path
@@ -337,10 +344,8 @@ public class ConceptController {
                 String key = metaColumnNames.get(j);
                 String value = var[headerMap.get(key)];
                 if (!value.isBlank() && value != null) {
-                    System.out.println("Value for key " + key + " and path " + conceptPath + " is " + value);
                     metaVals.put(key, value);
-                } else
-                    System.out.println("No value for key " + key + " and path " + conceptPath);
+                }
             }
             metaMap.put(conceptPath, metaVals);
 
@@ -388,7 +393,6 @@ public class ConceptController {
                 List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
                 idMetaMap.entrySet().forEach(entry -> {
                     Long id = entry.getKey();
-                    System.out.println("Id: " + id);
                     Map<String, String> metaEntries = entry.getValue();
                     metaEntries.keySet().forEach(metaKey -> {
                         ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
@@ -398,12 +402,10 @@ public class ConceptController {
                         metaList.add(conceptMeta);
                     });
                 });
-                System.out.println("list size " + metaList.size());
                 Query metaQuery = entityManager.createNativeQuery(service.getUpsertConceptMetaBatchQuery(metaList));
                 metaUpdateCount += metaQuery.executeUpdate();
 
                 // clear all dataobjects for next batch
-                System.out.println("batch complete, resetting");
                 conceptModels = new ArrayList<>();
                 parentMap.clear();
                 metaMap.clear();

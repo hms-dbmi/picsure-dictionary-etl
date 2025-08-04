@@ -13,28 +13,34 @@ public class DatabaseCleanupUtility {
 
     @Transactional
     public void truncateTables() {
-        entityManager.createNativeQuery("TRUNCATE TABLE " +
-                                        " dict.concept_node_meta," +
-                                        " dict.concept_node," +
-                                        " dict.dataset " +
-                                        "CASCADE").executeUpdate();
+        entityManager.createNativeQuery("""
+            TRUNCATE TABLE\s
+                dict.concept_node_meta,
+                dict.concept_node,
+                dict.dataset\s
+            CASCADE).executeUpdate();
+            """);
     }
 
 
     @Transactional
     public void truncateTablesAllTables() {
-        String sql = "DO $$ \n" +
-                     "DECLARE \n" +
-                     "    table_name TEXT; \n" +
-                     "BEGIN \n" +
-                     "    FOR table_name IN \n" +
-                     "        SELECT tablename \n" +
-                     "        FROM pg_tables \n" +
-                     "        WHERE schemaname = 'dict' \n" +
-                     "    LOOP \n" +
-                     "        EXECUTE 'TRUNCATE TABLE dict.' || table_name || ' CASCADE'; \n" +
-                     "    END LOOP; \n" +
-                     "END $$;";
+        String sql =
+            """
+                DO $$
+                DECLARE
+                    table_name TEXT;
+                BEGIN
+                    FOR table_name IN
+                        SELECT tablename
+                        FROM pg_tables
+                        WHERE schemaname = 'dict'
+                           AND tablename NOT IN ('update_info')
+                    LOOP
+                        EXECUTE 'TRUNCATE TABLE dict.' || table_name || ' CASCADE';
+                    END LOOP;
+                END $$;;
+            """;
 
         entityManager.createNativeQuery(sql).executeUpdate();
     }

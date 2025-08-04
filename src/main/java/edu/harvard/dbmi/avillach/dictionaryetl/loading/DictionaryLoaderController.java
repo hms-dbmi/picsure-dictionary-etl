@@ -34,6 +34,19 @@ public class DictionaryLoaderController {
         this.datasetFacetRefreshService = datasetFacetRefreshService;
     }
 
+    @GetMapping("/clear")
+    public ResponseEntity<String> clearDatabase() {
+        if (this.reentrantLock.tryLock()) {
+            log.info("Clearing all tables");
+            databaseCleanupUtility.truncateTablesAllTables();
+            reentrantLock.unlock();
+            return ResponseEntity.ok().build();
+        } else {
+            log.info("ETL already running");
+            return ResponseEntity.status(423).body("ETL locked, something else is running");
+        }
+    }
+
     /**
      * This method is responsible for loading all data from a provided columnMeta.csv into the data dictionary
      * SQL database. It will return a response based on the results. If there are errors during the transform process

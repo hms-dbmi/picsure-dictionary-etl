@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "concept_node_meta")
 public class ConceptMetadataModel {
