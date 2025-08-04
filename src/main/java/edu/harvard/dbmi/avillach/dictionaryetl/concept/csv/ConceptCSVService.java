@@ -109,7 +109,14 @@ public class ConceptCSVService {
         for (ParsedCSVConceptRow row : rows) {
             for (FacetsAndPairs f : row.facetsAndPairs()) {// get the last facet, as that is the leaf that should be associated with the concept
                 Long facetId = facets.get(f.facets().getLast().name()).getFacetId();
-                facetConceptRepository.createFacetConceptForFacetAndConceptWithPath(facetId, f.conceptPath());
+                try {
+                    facetConceptRepository.createFacetConceptForFacetAndConceptWithPath(facetId, f.conceptPath());
+                } catch (Exception e) {
+                    log.warn(
+                        "Error adding facet concept for facet {} and concept {}",
+                        f.facets().getLast().name(), f.conceptPath()
+                    );
+                }
                 pairCount++;
             }
         }
