@@ -129,7 +129,7 @@ public class ConceptCSVIngestWrapper {
                 conceptPath
             );
         }
-        if (nodes.size() == 3) {
+        else {
             // create non nested facet
             String parent = nodes.getFirst().replaceAll("([\\[\\]])", "");
             return new FacetsAndPairs(
@@ -138,7 +138,6 @@ public class ConceptCSVIngestWrapper {
                 conceptPath
             );
         }
-        return null;
     }
 
     private FacetsAndPairs extractDataTypeFacet(String conceptPath, String[] row) {
