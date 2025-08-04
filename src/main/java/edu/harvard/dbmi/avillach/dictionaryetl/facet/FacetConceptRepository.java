@@ -83,6 +83,7 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
           LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
       WHERE concept_node.concept_path_md5 = md5(:conceptPath)
           AND categorical_values.value <> ''
+      ON CONFLICT DO NOTHING
   """, nativeQuery = true)
   void createFacetConceptForFacetAndConceptWithPath(@Param("facetID") Long facetID, @Param("conceptPath") String conceptPath);
 }
