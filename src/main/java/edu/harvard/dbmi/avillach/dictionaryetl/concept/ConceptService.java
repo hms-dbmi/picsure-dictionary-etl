@@ -1,21 +1,25 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import org.apache.commons.lang3.math.NumberUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Tuple;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -26,6 +30,11 @@ public class ConceptService {
 
         private final ConceptRepository conceptRepository;
 
+        @PersistenceContext
+        private EntityManager entityManager;
+
+        @Autowired
+        DatasetRepository datasetRepository;
         @Autowired
         public ConceptService(ConceptRepository conceptRepository) {
                 this.conceptRepository = conceptRepository;
@@ -52,6 +61,168 @@ public class ConceptService {
 
         public void setDataSource(DataSource dataSource) {
                 this.jdbcTemplate = new JdbcTemplate(dataSource);
+        }
+
+        @Transactional
+        public ResponseEntity<Object> updateConceptsFromCSV(String datasetRef, String input, int batch_size){
+                      Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+                      Long datasetId;
+                      if (datasetData.isPresent()) {
+                          datasetId = datasetData.get().getDatasetId();
+                      } else {
+                          return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
+                      }
+                      List<String[]> concepts = new ArrayList<>();
+                      Map<String, Integer> headerMap = new HashMap<String, Integer>();
+                      List<String> metaColumnNames = new ArrayList<>();
+                      try (CSVReader reader = new CSVReader(new StringReader(input))) {
+                          String[] header = reader.readNext();
+                          headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
+                          String[] coreConceptHeaders = { "dataset_ref", "name", "display", "concept_type", "concept_path",
+                                  "parent_concept_path" };
+                          metaColumnNames = CSVUtility.getExtraColumns(coreConceptHeaders, headerMap);
+                          if (metaColumnNames == null){
+                              return new ResponseEntity<>(
+                                                  "ERROR: Input headers are not as expected for " + datasetRef + ". \n" +
+                                                  "Verify that the following headers are present in the input csv file: \"dataset_ref\", \"name\", \"display\", \"concept_type\", \"concept_path\", \"parent_concept_path\""
+                                                  ,
+                                                  HttpStatus.BAD_REQUEST);
+                          }
+
+                          concepts = reader.readAll();
+                          concepts.remove(header);
+                          reader.close();
+                      } catch (IOException | CsvException e) {
+                          return new ResponseEntity<>(
+                                  "Error reading ingestion csv for " + datasetRef + ". Error: \n" + e.getStackTrace(),
+                                  HttpStatus.BAD_REQUEST);
+                      }
+                      if (concepts.isEmpty()) {
+                          return new ResponseEntity<>(
+                                  "No csv records found in " + datasetRef + "  input file.",
+                                  HttpStatus.BAD_REQUEST);
+                      }
+
+                      int varcount = concepts.size();
+                      System.out.println("varcount: " + varcount);
+                      int conceptUpdateCount = 0;
+                      int metaUpdateCount = 0;
+                      List<ConceptModel> conceptModels = new ArrayList<>();
+                      // map of concept path -> key/value map
+                      Map<String, Map<String, String>> metaMap = new HashMap<>();
+                      Map<String, String> parentMap = new HashMap<>();
+                      for (int i = 0; i < varcount; i++) {
+                          String[] var = concepts.get(i);
+                          if (var.length < headerMap.size())
+                              continue;
+
+                          String conceptType = var[headerMap.get("concept_type")];
+                          String conceptPath = var[headerMap.get("concept_path")].replaceAll("'",
+                                  "''");
+                          String name = var[headerMap.get("name")];
+                          if (name.isEmpty()) {
+                              String[] nodes = conceptPath.split("\\\\");
+                              name = nodes[nodes.length - 1];
+                          }
+                          String display = var[headerMap.get("display")];
+                          if (display.isEmpty())
+                              display = name;
+                          String parentConceptPath = var[headerMap.get("parent_concept_path")].replaceAll("'",
+                                  "''");
+                          if (!parentConceptPath.isEmpty())
+                              parentMap.put(conceptPath, parentConceptPath);
+                          ConceptModel newConceptModel;
+                          newConceptModel = new ConceptModel(conceptPath);
+                          newConceptModel.setConceptType(conceptType);
+                          newConceptModel.setDatasetId(datasetId);
+                          newConceptModel.setDisplay(display);
+                          newConceptModel.setName(name);
+                          conceptModels.add(newConceptModel);
+                          Map<String, String> metaVals = new HashMap<>();
+                          for (int j = 0; j < metaColumnNames.size(); j++) {
+                              String key = metaColumnNames.get(j);
+                              String value = var[headerMap.get(key)];
+                              if (!value.isBlank()) {
+                                  metaVals.put(key, value);
+                              }
+                          }
+                          metaMap.put(conceptPath, metaVals);
+
+                          if ((i % batch_size == 0 && i != 0) || i == varcount - 1) {
+
+                              // bulk update concept_node
+                              Query conceptQuery = entityManager.createNativeQuery(getUpsertConceptBatchQuery(conceptModels));
+
+                              conceptUpdateCount += conceptQuery.executeUpdate();
+
+                              // fetch updated concept node ids corresponding to concept paths
+                              Map<String, Long> metaConceptIdMap = new HashMap<>();
+
+                              List<Object[]> metaRefList = entityManager
+                                      .createNativeQuery(getIdsFromPathsQuery(metaMap.keySet())).getResultList();
+                              metaRefList.forEach(entry -> {
+                                  String path = entry[0].toString().replaceAll("'", "''");
+                                  Long conceptId = Long.parseLong(entry[1].toString());
+                                  metaConceptIdMap.put(path, conceptId);
+                              });
+
+                              // bulk update to add parent ids
+                              Map<String, Long> childConceptIdMap  = new HashMap<>();
+                              List<Object[]> childConceptRefList = entityManager
+                                                      .createNativeQuery(getIdsFromPathsQuery(parentMap.keySet())).getResultList();
+                              childConceptRefList.forEach(entry -> {
+                                                  String path = entry[0].toString().replaceAll("'", "''");
+                                                  Long conceptId = Long.parseLong(entry[1].toString());
+                                                  childConceptIdMap.put(path, conceptId);
+                                              });
+
+
+                              try {
+                                  Map<Long, String> idParentMap = parentMap.entrySet().stream()
+                                          .collect(
+                                                  Collectors.toMap(e -> (childConceptIdMap.get(e.getKey())),
+                                                          e -> (e.getValue())));
+                                  Query parentQuery = entityManager.createNativeQuery(getUpdateParentIdsQuery(idParentMap));
+                                  parentQuery.executeUpdate();
+                              } catch (NullPointerException e) {
+                                  return new ResponseEntity<>(
+                                          "Caught null pointer. \n Path map: \n"
+                                                  + StringUtils.collectionToDelimitedString(parentMap.entrySet(), "\n")
+                                                  + "\n\n Id map: \n" + StringUtils
+                                                          .collectionToDelimitedString(metaConceptIdMap.entrySet(),
+                                                                  "\n"),
+                                          HttpStatus.BAD_REQUEST);
+
+                              }
+
+                              // bulk update concept_node_meta
+                              Map<Long, Map<String, String>> idMetaMap = metaMap.entrySet().stream()
+                                      .collect(Collectors.toMap(e -> (metaConceptIdMap.get(e.getKey())), e -> (e.getValue())));
+
+                              List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
+                              idMetaMap.entrySet().forEach(entry -> {
+                                  Long id = entry.getKey();
+                                  Map<String, String> metaEntries = entry.getValue();
+                                  metaEntries.keySet().forEach(metaKey -> {
+                                      ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
+                                      conceptMeta.setConceptNodeId(id);
+                                      conceptMeta.setKey(metaKey);
+                                      conceptMeta.setValue(metaEntries.get(metaKey).toString());
+                                      metaList.add(conceptMeta);
+                                  });
+                              });
+                              Query metaQuery = entityManager.createNativeQuery(getUpsertConceptMetaBatchQuery(metaList));
+                              metaUpdateCount += metaQuery.executeUpdate();
+
+                              // clear all dataobjects for next batch
+                              conceptModels = new ArrayList<>();
+                              parentMap.clear();
+                              metaMap.clear();
+                              entityManager.flush();
+                          }
+                      }
+            return new ResponseEntity<>("Successfully updated " + conceptUpdateCount + " concepts and " + metaUpdateCount
+                     + " concept meta entries from CSV. \n", HttpStatus.OK);
         }
 
         public String getUpsertConceptBatchQuery(List<ConceptModel> conceptModels) {
@@ -143,14 +314,7 @@ public class ConceptService {
 
                 return updateQuery;
         }
-        //TODO generalize this to use in all classes(general utility class) Currently duplicating in multiple services
-        public Map<String, Integer> buildCsvInputsHeaderMap(String[] headers) {
-                Map<String, Integer> inputsHeaders = new HashMap<String, Integer>();
-                for (int i = 0; i < headers.length; i++) {
-                        inputsHeaders.put(headers[i], i);
-                }
-                return inputsHeaders;
-        }
+
 
         public List<ConceptModel> findByDatasetID(Long datasetId) {
                 return this.conceptRepository.findByDatasetId(datasetId);

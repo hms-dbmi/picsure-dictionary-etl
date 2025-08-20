@@ -1,12 +1,17 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
+import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +46,16 @@ public class FacetController {
     FacetConceptRepository facetConceptRepository;
 
     @Autowired
+    FacetConceptService facetConceptService;
+
+    @Autowired
     FacetCategoryRepository facetCategoryRepository;
+
+    @Autowired
+    FacetCategoryService facetCategoryService;
+
+    @Autowired
+    FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Autowired
     FacetMetadataRepository facetMetadataRepository;
@@ -73,8 +87,8 @@ public class FacetController {
 
     @PutMapping("/facet")
     public ResponseEntity<FacetModel> updateFacet(@RequestParam String categoryName,
-            @RequestParam String name, @RequestParam String display, @RequestParam String desc,
-            @RequestParam String parentName) {
+                                                  @RequestParam String name, @RequestParam String display, @RequestParam String desc,
+                                                  @RequestParam String parentName) {
 
         Optional<FacetCategoryModel> facetCategoryModel = facetCategoryRepository.findByName(categoryName);
         Long categoryId;
@@ -152,7 +166,7 @@ public class FacetController {
 
     @PutMapping("/facet/concept")
     public ResponseEntity<FacetConceptModel> addConceptFacet(@RequestParam String facetName,
-            @RequestParam String conceptPath) {
+                                                             @RequestParam String conceptPath) {
         // add new facet concept relationship
 
         try {
@@ -205,9 +219,11 @@ public class FacetController {
         }
 
     }
+
+    //TODO - update this endpoint to be /facet/refresh/bdc - calls need to be updated in bdc pipeline jobs
     @Transactional
     @PutMapping("/facet/general/refresh/")
-    public ResponseEntity<String> refreshGeneralFacets() {
+    public ResponseEntity<String> refreshBDCFacets() {
         // get list of datasets currently in dictionary and create/update dataset facet
         // category
         List<DatasetModel> datasetModels = datasetRepository.findAll();
@@ -228,8 +244,31 @@ public class FacetController {
             facetConceptRepository.mapConceptDatasetIdToFacet(facetId, dataset.getDatasetId());
         });
 
-        // if dataset facet has 0 concepts remove it(excludes anvil studies etc)
+        // if dataset facet has 0 concepts remove it(keeps facet clear of anvil studies etc)
         facetRepository.deleteUnusedFacetsFromCategory(datasetFacetCategoryId);
+        //update continuous/categorical vars
+        refreshDataTypeFacet();
+        //create/update data_source category and data_source_genomic facet
+        FacetCategoryModel dataSourceCategoryModel = facetCategoryRepository.findByName("data_source")
+                .orElse(new FacetCategoryModel("data_source", "Data Type",
+                        "Associated metadata source"));
+        entityManager.persist(dataSourceCategoryModel);
+        Long dataSourceFacetCategoryId = dataSourceCategoryModel.getFacetCategoryId();
+
+        //Adds facet for genomic data and finds all concepts named "SAMPLE_ID" and adds those to the facet
+        FacetModel genomicSourceFacet = facetRepository.findByName("data_source_genomic").orElse(
+                new FacetModel(dataSourceFacetCategoryId, "data_source_genomic", "Genomic", "Associated with genomic data", null));
+        entityManager.persist(genomicSourceFacet);
+        Long genomicSourceFacetId = genomicSourceFacet.getFacetId();
+        facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");
+
+        return new ResponseEntity<>("Successfully updated default facets\n", HttpStatus.OK);
+    }
+
+    //TODO extract this method to service and add test
+    @Transactional
+    @PutMapping("/facet/refresh/data_type")
+    public ResponseEntity<String> refreshDataTypeFacet() {
 
         // create/update 'type of variable' category and facet
         FacetCategoryModel dataTypeCategoryModel = facetCategoryRepository.findByName("data_type")
@@ -249,24 +288,39 @@ public class FacetController {
         facetConceptRepository.mapConceptConceptTypeToFacet(catFacetId, catFacet.getName());
         facetConceptRepository.mapConceptConceptTypeToFacet(conFacetId, conFacet.getName());
 
-        //create/update data_source category and data_source_genomic facet
-        FacetCategoryModel dataSourceCategoryModel = facetCategoryRepository.findByName("data_source")
-                .orElse(new FacetCategoryModel("data_source", "Data Type",
-                        "Associated metadata source"));
-        entityManager.persist(dataSourceCategoryModel);
-        Long dataSourceFacetCategoryId = dataSourceCategoryModel.getFacetCategoryId();
-        FacetModel genomicSourceFacet = facetRepository.findByName("data_source_genomic").orElse(
-                new FacetModel(dataSourceFacetCategoryId, "data_source_genomic", "Genomic", "Associated with genomic data", null));
-        entityManager.persist(genomicSourceFacet);
-        Long genomicSourceFacetId = genomicSourceFacet.getFacetId();
-        facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");
-    
-        return new ResponseEntity<>("Successfully updated default facets\n", HttpStatus.OK);
+        return new ResponseEntity<>("Successfully updated continuous and categorical data type facets\n", HttpStatus.OK);
     }
+
+    /*Ingest facets from "Ideal Ingest" csv format
+    Expected CSV headers:
+    facet_category facet_name(unique) display_name description parent_name
+
+    */
+    @Transactional
+    @PutMapping("/facet/csv")
+    public ResponseEntity<String> updateFacetsFromCSVs(@RequestBody String input) {
+
+        FacetService service = new FacetService(facetRepository, facetCategoryService, facetConceptService, facetMetadataRepository);
+
+        return service.updateFacetsFromCSVs(input);
+    }
+
+    /*Ingest facet/concept mappings from "Ideal Ingest" csv format
+    Expected CSV headers:
+    concept_path	[1+ columns of facetCategoryName header]
+    values are concept_path, then the exact facet in each facetCategory that the concept path belongs to.
+        If that facet has a parent facet, the concept should also be assigned to the parent
+    */
+    @Transactional
+    @PutMapping("/facet/concept/csv")
+    public ResponseEntity<String> updateFacetConceptMappingsFromCSVs(@RequestBody String input) {
+        return facetConceptService.updateFacetConceptMappingsFromCSVs(input);
+    }
+
 
     @PutMapping("/facet/dataset")
     public ResponseEntity<FacetConceptModel> addFacetToFullDataset(@RequestParam String facetName,
-            @RequestParam String datasetRef) {
+                                                                   @RequestParam String datasetRef) {
         // add relationship between facet and all concepts in dataset
 
         try {
@@ -326,7 +380,7 @@ public class FacetController {
 
     @DeleteMapping("/facet/concept")
     public ResponseEntity<FacetConceptModel> deleteConceptFacet(@RequestParam String facetName,
-            @RequestParam String conceptPath) {
+                                                                @RequestParam String conceptPath) {
         Optional<FacetModel> facet = facetRepository.findByName(facetName);
         Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
         Long facetId;
@@ -376,7 +430,7 @@ public class FacetController {
 
     @PutMapping("/facet/metadata")
     public ResponseEntity<FacetMetadataModel> updateFacetMetadata(@RequestParam String name,
-            @RequestParam String key, @RequestBody String values) {
+                                                                  @RequestParam String key, @RequestBody String values) {
         Optional<FacetModel> facet = facetRepository.findByName(name);
         Long facetId;
         if (facet.isPresent()) {
@@ -414,7 +468,7 @@ public class FacetController {
 
     @DeleteMapping("/facet/metadata")
     public ResponseEntity<FacetMetadataModel> deleteFacetMetadata(@RequestParam String name,
-            @RequestParam String key) {
+                                                                  @RequestParam String key) {
 
         Long facetId = facetRepository.findByName(name).get().getFacetId();
         Optional<FacetMetadataModel> facetMetadataData = facetMetadataRepository

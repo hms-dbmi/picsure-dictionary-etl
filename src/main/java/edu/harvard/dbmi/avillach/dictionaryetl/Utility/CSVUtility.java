@@ -11,8 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -190,5 +189,26 @@ public class CSVUtility {
         }
 
         return false;
+    }
+
+    public static Map<String, Integer> buildCsvInputsHeaderMap(String[] inputHeaders) {
+            Map<String, Integer> inputsHeaders = new HashMap<String, Integer>();
+            for (int i = 0; i < inputHeaders.length; i++) {
+                    inputsHeaders.put(inputHeaders[i], i);
+            }
+            return inputsHeaders;
+    }
+    /*Used to get metadata keys for concepts, categories, facets and facet categories for concept/facet mappings*/
+    public static List<String> getExtraColumns(String[] coreHeaders, Map<String, Integer> inputHeaderMap){
+        List<String> metaColumnNames = new ArrayList<>();
+        if (!inputHeaderMap.keySet().containsAll(Arrays.asList(coreHeaders))) {
+                        return null;
+         }
+        inputHeaderMap.keySet().forEach(k -> {
+              if (!Arrays.asList(coreHeaders).contains(k)) {
+                 metaColumnNames.add(k);
+              }
+          });
+          return metaColumnNames;
     }
 }

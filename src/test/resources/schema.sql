@@ -91,7 +91,8 @@ create table facet_category
         primary key,
     name              varchar(512) not null,
     display           varchar(512) not null,
-    description       text default ''::text
+    description       text default ''::text,
+    unique (name)
 );
 
 create table facet

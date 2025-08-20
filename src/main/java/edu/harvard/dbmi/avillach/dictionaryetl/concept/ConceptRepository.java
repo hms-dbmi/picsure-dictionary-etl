@@ -14,4 +14,5 @@ public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
 
     Optional<ConceptModel> findByConceptPath(String conceptPath);
 
+    Optional<List<ConceptModel>> findByName(String name);
 }
