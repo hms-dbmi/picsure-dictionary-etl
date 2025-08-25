@@ -46,6 +46,8 @@ public class ConceptController {
     DatasetRepository datasetRepository;
     @Autowired
     FacetConceptRepository facetConceptRepository;
+    @Autowired
+    ConceptService conceptService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -234,7 +236,6 @@ public class ConceptController {
       @PutMapping("/concept/csv")
       public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input)
               throws IOException, CsvException {
-          ConceptService conceptService = new ConceptService(conceptRepository);
           return conceptService.updateConceptsFromCSV(datasetRef, input, BATCH_SIZE);
 
       }

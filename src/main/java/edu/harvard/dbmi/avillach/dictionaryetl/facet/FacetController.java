@@ -55,6 +55,9 @@ public class FacetController {
     FacetCategoryService facetCategoryService;
 
     @Autowired
+    FacetService facetService;
+
+    @Autowired
     FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Autowired
@@ -299,10 +302,7 @@ public class FacetController {
     @Transactional
     @PutMapping("/facet/csv")
     public ResponseEntity<String> updateFacetsFromCSVs(@RequestBody String input) {
-
-        FacetService service = new FacetService(facetRepository, facetCategoryService, facetConceptService, facetMetadataRepository);
-
-        return service.updateFacetsFromCSVs(input);
+        return facetService.updateFacetsFromCSVs(input);
     }
 
     /*Ingest facet/concept mappings from "Ideal Ingest" csv format
