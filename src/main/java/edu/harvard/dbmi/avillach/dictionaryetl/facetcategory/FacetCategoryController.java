@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 public class FacetCategoryController {
     @Autowired
     FacetCategoryRepository facetCategoryRepository;
+    @Autowired
+    FacetCategoryService categoryService;
     FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @GetMapping("/facetCategory")
@@ -85,7 +87,6 @@ public class FacetCategoryController {
         @Transactional
         @PutMapping("/facet/category/csv")
         public ResponseEntity<String> updateFacetCategoriesFromCSVs(@RequestBody String input) {
-            FacetCategoryService categoryService = new FacetCategoryService(facetCategoryRepository, facetCategoryMetaRepository);
             return categoryService.updateFacetCategoriesFromCSVs(input);
         }
 
