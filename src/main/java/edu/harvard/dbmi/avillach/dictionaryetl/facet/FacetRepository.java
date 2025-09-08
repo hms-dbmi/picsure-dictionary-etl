@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface FacetRepository extends JpaRepository<FacetModel, Long> {
 
-    List<FacetModel> findByFacetId(long facetId);
+    FacetModel findByFacetId(long facetId);
 
     Optional<FacetModel> findByName(String name);
 

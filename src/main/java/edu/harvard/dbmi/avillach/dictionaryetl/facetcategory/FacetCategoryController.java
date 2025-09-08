@@ -3,16 +3,12 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facetcategory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -20,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class FacetCategoryController {
     @Autowired
     FacetCategoryRepository facetCategoryRepository;
+    @Autowired
+    FacetCategoryService categoryService;
+    FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @GetMapping("/facetCategory")
     public ResponseEntity<List<FacetCategoryModel>> getAllFacetCategoryModels() {
@@ -78,4 +77,17 @@ public class FacetCategoryController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+
+    /*Ingest facet categories from "Ideal Ingest" csv format
+        Expected CSV headers:
+        name(unique)	display name	description
+        */
+
+        @Transactional
+        @PutMapping("/facet/category/csv")
+        public ResponseEntity<String> updateFacetCategoriesFromCSVs(@RequestBody String input) {
+            return categoryService.updateFacetCategoriesFromCSVs(input);
+        }
+
 }
