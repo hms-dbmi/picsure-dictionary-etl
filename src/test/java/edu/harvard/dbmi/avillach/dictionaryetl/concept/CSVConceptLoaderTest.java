@@ -39,6 +39,9 @@ class CSVConceptLoaderTest {
     ConceptService conceptService;
 
     @Autowired
+    ConceptController conceptController;
+
+    @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
 
     @Autowired
@@ -89,7 +92,7 @@ class CSVConceptLoaderTest {
                 ref1,concept2,display2,Continuous,\\\\ref1\\\\concept1\\\\concept2\\\\,\\\\ref1\\\\concept1\\\\,"[0,0]",ipsum2
                 """;
 
-        ResponseEntity<Object> updateResponse = conceptService.updateConceptsFromCSV("ref1", csv, 2);
+        ResponseEntity<Object> updateResponse = conceptController.updateConceptsFromCSV("ref1", csv);
         Assertions.assertSame(HttpStatus.OK, updateResponse.getStatusCode(), "Response Entity not as expected for CSV Loader call");
 
         List<ConceptModel> conceptList = conceptService.findAll();

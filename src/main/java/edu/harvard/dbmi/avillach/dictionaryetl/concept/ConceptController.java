@@ -7,11 +7,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +57,10 @@ public class ConceptController {
 
     @PersistenceContext
     private EntityManager entityManager;
+    private static final Logger log = LoggerFactory.getLogger(ConceptController.class);
     private int BATCH_SIZE = 100;
+    String[] coreConceptHeaders = {"dataset_ref", "name", "display", "concept_type", "concept_path",
+            "parent_concept_path"};
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
@@ -168,8 +177,6 @@ public class ConceptController {
         List<ConceptModel> validConcepts = new ArrayList<>();
         for (int i = 0; i < inputArray.length; i++) {
             try {
-                System.out.println(inputArray[i]);
-                System.out.println(Long.parseLong(inputArray[i]));
                 validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
             } catch (NumberFormatException e) {
                 return new ResponseEntity<>(
@@ -200,8 +207,6 @@ public class ConceptController {
         List<ConceptModel> validConcepts = new ArrayList<>();
         for (int i = 0; i < inputArray.length; i++) {
             try {
-                System.out.println(inputArray[i]);
-                System.out.println(Long.parseLong(inputArray[i]));
                 validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
             } catch (NumberFormatException e) {
                 return new ResponseEntity<Object>(
@@ -236,7 +241,47 @@ public class ConceptController {
       @PutMapping("/concept/csv")
       public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input)
               throws IOException, CsvException {
-          return conceptService.updateConceptsFromCSV(datasetRef, input, BATCH_SIZE);
+          Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+          Long datasetId;
+          if (datasetData.isPresent()) {
+              datasetId = datasetData.get().getDatasetId();
+          } else {
+              return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
+          }
+          List<String[]> concepts;
+          Map<String, Integer> headerMap;
+          List<String> metaColumnNames;
+          try (CSVReader reader = new CSVReader(new StringReader(input))) {
+              String[] header = reader.readNext();
+              headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
+              metaColumnNames = CSVUtility.getExtraColumns(coreConceptHeaders, headerMap);
+              if (metaColumnNames == null) {
+                  return new ResponseEntity<>(
+                          "ERROR: Input headers are not as expected for " + datasetRef + ". \n" +
+                          "Verify that the following headers are present in the input csv file: " + String.join(", ", coreConceptHeaders)
+                          ,
+                          HttpStatus.BAD_REQUEST);
+              }
+
+              concepts = reader.readAll();
+              concepts.remove(header);
+              reader.close();
+          } catch (IOException | CsvException e) {
+              return new ResponseEntity<>(
+                      "Error reading ingestion csv for " + datasetRef + ". Error: \n" + e.getStackTrace(),
+                      HttpStatus.BAD_REQUEST);
+          }
+          if (concepts.isEmpty()) {
+              return new ResponseEntity<>(
+                      "No csv records found in " + datasetRef + "  input file.",
+                      HttpStatus.BAD_REQUEST);
+          }
+          String updateConceptsResponse = conceptService.updateConceptsFromCSV(datasetId, concepts, headerMap, metaColumnNames, BATCH_SIZE);
+          if (updateConceptsResponse.startsWith("Success")){
+              return new ResponseEntity<>(updateConceptsResponse, HttpStatus.OK);
+          }
+          return new ResponseEntity<>("An error occurred while trying to update concepts from CSV. Check logs for further information", HttpStatus.INTERNAL_SERVER_ERROR);
+
 
       }
 
@@ -268,7 +313,7 @@ public class ConceptController {
         }
         JSONArray dictionaryJSON = new JSONArray(input);
         int varcount = dictionaryJSON.length();
-        System.out.println("varcount: " + varcount);
+        log.info("varcount: " + varcount);
         int conceptUpdateCount = 0;
         int metaUpdateCount = 0;
         final Map<String, JSONObject> conceptMetaMap = new HashMap<String, JSONObject>();
@@ -287,7 +332,7 @@ public class ConceptController {
             try {
                 display = var.getString("display").replaceAll("'", "''").replaceAll("\n", " ");
             } catch (JSONException e) {
-                System.out.println("Using name as display");
+                log.info("Using name as display");
             }
             ConceptModel newConceptModel;
             newConceptModel = new ConceptModel(conceptPath);
@@ -305,8 +350,8 @@ public class ConceptController {
                 conceptUpdateCount += conceptQuery.executeUpdate();
 
                 conceptMetaMap.forEach((key, value) -> {
-                    System.out.println("Path key" + key);
-                    System.out.println("meta value" + value);
+                    log.info("Path key" + key);
+                    log.info("meta value" + value);
                 });
                 // fetch updated concept node ids corresponding to concept paths
                 Map<Long, JSONObject> idMetaMap = new HashMap<Long, JSONObject>();
@@ -322,7 +367,7 @@ public class ConceptController {
                 List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
                 idMetaMap.entrySet().forEach(entry -> {
                     Long id = entry.getKey();
-                    System.out.println("Id:" + id);
+                    log.info("Id:" + id);
                     JSONObject metaJson = entry.getValue();
                     metaJson.keySet().forEach(metaKey -> {
                         ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
@@ -353,10 +398,10 @@ public class ConceptController {
 
             if (conceptPath == null || !conceptPath.isPresent()) {
                 // get all conceptMetadatas in dictionary
-                System.out.println("Hitting conceptMetadata null");
+                log.info("Hitting conceptMetadata null");
                 conceptMetadataRepository.findAll().forEach(conceptMetadataModels::add);
             } else {
-                System.out.println("Hitting conceptMetadata");
+                log.info("Hitting conceptMetadata");
                 Long conceptId = conceptRepository.findByConceptPath(conceptPath.get()).get().getConceptNodeId();
                 conceptMetadataRepository.findByConceptNodeId(conceptId).forEach(conceptMetadataModels::add);
 
@@ -366,7 +411,7 @@ public class ConceptController {
             }
             return new ResponseEntity<>(conceptMetadataModels, HttpStatus.OK);
         } catch (Exception e) {
-            System.out.println(e.getLocalizedMessage());
+            log.info(e.getLocalizedMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -398,12 +443,12 @@ public class ConceptController {
                                     values));
                     return new ResponseEntity<>(newConceptMetadata, HttpStatus.CREATED);
                 } catch (Exception e) {
-                    System.out.println(e.getLocalizedMessage());
+                    log.info(e.getLocalizedMessage());
                     return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
         } catch (Exception e) {
-            System.out.println(e.getLocalizedMessage());
+            log.info(e.getLocalizedMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -421,7 +466,7 @@ public class ConceptController {
 
             String[] concepts = conceptList.toArray(new String[0]);
             int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
-                   System.out.println("count:" + upsertCount);
+                   log.info("count:" + upsertCount);
                    return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
                            HttpStatus.CREATED);
 
