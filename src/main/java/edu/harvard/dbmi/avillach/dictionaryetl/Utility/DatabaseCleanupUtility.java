@@ -30,7 +30,7 @@ public class DatabaseCleanupUtility {
                      "    FOR table_name IN \n" +
                      "        SELECT tablename \n" +
                      "        FROM pg_tables \n" +
-                     "        WHERE schemaname = 'dict' \n" +
+                     "        WHERE schemaname = 'dict' and tablename != 'update_info'\n" +
                      "    LOOP \n" +
                      "        EXECUTE 'TRUNCATE TABLE dict.' || table_name || ' CASCADE'; \n" +
                      "    END LOOP; \n" +
