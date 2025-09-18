@@ -254,8 +254,6 @@ public class DictionaryLoaderServiceTest {
                                                                     "12069274,5,5").get());
         this.dictionaryLoaderService.processColumnMetas(columnMetas);
 
-        // find all concepts
-        List<ConceptModel> all = this.conceptService.findAll();
         Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(laboratory.isPresent());
         assertEquals("laboratory", laboratory.get().getName());

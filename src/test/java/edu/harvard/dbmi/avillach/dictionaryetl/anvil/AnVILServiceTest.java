@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -31,13 +30,13 @@ public class AnVILServiceTest {
     @Autowired
     private AnVILService anVILService;
 
-    @MockBean
+    @Autowired
     private DatasetRepository datasetRepository;
 
-    @MockBean
+    @Autowired
     private ConsentRepository consentRepository;
 
-    @MockBean
+    @Autowired
     private DatasetMetadataRepository datasetMetadataRepository;
 
     private static String fileContents;

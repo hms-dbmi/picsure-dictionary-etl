@@ -32,21 +32,6 @@ public class ConceptMetadataService {
         return this.conceptMetadataRepository.findById(conceptMetaID);
     }
 
-    public void deleteAll() {
-        this.conceptMetadataRepository.deleteAll();
-    }
-
-
-    /**
-     * Returns a list of all the metadata keys in the database for the concept node
-     * The keys are sorted in alphabetical order
-     * @return A list of all the metadata keys
-     */
-    public List<String> allMetadataKeys() {
-        List<String> keyValues = this.conceptMetadataRepository.findAllKeyValues();
-        Collections.sort(keyValues);
-        return keyValues;
-    }
 
     public List<String> findMetadataKeysByDatasetID(Long[] datasetIDs) {
         List<String> metadata = this.conceptMetadataRepository.findByDatasetID(datasetIDs);

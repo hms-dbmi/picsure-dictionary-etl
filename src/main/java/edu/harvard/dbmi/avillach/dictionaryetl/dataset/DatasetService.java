@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
@@ -25,19 +26,11 @@ public class DatasetService {
         return this.datasetRepository.findByRef(datasetRef);
     }
 
-    public void deleteAll() {
-        this.datasetRepository.deleteAll();
-    }
-
     public List<DatasetModel> findAll() {
         return this.datasetRepository.findAll();
     }
     public Map<String, Integer> buildCsvInputsHeaderMap(String[] headers) {
-                Map<String, Integer> inputsHeaders = new HashMap<String, Integer>();
-                for (int i = 0; i < headers.length; i++) {
-                        inputsHeaders.put(headers[i], i);
-                }
-                return inputsHeaders;
+        return CSVUtility.buildCsvInputsHeaderMap(headers);
     }
 
 

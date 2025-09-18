@@ -38,15 +38,15 @@ public class ConsentController {
     @GetMapping("/consent")
     public ResponseEntity<List<ConsentModel>> getAllConsentModels(@RequestParam(required = false) String datasetRef) {
         try {
-            List<ConsentModel> consentModels = new ArrayList<ConsentModel>();
+            List<ConsentModel> consentModels = new ArrayList<>();
 
             if (datasetRef == null) {
                 // get all consents in dictionary
-                consentRepository.findAll().forEach(consentModels::add);
+                consentModels.addAll(consentRepository.findAll());
             } else {
                 // get all consents in specific dataset
                 Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
-                consentRepository.findByDatasetId(datasetId).forEach(consentModels::add);
+                consentModels.addAll(consentRepository.findByDatasetId(datasetId));
 
             }
             if (consentModels.isEmpty()) {
@@ -103,8 +103,8 @@ public class ConsentController {
         } else {
             return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
         }
-        List<String[]> consents = new ArrayList<>();
-        Map<String, Integer> headerMap = new HashMap<String, Integer>();
+        List<String[]> consents;
+        Map<String, Integer> headerMap;
         try (CSVReader reader = new CSVReader(new StringReader(input))) {
             String[] header = reader.readNext();
             headerMap = service.buildCsvInputsHeaderMap(header);
@@ -118,10 +118,9 @@ public class ConsentController {
             }
             consents = reader.readAll();
             consents.remove(header);
-            reader.close();
         } catch (IOException | CsvException e) {
             return new ResponseEntity<>(
-                    "Error reading consent ingestion csv for " + datasetRef + ". Error: \n" + e.getStackTrace(),
+                    "Error reading consent ingestion csv for " + datasetRef + ". Error: \n" + Arrays.toString(e.getStackTrace()),
                     HttpStatus.BAD_REQUEST);
         }
         if (consents.isEmpty()) {
@@ -130,18 +129,16 @@ public class ConsentController {
                     HttpStatus.BAD_REQUEST);
         }
 
-        int consentCount = consents.size();
         int consentUpdateCount = 0;
 
-        for (int i = 0; i < consentCount; i++) {
-            String[] consent = consents.get(i);
+        for (String[] consent : consents) {
             if (consent.length < headerMap.size())
                 continue;
             String consentCode = consent[headerMap.get("consentCode")];
             String description = consent[headerMap.get("description")];
-            Long participantCount;
-            Long variableCount;
-            Long sampleCount;
+            long participantCount;
+            long variableCount;
+            long sampleCount;
             try {
                 participantCount = Long.parseLong(consent[headerMap.get("participantCount")]);
             } catch (NumberFormatException e) {
@@ -198,12 +195,9 @@ public class ConsentController {
         if (consentData.isPresent()) {
             // update already existing consent
             ConsentModel existingConsent = consentData.get();
-            if (participantCount.isPresent())
-                existingConsent.setParticipantCount(participantCount.get());
-            if (variableCount.isPresent())
-                existingConsent.setVariableCount(variableCount.get());
-            if (sampleCount.isPresent())
-                existingConsent.setSampleCount(sampleCount.get());
+            participantCount.ifPresent(existingConsent::setParticipantCount);
+            variableCount.ifPresent(existingConsent::setVariableCount);
+            sampleCount.ifPresent(existingConsent::setSampleCount);
 
             return new ResponseEntity<>(consentRepository.save(existingConsent), HttpStatus.OK);
         } else {

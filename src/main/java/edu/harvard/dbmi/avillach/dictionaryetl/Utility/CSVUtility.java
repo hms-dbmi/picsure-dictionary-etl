@@ -131,9 +131,8 @@ public class CSVUtility {
      * Removes a directory if it is empty
      *
      * @param directoryPath Path to the directory
-     * @return true if directory was deleted, false otherwise
      */
-    public boolean removeDirectoryIfEmpty(String directoryPath) {
+    public void removeDirectoryIfEmpty(String directoryPath) {
         File directory = new File(directoryPath);
         if (directory.isDirectory()) {
             File[] files = directory.listFiles();
@@ -141,14 +140,12 @@ public class CSVUtility {
                 boolean deleted = directory.delete();
                 if (deleted) {
                     log.info("Deleted empty directory: {}", directoryPath);
-                    return true;
                 } else {
                     log.warn("Failed to delete empty directory: {}", directoryPath);
                 }
             }
         }
 
-        return false;
     }
 
     /**

@@ -200,7 +200,7 @@ public class DatasetController {
         try {
             List<DatasetMetadataModel> datasetMetadataModels = new ArrayList<>();
 
-            if (datasetRef == null || !datasetRef.isPresent()) {
+            if (datasetRef.isEmpty()) {
                 // get all dataset metadata in dictionary
                 System.out.println("Hitting datasetMetadata");
                 datasetMetadataModels.addAll(datasetMetadataRepository.findAll());
@@ -276,7 +276,7 @@ public class DatasetController {
         Long sourceDatasetId = datasetRepository.findByRef(sourceDatasetRef).get().getDatasetId();
         Optional<DatasetHarmonizationModel> existingHarmonization = datasetHarmonizationRepository
                 .findBySourceDatasetIdAndHarmonizedDatasetId(sourceDatasetId, harmonizedDatasetId);
-        if (!existingHarmonization.isPresent()) {
+        if (existingHarmonization.isEmpty()) {
             try {
                 DatasetHarmonizationModel newDatasetHarmonization = datasetHarmonizationRepository
                         .save(new DatasetHarmonizationModel(harmonizedDatasetId, sourceDatasetId));

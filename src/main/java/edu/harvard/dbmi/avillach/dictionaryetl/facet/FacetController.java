@@ -1,8 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.*;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,13 +32,7 @@ public class FacetController {
     FacetCategoryRepository facetCategoryRepository;
 
     @Autowired
-    FacetCategoryService facetCategoryService;
-
-    @Autowired
     FacetService facetService;
-
-    @Autowired
-    FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Autowired
     FacetMetadataRepository facetMetadataRepository;
@@ -125,7 +118,7 @@ public class FacetController {
     }
 
     @GetMapping("/facet/concept")
-    public ResponseEntity<List<FacetConceptModel>> getAllFacetConceptModels(Optional<String> facetName) {
+    public ResponseEntity<List<FacetConceptModel>> getAllFacetConceptModels() {
         try {
 
             List<FacetConceptModel> facetConceptModels = new ArrayList<>(facetConceptRepository.findAll());
@@ -180,7 +173,7 @@ public class FacetController {
                             .findByFacetIdAndConceptNodeId(parentFacetId,
                                     conceptNodeId);
                     if (parentConceptFacet.isEmpty()) {
-                        FacetConceptModel newConceptParentFacet = facetConceptRepository
+                        facetConceptRepository
                                 .save(new FacetConceptModel(parentFacetId,
                                         conceptNodeId));
                     }
@@ -317,7 +310,7 @@ public class FacetController {
                 Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
                         conceptNodeId);
                 if (conceptFacet.isEmpty()) {
-                    FacetConceptModel newConceptFacet = facetConceptRepository
+                    facetConceptRepository
                             .save(new FacetConceptModel(facetId,
                                     conceptNodeId));
 
@@ -331,7 +324,7 @@ public class FacetController {
                                 .findByFacetIdAndConceptNodeId(parentFacetId,
                                         conceptNodeId);
                         if (parentConceptFacet.isEmpty()) {
-                            FacetConceptModel newConceptParentFacet = facetConceptRepository
+                            facetConceptRepository
                                     .save(new FacetConceptModel(parentFacetId,
                                             conceptNodeId));
                         }
