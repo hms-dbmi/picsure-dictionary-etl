@@ -2,6 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.*;
 
+
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -312,7 +313,7 @@ public class FacetController {
                 Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
                         conceptNodeId);
                 if (conceptFacet.isEmpty()) {
-                    FacetConceptModel newConceptFacet = facetConceptRepository
+                    facetConceptRepository
                             .save(new FacetConceptModel(facetId,
                                     conceptNodeId));
 
@@ -326,7 +327,7 @@ public class FacetController {
                                 .findByFacetIdAndConceptNodeId(parentFacetId,
                                         conceptNodeId);
                         if (parentConceptFacet.isEmpty()) {
-                            FacetConceptModel newConceptParentFacet = facetConceptRepository
+                            facetConceptRepository
                                     .save(new FacetConceptModel(parentFacetId,
                                             conceptNodeId));
                         }
