@@ -71,7 +71,7 @@ class CSVConceptLoaderTest {
     }
 
     @Test
-    void csvBatchConceptLoadTest() {
+    void csvBatchConceptLoadTest() throws IOException, CsvException {
         //testing ingesting with hierarchy of ref1 -> ref2 (with categorical values) -> ref3 (with continuous values) with batch size of 2 (two batches)
         DatasetModel dataset = new DatasetModel("ref1", "REF1", "abv", "");
         datasetRepository.save(dataset);

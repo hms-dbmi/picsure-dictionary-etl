@@ -1,12 +1,14 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import jakarta.persistence.EntityManager;
@@ -36,6 +38,14 @@ public class ConceptService {
 
     public List<ConceptModel> findAll() {
         return this.conceptRepository.findAll();
+    }
+
+    public void deleteAll() {
+        this.conceptRepository.deleteAll();
+    }
+
+    public void setDataSource(DataSource dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Transactional
