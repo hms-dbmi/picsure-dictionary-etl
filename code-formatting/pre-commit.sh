@@ -1,6 +1,6 @@
 #!/bin/sh -e
 CWD=$(pwd)
-cd $(git rev-parse --show-toplevel)
+cd "$(git rev-parse --show-toplevel)"
 format_cmd=""
 
 # skip if NO_VERIFY env var set
