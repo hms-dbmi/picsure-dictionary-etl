@@ -370,7 +370,7 @@ public class ConceptController {
     public ResponseEntity<Object> getAllConceptMetadataModels(
             @RequestParam Optional<String> conceptPath) {
         try {
-            List<ConceptMetadataModel> conceptMetadataModels = new ArrayList<ConceptMetadataModel>();
+            List<ConceptMetadataModel> conceptMetadataModels = new ArrayList<>();
 
             if (conceptPath.isEmpty()) {
                 // get all conceptMetadatas in dictionary

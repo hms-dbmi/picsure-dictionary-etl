@@ -130,7 +130,7 @@ public class ConceptService {
                 Map<Long, Map<String, String>> idMetaMap = metaMap.entrySet().stream()
                         .collect(Collectors.toMap(e -> (metaConceptIdMap.get(e.getKey())), Map.Entry::getValue));
 
-                List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
+                List<ConceptMetadataModel> metaList = new ArrayList<>();
                 idMetaMap.forEach((id, metaEntries) -> metaEntries.keySet().forEach(metaKey -> {
                     ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
                     conceptMeta.setConceptNodeId(id);
