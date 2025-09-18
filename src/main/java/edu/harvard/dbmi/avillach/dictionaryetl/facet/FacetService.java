@@ -107,9 +107,9 @@ public class FacetService {
     @PutMapping("/facet/csv")
     public ResponseEntity<String> updateFacetsFromCSVs(@RequestBody String input) {
 
-        List<String[]> facets = new ArrayList<>();
-        Map<String, Integer> headerMap = new HashMap<String, Integer>();
-        List<String> metaColumnNames = new ArrayList<>();
+        List<String[]> facets;
+        Map<String, Integer> headerMap;
+        List<String> metaColumnNames;
         try (CSVReader reader = new CSVReader(new StringReader(input))) {
             String[] header = reader.readNext();
             headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
@@ -136,7 +136,6 @@ public class FacetService {
         }
         int facetUpdateCount = 0;
         int parentUpdateCount = 0;
-        int facetMetaUpdateCount = 0;
         List<FacetModel> facetModels = new ArrayList<>();
         Map<String, Map<String, String>> metaMap = new HashMap<>();
         Map<String, String> parentMap = new HashMap<>();
@@ -149,15 +148,14 @@ public class FacetService {
             String display = facet[headerMap.get("display_name")];
             String description = facet[headerMap.get("description")];
             String parentName = facet[headerMap.get("parent_name")];
-            if (!parentName.isEmpty() && parentName != null)
+            if (!parentName.isEmpty())
                 parentMap.put(name, parentName);
             FacetModel facetModel = new FacetModel(facetCategory.getFacetCategoryId(), name, display, description, null);
             facetModels.add(facetModel);
             Map<String, String> metaVals = new HashMap<>();
-            for (int j = 0; j < metaColumnNames.size(); j++) {
-                String key = metaColumnNames.get(j);
+            for (String key : metaColumnNames) {
                 String value = facet[headerMap.get(key)];
-                if (!value.isBlank() && value != null) {
+                if (!value.isBlank()) {
                     metaVals.put(key, value);
                 }
             }
@@ -202,10 +200,9 @@ public class FacetService {
         String vals = StringUtils.arrayToCommaDelimitedString(
                                         new String[] { facetCategoryIds, names, displays, descriptions });
 
-        String upsertQuery = "insert into facet (facet_category_id,name,display,description) "
-                                        + "VALUES (" + vals + ")"
-                                        + " ON CONFLICT (name, facet_category_id) DO UPDATE SET (display,description) = (EXCLUDED.display,EXCLUDED.description);";
-        return upsertQuery;
+        return "insert into facet (facet_category_id,name,display,description) "
+               + "VALUES (" + vals + ")"
+               + " ON CONFLICT (name, facet_category_id) DO UPDATE SET (display,description) = (EXCLUDED.display,EXCLUDED.description);";
 
 
 
@@ -213,29 +210,27 @@ public class FacetService {
 
     public String getIdsFromNamesQuery(Set<String> names) {
         String nameClause = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(names.stream()
-                                        .map(name -> StringUtils.quote(name))
+                                        .map(StringUtils::quote)
                                         .collect(Collectors.toList())) + "])";
         return "select name, facet_id from facet where name in (select " + nameClause + ")";
     }
     public String getUpdateParentIdsQuery(Map<String, String> parentFacetMap) {
         String childNames = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                parentFacetMap.keySet().stream().map(childName -> StringUtils.quote(childName))
+                parentFacetMap.keySet().stream().map(StringUtils::quote)
                                                                   .collect(Collectors
                                                                                   .toList()))
                                   + "])";
                   String parentNames = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
-                                  parentFacetMap.values().stream().map(parentName -> StringUtils.quote(parentName))
+                                  parentFacetMap.values().stream().map(StringUtils::quote)
                                                   .collect(Collectors
                                                                   .toList()))
                                   + "])";
 
-                  String updateQuery = "with parent_table (child_name, parent_name) as"
-                                  + "(select " + childNames + ", " + parentNames + ")"
-                                  + "update facet set parent_id = parent_ref.p_id from "
-                                  + "(select child_name, facet_id as p_id from parent_table left join facet on parent_name = name) as parent_ref"
-                                  + " where name = child_name;";
-
-                  return updateQuery;
+        return "with parent_table (child_name, parent_name) as"
+     + "(select " + childNames + ", " + parentNames + ")"
+     + "update facet set parent_id = parent_ref.p_id from "
+     + "(select child_name, facet_id as p_id from parent_table left join facet on parent_name = name) as parent_ref"
+     + " where name = child_name;";
 
     }
 }

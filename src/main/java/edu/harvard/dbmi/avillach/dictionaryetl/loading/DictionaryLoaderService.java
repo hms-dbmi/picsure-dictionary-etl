@@ -233,9 +233,7 @@ public class DictionaryLoaderService {
      */
     protected ColumnMeta flattenCategoricalColumnMeta(List<ColumnMeta> columnMetas) {
         Set<String> setOfVals = new HashSet<>();
-        columnMetas.forEach(columnMeta -> {
-            setOfVals.addAll(columnMeta.categoryValues());
-        });
+        columnMetas.forEach(columnMeta -> setOfVals.addAll(columnMeta.categoryValues()));
 
         List<String> values = new ArrayList<>(setOfVals);
         return new ColumnMeta(
@@ -303,7 +301,7 @@ public class DictionaryLoaderService {
         ConceptNode currentNode = rootConceptNode;
         Long parentConceptID = null;
         while (currentNode != null) {
-            Long conceptNodeID = null;
+            Long conceptNodeID;
             if (currentNode.getChild() == null) {
                 // We have reached the leaf node. We can create concept metadata
                 conceptNodeID = createConceptModel(currentNode, columnMeta, datasetID, parentConceptID);

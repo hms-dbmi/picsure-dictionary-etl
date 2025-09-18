@@ -35,10 +35,6 @@ public class FacetCategoryMeta {
         return facetCategoryMetaId;
     }
 
-    public void setFacetCategoryMetaId(Long facetCategoryMetaId) {
-        this.facetCategoryMetaId = facetCategoryMetaId;
-    }
-
     public Long getFacetCategoryId() {
         return facetCategoryId;
     }

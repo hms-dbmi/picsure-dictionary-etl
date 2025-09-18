@@ -6,8 +6,6 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,8 +47,6 @@ class DictionaryClearControllerTest {
     @Autowired
     private ConceptMetadataRepository conceptMetadataRepository;
 
-    @PersistenceContext
-         private EntityManager entityManager;
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")

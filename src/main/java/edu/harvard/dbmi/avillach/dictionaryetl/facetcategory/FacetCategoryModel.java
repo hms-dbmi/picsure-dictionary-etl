@@ -34,10 +34,6 @@ public class FacetCategoryModel {
         return this.facetCategoryId;
     }
 
-    public void setFacetCategoryId(Long facetCategory_id) {
-        this.facetCategoryId = facetCategory_id;
-    }
-
     public String getName() {
         return this.name;
     }

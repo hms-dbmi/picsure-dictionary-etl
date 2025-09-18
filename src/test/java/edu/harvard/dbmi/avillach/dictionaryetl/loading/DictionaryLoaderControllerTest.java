@@ -1,7 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;

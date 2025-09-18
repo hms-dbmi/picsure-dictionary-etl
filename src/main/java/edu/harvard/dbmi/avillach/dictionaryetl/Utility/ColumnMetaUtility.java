@@ -71,7 +71,8 @@ public class ColumnMetaUtility {
         Map<String, String> metadata;
 
         try {
-            List<Map<String, String>> maps = objectMapper.readValue(jsonMetaData, new TypeReference<List<Map<String, String>>>() {});
+            List<Map<String, String>> maps = objectMapper.readValue(jsonMetaData, new TypeReference<>() {
+            });
             // convert the list to a flat map
             Map<String, String> map = new HashMap<>();
             for (Map<String, String> entry : maps) {

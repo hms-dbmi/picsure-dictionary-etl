@@ -23,8 +23,7 @@ public class FacetCategoryController {
     @GetMapping("/facetCategory")
     public ResponseEntity<List<FacetCategoryModel>> getAllFacetCategoryModels() {
         try {
-            List<FacetCategoryModel> facetCategoryModels = new ArrayList<FacetCategoryModel>();
-            facetCategoryRepository.findAll().forEach(facetCategoryModels::add);
+            List<FacetCategoryModel> facetCategoryModels = new ArrayList<>(facetCategoryRepository.findAll());
 
             if (facetCategoryModels.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);

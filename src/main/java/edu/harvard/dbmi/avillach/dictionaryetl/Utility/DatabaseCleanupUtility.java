@@ -23,18 +23,19 @@ public class DatabaseCleanupUtility {
 
     @Transactional
     public void truncateTablesAllTables() {
-        String sql = "DO $$ \n" +
-                     "DECLARE \n" +
-                     "    table_name TEXT; \n" +
-                     "BEGIN \n" +
-                     "    FOR table_name IN \n" +
-                     "        SELECT tablename \n" +
-                     "        FROM pg_tables \n" +
-                     "        WHERE schemaname = 'dict' and tablename != 'update_info'\n" +
-                     "    LOOP \n" +
-                     "        EXECUTE 'TRUNCATE TABLE dict.' || table_name || ' CASCADE'; \n" +
-                     "    END LOOP; \n" +
-                     "END $$;";
+        String sql = """
+                DO $$\s
+                DECLARE\s
+                    table_name TEXT;\s
+                BEGIN\s
+                    FOR table_name IN\s
+                        SELECT tablename\s
+                        FROM pg_tables\s
+                        WHERE schemaname = 'dict' and tablename != 'update_info'
+                    LOOP\s
+                        EXECUTE 'TRUNCATE TABLE dict.' || table_name || ' CASCADE';\s
+                    END LOOP;\s
+                END $$;""";
 
         entityManager.createNativeQuery(sql).executeUpdate();
     }
