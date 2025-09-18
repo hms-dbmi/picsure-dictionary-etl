@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
-
 @Repository
 public interface DatasetRepository extends JpaRepository<DatasetModel, Long> {
     List<DatasetModel> findByDatasetId(long datasetId);
@@ -21,14 +19,14 @@ public interface DatasetRepository extends JpaRepository<DatasetModel, Long> {
      * @return The List of refs that don't exist in the database
      */
     @Query(value = """
-    WITH refs AS (
+WITH refs AS (
         SELECT unnest(:refs) AS ref
     )
     SELECT refs.ref
     FROM refs
-    LEFT JOIN dataset d ON refs.ref = d.ref
+    LEFT JOIN dict.dataset d ON refs.ref = d.ref
     WHERE d.ref IS NULL
-    """, nativeQuery = true)
+""", nativeQuery = true)
     List<String> findValuesNotInRef(@Param("refs") String[] refs);
 
     @Query(value = "SELECT dataset.dataset_id AS datasetId, dataset.ref AS ref FROM dict.dataset ORDER BY ref", nativeQuery = true)

@@ -1,31 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
-import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
@@ -75,8 +56,7 @@ public class FacetController {
     @GetMapping("/facet")
     public ResponseEntity<List<FacetModel>> getAllFacetModels() {
         try {
-            List<FacetModel> facetModels = new ArrayList<FacetModel>();
-            facetRepository.findAll().forEach(facetModels::add);
+            List<FacetModel> facetModels = new ArrayList<>(facetRepository.findAll());
 
             if (facetModels.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -102,11 +82,7 @@ public class FacetController {
         }
         Optional<FacetModel> parentModel = facetRepository.findByName(parentName);
         Long parentId;
-        if (parentModel.isPresent()) {
-            parentId = parentModel.get().getFacetId();
-        } else {
-            parentId = null;
-        }
+        parentId = parentModel.map(FacetModel::getFacetId).orElse(null);
         Optional<FacetModel> facetData = facetRepository.findByName(name);
 
         if (facetData.isPresent()) {
@@ -140,9 +116,7 @@ public class FacetController {
 
         if (facetData.isPresent()) {
             Long facetId = facetData.get().getFacetId();
-            facetConceptRepository.findByFacetId(facetId).get().forEach(fc -> {
-                facetConceptRepository.delete(fc);
-            });
+            facetConceptRepository.deleteAll(facetConceptRepository.findByFacetId(facetId).get());
             facetRepository.delete(facetData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -154,8 +128,7 @@ public class FacetController {
     public ResponseEntity<List<FacetConceptModel>> getAllFacetConceptModels(Optional<String> facetName) {
         try {
 
-            List<FacetConceptModel> facetConceptModels = new ArrayList<FacetConceptModel>();
-            facetConceptRepository.findAll().forEach(facetConceptModels::add);
+            List<FacetConceptModel> facetConceptModels = new ArrayList<>(facetConceptRepository.findAll());
 
             if (facetConceptModels.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -343,24 +316,21 @@ public class FacetController {
                 Long conceptNodeId = concept.getConceptNodeId();
                 Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId,
                         conceptNodeId);
-                if (!conceptFacet.isPresent()) {
+                if (conceptFacet.isEmpty()) {
                     FacetConceptModel newConceptFacet = facetConceptRepository
                             .save(new FacetConceptModel(facetId,
                                     conceptNodeId));
 
                     // check if parent facet a) exists and b) has the concept relationship
                     // established. If not, create relationship between parent facet and concept
-                    Boolean hasParent = false;
-                    if (facet.get().getParentId() != null) {
-                        hasParent = true;
-                    }
+                    boolean hasParent = facet.get().getParentId() != null;
                     if (hasParent) {
                         Optional<FacetModel> parentFacet = facetRepository.findById(facet.get().getParentId());
                         Long parentFacetId = parentFacet.get().getFacetId();
                         Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository
                                 .findByFacetIdAndConceptNodeId(parentFacetId,
                                         conceptNodeId);
-                        if (!parentConceptFacet.isPresent()) {
+                        if (parentConceptFacet.isEmpty()) {
                             FacetConceptModel newConceptParentFacet = facetConceptRepository
                                     .save(new FacetConceptModel(parentFacetId,
                                             conceptNodeId));
@@ -406,16 +376,16 @@ public class FacetController {
     public ResponseEntity<List<FacetMetadataModel>> getAllFacetMetadataModels(
             @RequestParam Optional<String> name) {
         try {
-            List<FacetMetadataModel> facetMetadataModels = new ArrayList<FacetMetadataModel>();
+            List<FacetMetadataModel> facetMetadataModels = new ArrayList<>();
 
-            if (name == null || !name.isPresent()) {
+            if (name.isEmpty()) {
                 // get all facetMetadatas in dictionary
                 System.out.println("Hitting facetMetadata null");
-                facetMetadataRepository.findAll().forEach(facetMetadataModels::add);
+                facetMetadataModels.addAll(facetMetadataRepository.findAll());
             } else {
                 System.out.println("Hitting facetMetadata");
                 Long facetId = facetRepository.findByName(name.get()).get().getFacetId();
-                facetMetadataRepository.findByFacetId(facetId).forEach(facetMetadataModels::add);
+                facetMetadataModels.addAll(facetMetadataRepository.findByFacetId(facetId));
 
             }
             if (facetMetadataModels.isEmpty()) {

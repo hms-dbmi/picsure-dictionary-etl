@@ -7,7 +7,6 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;

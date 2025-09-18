@@ -30,10 +30,6 @@ public class FacetConceptModel {
         return this.facetConceptId;
     }
 
-    public void setFacetConceptId(Long facetConceptId) {
-        this.facetConceptId = facetConceptId;
-    }
-
     public Long getFacetId() {
         return this.facetId;
     }

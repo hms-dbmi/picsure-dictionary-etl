@@ -39,7 +39,7 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
                     left join ConceptMetadataModel metavals on metavals.conceptNodeId = concept_node.conceptNodeId and metavals.key = 'values'
                     left join ConceptMetadataModel metadesc on metadesc.conceptNodeId = concept_node.conceptNodeId and metadesc.key = 'description'
             where ref = :ref
-            """)
+            """, nativeQuery = true)
     List<ConceptStigvarIdentificationModel> getInfoForStigvars(@Param(value = "ref") String ref);
 
     @Query(value = "select key FROM dict.concept_node_meta group by key;", nativeQuery = true)

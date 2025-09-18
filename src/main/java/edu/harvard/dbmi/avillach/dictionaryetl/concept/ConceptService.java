@@ -1,9 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
+
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -11,16 +8,10 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
 import jakarta.persistence.EntityManager;
-
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,7 +19,6 @@ import javax.sql.DataSource;
 
 @Service
 public class ConceptService {
-    private JdbcTemplate jdbcTemplate;
 
     private final ConceptRepository conceptRepository;
     private static final Logger log = LoggerFactory.getLogger(ConceptService.class);
@@ -63,7 +53,7 @@ public class ConceptService {
     }
 
     public void setDataSource(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Transactional
@@ -266,13 +256,11 @@ public class ConceptService {
                                 .toList()))
                              + "])";
 
-        String updateQuery = "with parent_table (node_id, parent_path) as"
-                             + "(select " + conceptNodeIds + ", " + parentPaths + ")"
-                             + "update concept_node set parent_id = parent_ref.p_id from "
-                             + "(select node_id, concept_node_id as p_id from parent_table left join concept_node on parent_path = concept_path) as parent_ref"
-                             + " where concept_node_id = node_id;";
-
-        return updateQuery;
+        return "with parent_table (node_id, parent_path) as"
+               + "(select " + conceptNodeIds + ", " + parentPaths + ")"
+               + "update concept_node set parent_id = parent_ref.p_id from "
+               + "(select node_id, concept_node_id as p_id from parent_table left join concept_node on parent_path = concept_path) as parent_ref"
+               + " where concept_node_id = node_id;";
     }
 
 

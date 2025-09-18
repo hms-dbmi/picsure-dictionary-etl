@@ -1,29 +1,16 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
-import com.opencsv.exceptions.CsvException;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.apache.tomcat.util.buf.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -32,10 +19,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
-
-import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @Testcontainers
 @ActiveProfiles("test")
@@ -60,19 +44,10 @@ public class CSVFacetLoaderTest {
     FacetConceptRepository facetConceptRepository;
 
     @Autowired
-    private DatabaseCleanupUtility databaseCleanupUtility;
-
-    @Autowired
     ConceptRepository conceptRepository;
 
     @Autowired
-    private ConceptMetadataRepository conceptMetadataRepository;
-
-    @Autowired
     DatasetRepository datasetRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
 
     @Container
@@ -138,7 +113,6 @@ public class CSVFacetLoaderTest {
         Assertions.assertEquals("Description of Category", category.getDescription());
         List<FacetModel> facetList = facetRepository.findAll();
         Assertions.assertEquals(3, facetList.size());
-        ;
         //Wrapping in a doesNotThrow to catch if any of the facets are missing
         Assertions.assertDoesNotThrow(() ->
                 {

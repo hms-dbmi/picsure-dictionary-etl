@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
@@ -58,22 +55,22 @@ public class ConceptController {
     @PersistenceContext
     private EntityManager entityManager;
     private static final Logger log = LoggerFactory.getLogger(ConceptController.class);
-    private int BATCH_SIZE = 100;
+    private final int BATCH_SIZE = 100;
     String[] coreConceptHeaders = {"dataset_ref", "name", "display", "concept_type", "concept_path",
             "parent_concept_path"};
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
         try {
-            List<ConceptModel> conceptModels = new ArrayList<ConceptModel>();
+            List<ConceptModel> conceptModels = new ArrayList<>();
 
             if (datasetRef == null) {
                 // get all concepts in dictionary
-                conceptRepository.findAll().forEach(conceptModels::add);
+                conceptModels.addAll(conceptRepository.findAll());
             } else {
                 // get all concepts in specific dataset
                 Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
-                conceptRepository.findByDatasetId(datasetId).forEach(conceptModels::add);
+                conceptModels.addAll(conceptRepository.findByDatasetId(datasetId));
 
             }
             if (conceptModels.isEmpty()) {
@@ -103,11 +100,7 @@ public class ConceptController {
         }
 
         Long parentId;
-        if (parentData.isPresent()) {
-            parentId = parentData.get().getConceptNodeId();
-        } else {
-            parentId = null;
-        }
+        parentId = parentData.map(ConceptModel::getConceptNodeId).orElse(null);
         if (conceptData.isPresent()) {
             // update already existing concept
             ConceptModel existingConcept = conceptData.get();

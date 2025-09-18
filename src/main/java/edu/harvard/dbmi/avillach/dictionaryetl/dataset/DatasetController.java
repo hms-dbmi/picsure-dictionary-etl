@@ -2,36 +2,18 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetController;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryController;
 import jakarta.transaction.Transactional;
 
 @CrossOrigin(origins = "http://localhost:8081")
@@ -64,8 +46,7 @@ public class DatasetController {
     @GetMapping("/dataset")
     public ResponseEntity<List<DatasetModel>> getAllDatasetModels() {
         try {
-            List<DatasetModel> datasetModels = new ArrayList<DatasetModel>();
-            datasetRepository.findAll().forEach(datasetModels::add);
+            List<DatasetModel> datasetModels = new ArrayList<>(datasetRepository.findAll());
 
             if (datasetModels.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -109,9 +90,9 @@ public class DatasetController {
     @PutMapping("/dataset/csv")
     public ResponseEntity<Object> updateDatasetsFromCsv(@RequestBody String input) {
         DatasetService datasetService = new DatasetService(datasetRepository);
-        Map<String, Integer> headerMap = new HashMap<String, Integer>();
+        Map<String, Integer> headerMap;
         List<String> metaColumnNames = new ArrayList<>();
-        List<String[]> datasets = new ArrayList<>();
+        List<String[]> datasets;
         try (CSVReader reader = new CSVReader(new StringReader(input))) {
             String[] header = reader.readNext();
             headerMap = datasetService.buildCsvInputsHeaderMap(header);
@@ -129,10 +110,9 @@ public class DatasetController {
             }
             datasets = reader.readAll();
             datasets.remove(header);
-            reader.close();
         } catch (IOException | CsvException e) {
             return new ResponseEntity<>(
-                    "Error reading dataset ingestion csv. Error: \n" + e.getStackTrace(),
+                    "Error reading dataset ingestion csv. Error: \n" + Arrays.toString(e.getStackTrace()),
                     HttpStatus.BAD_REQUEST);
         }
         if (datasets.isEmpty()) {
@@ -140,12 +120,10 @@ public class DatasetController {
                     "No csv records found in dataset input file.",
                     HttpStatus.BAD_REQUEST);
         }
-        int datasetCount = datasets.size();
         int datasetUpdateCount = 0;
         int metaUpdateCount = 0;
 
-        for (int i = 0; i < datasetCount; i++) {
-            String[] dataset = datasets.get(i);
+        for (String[] dataset : datasets) {
             String ref = dataset[headerMap.get("ref")];
             String fullName = dataset[headerMap.get("full_name")];
             String abbreviation = dataset[headerMap.get("abbreviation")];
@@ -165,10 +143,9 @@ public class DatasetController {
             }
             datasetRepository.save(datasetModel);
             datasetUpdateCount++;
-            for (int j = 0; j < metaColumnNames.size(); j++) {
-                String key = metaColumnNames.get(j);
+            for (String key : metaColumnNames) {
                 String value = dataset[headerMap.get(key)];
-                if (!value.isBlank() && value != null) {
+                if (!value.isBlank()) {
                     DatasetMetadataModel dmModel = datasetMetadataRepository.findByDatasetIdAndKey(datasetModel.getDatasetId(), key).orElse(new DatasetMetadataModel(datasetModel.getDatasetId(), key, value));
                     dmModel.setValue(value);
                     datasetMetadataRepository.save(dmModel);
@@ -200,26 +177,16 @@ public class DatasetController {
                             conceptRepository.save(child);
                         });
 
-                        facetConceptRepository.findByConceptNodeId(conceptId).get().forEach(fc -> {
-                            facetConceptRepository.delete(fc);
-                        });
-                        conceptMetadataRepository.findByConceptNodeId(conceptId).forEach(cm -> {
-                            conceptMetadataRepository.delete(cm);
-                        });
+                        facetConceptRepository.deleteAll(facetConceptRepository.findByConceptNodeId(conceptId).get());
+                        conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
                         conceptRepository.delete(concept);
                     });
-            datasetMetadataRepository.findByDatasetId(datasetId).forEach(dm -> {
-                datasetMetadataRepository.delete(dm);
-            });
+            datasetMetadataRepository.deleteAll(datasetMetadataRepository.findByDatasetId(datasetId));
             if (facetRepository.findByName(datasetRef).isPresent()) {
                 facetRepository.delete(facetRepository.findByName(datasetRef).get());
             }
-            consentRepository.findByDatasetId(datasetId).forEach(consent -> {
-                consentRepository.delete(consent);
-            });
-            datasetHarmonizationRepository.findBySourceDatasetId(datasetId).forEach(dh -> {
-                datasetHarmonizationRepository.delete(dh);
-            });
+            consentRepository.deleteAll(consentRepository.findByDatasetId(datasetId));
+            datasetHarmonizationRepository.deleteAll(datasetHarmonizationRepository.findBySourceDatasetId(datasetId));
             datasetRepository.delete(datasetData.get());
             return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
         } else {
@@ -231,16 +198,16 @@ public class DatasetController {
     public ResponseEntity<List<DatasetMetadataModel>> getAllDatasetMetadataModels(
             @RequestParam Optional<String> datasetRef) {
         try {
-            List<DatasetMetadataModel> datasetMetadataModels = new ArrayList<DatasetMetadataModel>();
+            List<DatasetMetadataModel> datasetMetadataModels = new ArrayList<>();
 
             if (datasetRef == null || !datasetRef.isPresent()) {
                 // get all dataset metadata in dictionary
                 System.out.println("Hitting datasetMetadata");
-                datasetMetadataRepository.findAll().forEach(datasetMetadataModels::add);
+                datasetMetadataModels.addAll(datasetMetadataRepository.findAll());
             } else {
                 // get all dataset metadata in specific dataset
                 Long datasetId = datasetRepository.findByRef(datasetRef.get()).get().getDatasetId();
-                datasetMetadataRepository.findByDatasetId(datasetId).forEach(datasetMetadataModels::add);
+                datasetMetadataModels.addAll(datasetMetadataRepository.findByDatasetId(datasetId));
 
             }
             if (datasetMetadataModels.isEmpty()) {

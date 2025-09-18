@@ -2,7 +2,6 @@ package edu.harvard.dbmi.avillach.dictionaryetl.anvil;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
@@ -73,7 +72,7 @@ public class AnVILServiceTest {
         assertFalse(existingRefs.isEmpty());
         String testPhsVal = existingRefs.getFirst();
         assertNotNull(testPhsVal);
-        assertEquals(testPhsVal, "phs001746");
+        assertEquals("phs001746", testPhsVal);
     }
 
     @Test
