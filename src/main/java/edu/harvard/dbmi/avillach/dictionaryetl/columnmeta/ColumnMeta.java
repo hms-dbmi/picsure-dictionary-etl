@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.columnmeta;
 
 import java.util.List;
 

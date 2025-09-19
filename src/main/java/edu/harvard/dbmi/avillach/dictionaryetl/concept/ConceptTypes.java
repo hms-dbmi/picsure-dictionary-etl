@@ -1,6 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.columnmeta.ColumnMeta;
 
 public enum ConceptTypes {
     CATEGORICAL("categorical"),

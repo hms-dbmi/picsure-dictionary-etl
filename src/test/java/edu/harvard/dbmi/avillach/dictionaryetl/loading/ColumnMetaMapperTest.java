@@ -1,5 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.columnmeta.ColumnMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.columnmeta.ColumnMetaMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
