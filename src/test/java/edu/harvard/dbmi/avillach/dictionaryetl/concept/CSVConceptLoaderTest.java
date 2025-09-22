@@ -1,14 +1,9 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,8 +19,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
-
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,9 +46,6 @@ class CSVConceptLoaderTest {
     @Autowired
     DatasetRepository datasetRepository;
 
-    @PersistenceContext
-        private EntityManager entityManager;
-
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -81,7 +71,7 @@ class CSVConceptLoaderTest {
     }
 
     @Test
-    void csvBatchConceptLoadTest() throws IOException, CsvException, JSONException {
+    void csvBatchConceptLoadTest() {
         //testing ingesting with hierarchy of ref1 -> ref2 (with categorical values) -> ref3 (with continuous values) with batch size of 2 (two batches)
         DatasetModel dataset = new DatasetModel("ref1", "REF1", "abv", "");
         datasetRepository.save(dataset);
@@ -124,11 +114,8 @@ class CSVConceptLoaderTest {
                 }, "JSON Parsing issue for values for concept1(categorical)"
         );
         Assertions.assertDoesNotThrow(
-                () -> {
-                    Assertions.assertEquals("ipsum", conceptMetadataRepository.findByConceptNodeIdAndKey(concept1.getConceptNodeId(), "desc")
-                        .get().getValue(), "Desc value not as expected for mid-level concept concept1");
-
-                }, "Desc meta key for mid-level concept concept1 does not exist");
+                () -> Assertions.assertEquals("ipsum", conceptMetadataRepository.findByConceptNodeIdAndKey(concept1.getConceptNodeId(), "desc")
+                    .get().getValue(), "Desc value not as expected for mid-level concept concept1"), "Desc meta key for mid-level concept concept1 does not exist");
 
         //verify that concept2 exists, is continuous, has the parent concept1, values and desc meta exist, and min/max values are parseable
         Assertions.assertTrue(conceptRepository.findByName("concept2").isPresent(), "Lowest level concept concept2 not present in db after load");
@@ -147,10 +134,7 @@ class CSVConceptLoaderTest {
                         }, "JSON Parsing issue for values for concept2(continuous)"
                 );
         Assertions.assertDoesNotThrow(
-                        () -> {
-                            Assertions.assertEquals("ipsum2", conceptMetadataRepository.findByConceptNodeIdAndKey(concept2.getConceptNodeId(), "desc")
-                                .get().getValue(), "Desc value not as expected for low-level concept concept2");
-
-                        }, "Desc meta key for low-level concept concept2 does not exist");
+                        () -> Assertions.assertEquals("ipsum2", conceptMetadataRepository.findByConceptNodeIdAndKey(concept2.getConceptNodeId(), "desc")
+                            .get().getValue(), "Desc value not as expected for low-level concept concept2"), "Desc meta key for low-level concept concept2 does not exist");
     }
 }

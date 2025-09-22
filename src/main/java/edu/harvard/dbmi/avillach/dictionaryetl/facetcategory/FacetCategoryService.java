@@ -12,9 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
@@ -71,10 +69,9 @@ public class FacetCategoryService {
                                + "])";
         String vals = StringUtils.arrayToCommaDelimitedString(
                                        new String[] { names, displays, descs });
-        String upsertQuery = "insert into facet_category (name,display,description) "
-                                        + "VALUES (" + vals + ")"
-                                        + " ON CONFLICT (name) DO UPDATE SET (display,description) = (EXCLUDED.display,EXCLUDED.description);";
-                                        return upsertQuery;
+        return "insert into facet_category (name,display,description) "
+               + "VALUES (" + vals + ")"
+               + " ON CONFLICT (name) DO UPDATE SET (display,description) = (EXCLUDED.display,EXCLUDED.description);";
 
     }
 
@@ -86,9 +83,9 @@ public class FacetCategoryService {
         @Transactional
 
         public ResponseEntity<String> updateFacetCategoriesFromCSVs(@RequestBody String input) {
-            List<String[]> facetCategories = new ArrayList<>();
-            Map<String, Integer> headerMap = new HashMap<String, Integer>();
-            List<String> metaColumnNames = new ArrayList<>();
+            List<String[]> facetCategories;
+            Map<String, Integer> headerMap;
+            List<String> metaColumnNames;
             try (CSVReader reader = new CSVReader(new StringReader(input))) {
                 String[] header = reader.readNext();
                 headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
@@ -113,9 +110,7 @@ public class FacetCategoryService {
                         "No csv records found in facet categories input file.",
                         HttpStatus.BAD_REQUEST);
             }
-            int catCount = facetCategories.size();
             int catUpdateCount = 0;
-            int catMetaUpdateCount = 0;
             List<FacetCategoryModel> catModels = new ArrayList<>();
             Map<String, Map<String, String>> metaMap = new HashMap<>();
             for (String[] category : facetCategories) {
@@ -128,10 +123,9 @@ public class FacetCategoryService {
                 FacetCategoryModel newCategoryModel = new FacetCategoryModel(name, display, description);
                 catModels.add(newCategoryModel);
                 Map<String, String> metaVals = new HashMap<>();
-                for (int j = 0; j < metaColumnNames.size(); j++) {
-                    String key = metaColumnNames.get(j);
+                for (String key : metaColumnNames) {
                     String value = category[headerMap.get(key)];
-                    if (!value.isBlank() && value != null) {
+                    if (!value.isBlank()) {
                         metaVals.put(key, value);
                     }
                 }

@@ -2,7 +2,6 @@ package edu.harvard.dbmi.avillach.dictionaryetl.anvil;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
@@ -11,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,13 +31,13 @@ public class AnVILServiceTest {
     @Autowired
     private AnVILService anVILService;
 
-    @MockBean
+    @MockitoBean
     private DatasetRepository datasetRepository;
 
-    @MockBean
+    @MockitoBean
     private ConsentRepository consentRepository;
 
-    @MockBean
+    @MockitoBean
     private DatasetMetadataRepository datasetMetadataRepository;
 
     private static String fileContents;
@@ -73,7 +72,7 @@ public class AnVILServiceTest {
         assertFalse(existingRefs.isEmpty());
         String testPhsVal = existingRefs.getFirst();
         assertNotNull(testPhsVal);
-        assertEquals(testPhsVal, "phs001746");
+        assertEquals("phs001746", testPhsVal);
     }
 
     @Test

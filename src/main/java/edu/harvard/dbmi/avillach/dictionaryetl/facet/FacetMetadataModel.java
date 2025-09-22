@@ -34,10 +34,6 @@ public class FacetMetadataModel {
         return this.facetMetaId;
     }
 
-    public void setFacetMetaId(Long facetMetaId) {
-        this.facetMetaId = facetMetaId;
-    }
-
     public Long getFacetId() {
         return this.facetId;
     }

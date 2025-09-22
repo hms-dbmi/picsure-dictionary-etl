@@ -26,16 +26,7 @@ public class ColumnMetaMapper {
             boolean isCategorical = columns[3].charAt(0) == 't';
             List<String> categoryValues = parseCategoryValuesToList(columns[4]);
 
-            String conceptPath = columns[0].replace("µ", "\\");
-            if (isCategorical && categoryValues.size() == 1) {
-                int lastBackslash = conceptPath.lastIndexOf("\\");
-                int secondLastBackslash = conceptPath.lastIndexOf("\\", lastBackslash - 1);
-                String lastNode = conceptPath.substring(secondLastBackslash + 1).replace("\\", "");
-                if (lastNode.equals(categoryValues.getFirst())) {
-                    // remove the last node from the concept path
-                    conceptPath = conceptPath.substring(0, secondLastBackslash + 1);
-                }
-            }
+            String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
 
             double min = 0;
             double max = 0;
@@ -65,6 +56,20 @@ public class ColumnMetaMapper {
             log.error("Unable to parse line {}", csvRow);
         }
         return Optional.empty();
+    }
+
+    private static String getConceptPath(String[] columns, boolean isCategorical, List<String> categoryValues) {
+        String conceptPath = columns[0].replace("µ", "\\");
+        if (isCategorical && categoryValues.size() == 1) {
+            int lastBackslash = conceptPath.lastIndexOf("\\");
+            int secondLastBackslash = conceptPath.lastIndexOf("\\", lastBackslash - 1);
+            String lastNode = conceptPath.substring(secondLastBackslash + 1).replace("\\", "");
+            if (lastNode.equals(categoryValues.getFirst())) {
+                // remove the last node from the concept path
+                conceptPath = conceptPath.substring(0, secondLastBackslash + 1);
+            }
+        }
+        return conceptPath;
     }
 
     private List<String> parseCategoryValuesToList(String column) {

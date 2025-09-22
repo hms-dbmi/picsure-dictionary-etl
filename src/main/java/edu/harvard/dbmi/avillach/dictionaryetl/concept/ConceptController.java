@@ -2,13 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.*;
 
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -58,22 +52,22 @@ public class ConceptController {
     @PersistenceContext
     private EntityManager entityManager;
     private static final Logger log = LoggerFactory.getLogger(ConceptController.class);
-    private int BATCH_SIZE = 100;
+    private final int BATCH_SIZE = 100;
     String[] coreConceptHeaders = {"dataset_ref", "name", "display", "concept_type", "concept_path",
             "parent_concept_path"};
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
         try {
-            List<ConceptModel> conceptModels = new ArrayList<ConceptModel>();
+            List<ConceptModel> conceptModels = new ArrayList<>();
 
             if (datasetRef == null) {
                 // get all concepts in dictionary
-                conceptRepository.findAll().forEach(conceptModels::add);
+                conceptModels.addAll(conceptRepository.findAll());
             } else {
                 // get all concepts in specific dataset
                 Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
-                conceptRepository.findByDatasetId(datasetId).forEach(conceptModels::add);
+                conceptModels.addAll(conceptRepository.findByDatasetId(datasetId));
 
             }
             if (conceptModels.isEmpty()) {
@@ -103,11 +97,7 @@ public class ConceptController {
         }
 
         Long parentId;
-        if (parentData.isPresent()) {
-            parentId = parentData.get().getConceptNodeId();
-        } else {
-            parentId = null;
-        }
+        parentId = parentData.map(ConceptModel::getConceptNodeId).orElse(null);
         if (conceptData.isPresent()) {
             // update already existing concept
             ConceptModel existingConcept = conceptData.get();
@@ -155,12 +145,8 @@ public class ConceptController {
                 conceptRepository.save(child);
             });
 
-            facetConceptRepository.findByConceptNodeId(conceptId).get().forEach(fc -> {
-                facetConceptRepository.delete(fc);
-            });
-            conceptMetadataRepository.findByConceptNodeId(conceptId).forEach(cm -> {
-                conceptMetadataRepository.delete(cm);
-            });
+            facetConceptRepository.deleteAll(facetConceptRepository.findByConceptNodeId(conceptId).get());
+            conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
             conceptRepository.delete(conceptData.get());
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
@@ -175,9 +161,9 @@ public class ConceptController {
             @RequestBody String conceptNodeIds) {
         String[] inputArray = conceptNodeIds.split("\n");
         List<ConceptModel> validConcepts = new ArrayList<>();
-        for (int i = 0; i < inputArray.length; i++) {
+        for (String s : inputArray) {
             try {
-                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
+                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(s)));
             } catch (NumberFormatException e) {
                 return new ResponseEntity<>(
                         "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
@@ -191,10 +177,7 @@ public class ConceptController {
         } else {
             return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
         }
-        List<ConceptModel> obsoleteConcepts = new ArrayList<>();
-        conceptRepository.findByDatasetId(datasetId).forEach(concept -> {
-            obsoleteConcepts.add(concept);
-        });
+        List<ConceptModel> obsoleteConcepts = new ArrayList<>(conceptRepository.findByDatasetId(datasetId));
         obsoleteConcepts.removeAll(validConcepts);
         return new ResponseEntity<>(obsoleteConcepts, HttpStatus.OK);
     }
@@ -205,11 +188,11 @@ public class ConceptController {
             @RequestBody String conceptNodeIds) {
         String[] inputArray = conceptNodeIds.split("\n");
         List<ConceptModel> validConcepts = new ArrayList<>();
-        for (int i = 0; i < inputArray.length; i++) {
+        for (String s : inputArray) {
             try {
-                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(inputArray[i])));
+                validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(s)));
             } catch (NumberFormatException e) {
-                return new ResponseEntity<Object>(
+                return new ResponseEntity<>(
                         "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
                         HttpStatus.BAD_REQUEST);
             }
@@ -221,10 +204,7 @@ public class ConceptController {
         } else {
             return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
         }
-        List<ConceptModel> obsoleteConcepts = new ArrayList<>();
-        conceptRepository.findByDatasetId(datasetId).forEach(concept -> {
-            obsoleteConcepts.add(concept);
-        });
+        List<ConceptModel> obsoleteConcepts = new ArrayList<>(conceptRepository.findByDatasetId(datasetId));
         obsoleteConcepts.removeAll(validConcepts);
         obsoleteConcepts.forEach(concept -> {
             // uses the local delete method in order to propery cascade
@@ -239,8 +219,7 @@ public class ConceptController {
       // parent_concept_path values {addt metakeys}
       @Transactional
       @PutMapping("/concept/csv")
-      public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input)
-              throws IOException, CsvException {
+      public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input) {
           Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
           Long datasetId;
           if (datasetData.isPresent()) {
@@ -265,10 +244,9 @@ public class ConceptController {
 
               concepts = reader.readAll();
               concepts.remove(header);
-              reader.close();
           } catch (IOException | CsvException e) {
               return new ResponseEntity<>(
-                      "Error reading ingestion csv for " + datasetRef + ". Error: \n" + e.getStackTrace(),
+                      "Error reading ingestion csv for " + datasetRef + ". Error: \n" + Arrays.toString(e.getStackTrace()),
                       HttpStatus.BAD_REQUEST);
           }
           if (concepts.isEmpty()) {
@@ -316,7 +294,7 @@ public class ConceptController {
         log.info("varcount: " + varcount);
         int conceptUpdateCount = 0;
         int metaUpdateCount = 0;
-        final Map<String, JSONObject> conceptMetaMap = new HashMap<String, JSONObject>();
+        final Map<String, JSONObject> conceptMetaMap = new HashMap<>();
         List<ConceptModel> conceptModels = new ArrayList<>();
 
         for (int i = 0; i < varcount; i++) {
@@ -354,7 +332,7 @@ public class ConceptController {
                     log.info("meta value" + value);
                 });
                 // fetch updated concept node ids corresponding to concept paths
-                Map<Long, JSONObject> idMetaMap = new HashMap<Long, JSONObject>();
+                Map<Long, JSONObject> idMetaMap = new HashMap<>();
                 List<Object[]> refList = entityManager
                         .createNativeQuery(service.getIdsFromPathsQuery(conceptMetaMap.keySet())).getResultList();
                 refList.forEach(entry -> {
@@ -364,11 +342,9 @@ public class ConceptController {
                 });
 
                 // bulk update concept_node_meta
-                List<ConceptMetadataModel> metaList = new ArrayList<ConceptMetadataModel>();
-                idMetaMap.entrySet().forEach(entry -> {
-                    Long id = entry.getKey();
-                    log.info("Id:" + id);
-                    JSONObject metaJson = entry.getValue();
+                List<ConceptMetadataModel> metaList = new ArrayList<>();
+                idMetaMap.forEach((id, metaJson) -> {
+                    log.info("Id:{}", id);
                     metaJson.keySet().forEach(metaKey -> {
                         ConceptMetadataModel conceptMeta = new ConceptMetadataModel();
                         conceptMeta.setConceptNodeId(id);
@@ -394,16 +370,16 @@ public class ConceptController {
     public ResponseEntity<Object> getAllConceptMetadataModels(
             @RequestParam Optional<String> conceptPath) {
         try {
-            List<ConceptMetadataModel> conceptMetadataModels = new ArrayList<ConceptMetadataModel>();
+            List<ConceptMetadataModel> conceptMetadataModels = new ArrayList<>();
 
-            if (conceptPath == null || !conceptPath.isPresent()) {
+            if (conceptPath.isEmpty()) {
                 // get all conceptMetadatas in dictionary
                 log.info("Hitting conceptMetadata null");
-                conceptMetadataRepository.findAll().forEach(conceptMetadataModels::add);
+                conceptMetadataModels.addAll(conceptMetadataRepository.findAll());
             } else {
                 log.info("Hitting conceptMetadata");
                 Long conceptId = conceptRepository.findByConceptPath(conceptPath.get()).get().getConceptNodeId();
-                conceptMetadataRepository.findByConceptNodeId(conceptId).forEach(conceptMetadataModels::add);
+                conceptMetadataModels.addAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
 
             }
             if (conceptMetadataModels.isEmpty()) {
@@ -460,9 +436,7 @@ public class ConceptController {
             @RequestParam String value) {
         try {
             CSVParser csvParser =  new CSVParserBuilder().withEscapeChar('φ').build();
-            List<String> conceptList = new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream().map(line -> {
-                                                  return line[0];
-                                              }).toList();
+            List<String> conceptList = new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream().map(line -> line[0]).toList();
 
             String[] concepts = conceptList.toArray(new String[0]);
             int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
@@ -473,7 +447,7 @@ public class ConceptController {
         }
         catch (IOException | CsvException e) {
                     return new ResponseEntity<>(
-                            "Error reading conceptstoupdate csv. Error: \n" + e.getStackTrace(),
+                            "Error reading conceptstoupdate csv. Error: \n" + Arrays.toString(e.getStackTrace()),
                             HttpStatus.BAD_REQUEST);
                 }
 
@@ -484,9 +458,7 @@ public class ConceptController {
     public ResponseEntity<Object> getInfoForStigvarIdentification(@RequestParam String ref) {
         List<ConceptStigvarIdentificationModel> info = conceptMetadataRepository.getInfoForStigvars(ref);
         StringBuilder csvString = new StringBuilder();
-        info.forEach(model -> {
-            csvString.append(model.toString());
-        });
+        info.forEach(model -> csvString.append(model.toString()));
         return new ResponseEntity<>(csvString.toString(), HttpStatus.OK);
     }
 
@@ -524,10 +496,8 @@ public class ConceptController {
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-        } else if (key.length() > 0) {
-            conceptMetadataRepository.findByKey(key).forEach(cm -> {
-                conceptMetadataRepository.delete(cm);
-            });
+        } else if (!key.isEmpty()) {
+            conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByKey(key));
         }
 
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

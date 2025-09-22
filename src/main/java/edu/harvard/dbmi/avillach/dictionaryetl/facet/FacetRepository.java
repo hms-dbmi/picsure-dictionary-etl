@@ -2,7 +2,6 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -57,7 +56,7 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     @Transactional
     @Query(value = """
         INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
-        SELECT :catId, REF, REF, COALESCE(FULL_NAME, '')
+        SELECT :catId, REF, REF, FULL_NAME
         FROM dict.dataset
         """, nativeQuery = true)
     void createFacetForEachDatasetForCategory(@Param("catId") Long catId);

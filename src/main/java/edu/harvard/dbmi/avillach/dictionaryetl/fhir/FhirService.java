@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,9 +42,7 @@ public class FhirService {
     private final DatasetRepository datasetRepository;
     private final DatasetMetadataRepository datasetMetadataRepository;
 
-    // Tracking metrics variables
-    private int newStudiesCreated = 0;
-    private Set<String> datasetsUpdated = new HashSet<>();
+    private final Set<String> datasetsUpdated = new HashSet<>();
     private int metadataUpdated = 0;
 
     @Autowired
@@ -76,7 +73,8 @@ public class FhirService {
         }
 
         try {
-            this.urlToKeyMap = objectMapper.readValue(urlToKeyMapJson, new TypeReference<Map<String, String>>() {});
+            this.urlToKeyMap = objectMapper.readValue(urlToKeyMapJson, new TypeReference<>() {
+            });
         } catch (IOException e) {
             logger.error("Failed to parse URL to Key Map JSON: {}", urlToKeyMapJson, e);
             this.urlToKeyMap = new HashMap<>();
@@ -167,6 +165,8 @@ public class FhirService {
     public void logMetrics() {
         try {
             Map<String, Object> metrics = new HashMap<>();
+            // Tracking metrics variables
+            int newStudiesCreated = 0;
             metrics.put("Number of new studies created", newStudiesCreated);
             metrics.put("Number of datasets updated", datasetsUpdated.size());
             metrics.put("Total metadata updated", metadataUpdated);

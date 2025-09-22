@@ -12,9 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
@@ -47,8 +45,8 @@ public class FacetConceptService {
 
     @Transactional
     public ResponseEntity<String> updateFacetConceptMappingsFromCSVs(@RequestBody String input) {
-        List<String[]> conceptMappings = new ArrayList<>();
-        Map<String, Integer> headerMap = new HashMap<String, Integer>();
+        List<String[]> conceptMappings;
+        Map<String, Integer> headerMap;
         try (CSVReader reader = new CSVReader(new StringReader(input))) {
             String[] header = reader.readNext();
             headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
@@ -56,7 +54,7 @@ public class FacetConceptService {
             conceptMappings.remove(header);
         } catch (IOException | CsvException e) {
             return new ResponseEntity<>(
-                    "Error reading ingestion csv for facet_concept mappings. Error: \n" + e.getStackTrace(),
+                    "Error reading ingestion csv for facet_concept mappings. Error: \n" + Arrays.toString(e.getStackTrace()),
                     HttpStatus.BAD_REQUEST);
         }
         List<String[]> finalConceptMappings = conceptMappings;

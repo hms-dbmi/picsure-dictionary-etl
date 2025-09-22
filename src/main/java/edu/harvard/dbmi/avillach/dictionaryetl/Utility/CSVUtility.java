@@ -6,13 +6,11 @@ import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -133,9 +131,8 @@ public class CSVUtility {
      * Removes a directory if it is empty
      *
      * @param directoryPath Path to the directory
-     * @return true if directory was deleted, false otherwise
      */
-    public boolean removeDirectoryIfEmpty(String directoryPath) {
+    public void removeDirectoryIfEmpty(String directoryPath) {
         File directory = new File(directoryPath);
         if (directory.isDirectory()) {
             File[] files = directory.listFiles();
@@ -143,14 +140,12 @@ public class CSVUtility {
                 boolean deleted = directory.delete();
                 if (deleted) {
                     log.info("Deleted empty directory: {}", directoryPath);
-                    return true;
                 } else {
                     log.warn("Failed to delete empty directory: {}", directoryPath);
                 }
             }
         }
 
-        return false;
     }
 
     /**
@@ -192,7 +187,7 @@ public class CSVUtility {
     }
 
     public static Map<String, Integer> buildCsvInputsHeaderMap(String[] inputHeaders) {
-            Map<String, Integer> inputsHeaders = new HashMap<String, Integer>();
+            Map<String, Integer> inputsHeaders = new HashMap<>();
             for (int i = 0; i < inputHeaders.length; i++) {
                     inputsHeaders.put(inputHeaders[i], i);
             }

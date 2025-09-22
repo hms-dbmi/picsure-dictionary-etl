@@ -1,7 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
@@ -36,9 +35,6 @@ class FacetRepositoryTest {
 
     @Autowired
     FacetCategoryRepository facetCategoryRepository;
-
-    @Autowired
-    ConceptRepository conceptRepository;
 
     @Autowired
     DatasetRepository datasetRepository;

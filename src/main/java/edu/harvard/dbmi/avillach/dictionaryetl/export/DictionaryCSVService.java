@@ -1,31 +1,18 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
 import com.opencsv.*;
-import com.opencsv.exceptions.CsvValidationException;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataService;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
-import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentService;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.*;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.ConceptToFacetDTO;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import javax.sql.DataSource;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -333,9 +320,7 @@ public class DictionaryCSVService {
 
         // Create mapping from facet category ID to name
         Map<Long, String> facetCategoryIdToName = new HashMap<>();
-        facetCategoryModels.forEach(facetCategoryModel -> {
-            facetCategoryIdToName.put(facetCategoryModel.getFacetCategoryId(), facetCategoryModel.getName());
-        });
+        facetCategoryModels.forEach(facetCategoryModel -> facetCategoryIdToName.put(facetCategoryModel.getFacetCategoryId(), facetCategoryModel.getName()));
 
         // Create mapping from parent ID to facet model
         Map<Long, FacetModel> parentIdToFacetModel = new HashMap<>();
