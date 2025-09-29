@@ -157,6 +157,7 @@ public class DatasetController {
                 + metaUpdateCount + " dataset metadata entries from input csv.", HttpStatus.CREATED);
     }
 
+    @Transactional
     @DeleteMapping("/dataset")
     public ResponseEntity<String> deleteDataset(@RequestParam String datasetRef) {
 
@@ -176,9 +177,17 @@ public class DatasetController {
                             child.setParentId(null);
                             conceptRepository.save(child);
                         });
+                        // Ensure child updates are flushed before deleting parent concept
+                        conceptRepository.flush();
 
-                        facetConceptRepository.deleteAll(facetConceptRepository.findByConceptNodeId(conceptId).get());
+                        // Delete facet mappings (handle Optional safely)
+                        facetConceptRepository.deleteAll(
+                                facetConceptRepository.findByConceptNodeId(conceptId).orElse(Collections.emptyList())
+                        );
+                        // Delete concept metadata
                         conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
+
+                        // Finally delete the concept itself
                         conceptRepository.delete(concept);
                     });
             datasetMetadataRepository.deleteAll(datasetMetadataRepository.findByDatasetId(datasetId));
