@@ -74,5 +74,15 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
           LEFT JOIN dict.concept_node_meta AS categorical_values ON dict.concept_node.concept_node_id = categorical_values.concept_node_id AND categorical_values.KEY = 'values'
       WHERE (continuous_min.value <> '' OR continuous_max.value <> '' OR categorical_values.value <> '')
       """, nativeQuery = true)
-  void createDatasetPairForEachLeafConcept(@Param("facetCategoryId") Long facetCategoryId);
+    void createDatasetPairForEachLeafConcept(@Param("facetCategoryId") Long facetCategoryId);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        DELETE FROM dict.facet__concept_node f
+        USING dict.concept_node cn
+        WHERE f.concept_node_id = cn.concept_node_id
+          AND cn.dataset_id = :datasetId
+        """, nativeQuery = true)
+    int deleteByDatasetId(@Param("datasetId") Long datasetId);
 }

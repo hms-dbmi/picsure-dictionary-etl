@@ -54,4 +54,14 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             group by key;
     """, nativeQuery = true)
     List<String> findByDatasetID(Long[] datasetIDs);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        DELETE FROM dict.concept_node_meta m
+        USING dict.concept_node cn
+        WHERE m.concept_node_id = cn.concept_node_id
+          AND cn.dataset_id = :datasetId
+        """, nativeQuery = true)
+    int deleteByDatasetId(@Param("datasetId") Long datasetId);
 }

@@ -169,49 +169,18 @@ public class DatasetController {
         if (datasetData.isPresent()) {
             Long datasetId = datasetData.get().getDatasetId();
 
-            conceptRepository.findByDatasetId(datasetId).forEach(
-                    concept -> {
-                        Long conceptId = concept.getConceptNodeId();
-                        // find all child concept nodes and null the parent ids to prevent dependency
-                        // errors
-                        // potentially would want to instead set the parent id to dataset or the
-                        // parent's parent id - must do eval on use case of single var deletion
-                        conceptRepository.findByParentId(conceptId).forEach(child -> {
-                            child.setParentId(null);
-                            conceptRepository.save(child);
-                        });
-                        // Ensure child updates are flushed before deleting parent concept
-                        conceptRepository.flush();
+            // Bulk, set-based operations for performance and idempotency
+            facetConceptRepository.deleteByDatasetId(datasetId);
+            conceptMetadataRepository.deleteByDatasetId(datasetId);
+            conceptRepository.nullChildrenByDataset(datasetId);
+            conceptRepository.deleteByDatasetId(datasetId);
+            datasetMetadataRepository.deleteByDatasetId(datasetId);
+            consentRepository.deleteByDatasetId(datasetId);
+            datasetHarmonizationRepository.deleteBySourceDatasetId(datasetId);
 
-                        // Delete facet mappings (handle Optional safely)
-                        facetConceptRepository.deleteAll(
-                                facetConceptRepository.findByConceptNodeId(conceptId).orElse(Collections.emptyList())
-                        );
-                        // Ensure facet-concept deletions are executed before concept delete
-                        facetConceptRepository.flush();
+            // Delete facet named after datasetRef if present
+            facetRepository.findByName(datasetRef).ifPresent(facetRepository::delete);
 
-                        // Delete concept metadata
-                        conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
-                        // Ensure concept metadata deletions are executed before concept delete
-                        conceptMetadataRepository.flush();
-
-                        // Finally delete the concept itself (idempotent)
-                        try {
-                            if (conceptRepository.existsById(conceptId)) {
-                                conceptRepository.delete(concept);
-                            }
-                        } catch (EmptyResultDataAccessException | StaleStateException | ObjectOptimisticLockingFailureException e) {
-                            // Already deleted or stale; ignore to keep DELETE idempotent
-                        }
-                        // Execute delete immediately to avoid stale/batch issues
-                        conceptRepository.flush();
-                    });
-            datasetMetadataRepository.deleteAll(datasetMetadataRepository.findByDatasetId(datasetId));
-            if (facetRepository.findByName(datasetRef).isPresent()) {
-                facetRepository.delete(facetRepository.findByName(datasetRef).get());
-            }
-            consentRepository.deleteAll(consentRepository.findByDatasetId(datasetId));
-            datasetHarmonizationRepository.deleteAll(datasetHarmonizationRepository.findBySourceDatasetId(datasetId));
             try {
                 datasetRepository.delete(datasetData.get());
             } catch (EmptyResultDataAccessException | StaleStateException | ObjectOptimisticLockingFailureException e) {

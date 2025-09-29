@@ -3,8 +3,11 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface DatasetMetadataRepository extends JpaRepository<DatasetMetadataModel, Long> {
@@ -21,4 +24,9 @@ public interface DatasetMetadataRepository extends JpaRepository<DatasetMetadata
             group by key;
     """, nativeQuery = true)
     List<String> findByDatasetID(Long[] datasetIDs);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM dict.dataset_meta WHERE dataset_id = :datasetId", nativeQuery = true)
+    int deleteByDatasetId(@Param("datasetId") Long datasetId);
 }
