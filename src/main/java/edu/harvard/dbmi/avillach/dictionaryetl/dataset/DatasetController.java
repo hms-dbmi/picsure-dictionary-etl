@@ -184,11 +184,18 @@ public class DatasetController {
                         facetConceptRepository.deleteAll(
                                 facetConceptRepository.findByConceptNodeId(conceptId).orElse(Collections.emptyList())
                         );
+                        // Ensure facet-concept deletions are executed before concept delete
+                        facetConceptRepository.flush();
+
                         // Delete concept metadata
                         conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
+                        // Ensure concept metadata deletions are executed before concept delete
+                        conceptMetadataRepository.flush();
 
                         // Finally delete the concept itself
                         conceptRepository.delete(concept);
+                        // Execute delete immediately to avoid stale/batch issues
+                        conceptRepository.flush();
                     });
             datasetMetadataRepository.deleteAll(datasetMetadataRepository.findByDatasetId(datasetId));
             if (facetRepository.findByName(datasetRef).isPresent()) {
