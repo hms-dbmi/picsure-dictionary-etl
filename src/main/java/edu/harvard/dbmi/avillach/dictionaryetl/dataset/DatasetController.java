@@ -15,6 +15,9 @@ import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import jakarta.transaction.Transactional;
+import org.hibernate.StaleStateException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -192,8 +195,14 @@ public class DatasetController {
                         // Ensure concept metadata deletions are executed before concept delete
                         conceptMetadataRepository.flush();
 
-                        // Finally delete the concept itself
-                        conceptRepository.delete(concept);
+                        // Finally delete the concept itself (idempotent)
+                        try {
+                            if (conceptRepository.existsById(conceptId)) {
+                                conceptRepository.delete(concept);
+                            }
+                        } catch (EmptyResultDataAccessException | StaleStateException | ObjectOptimisticLockingFailureException e) {
+                            // Already deleted or stale; ignore to keep DELETE idempotent
+                        }
                         // Execute delete immediately to avoid stale/batch issues
                         conceptRepository.flush();
                     });
@@ -203,7 +212,11 @@ public class DatasetController {
             }
             consentRepository.deleteAll(consentRepository.findByDatasetId(datasetId));
             datasetHarmonizationRepository.deleteAll(datasetHarmonizationRepository.findBySourceDatasetId(datasetId));
-            datasetRepository.delete(datasetData.get());
+            try {
+                datasetRepository.delete(datasetData.get());
+            } catch (EmptyResultDataAccessException | StaleStateException | ObjectOptimisticLockingFailureException e) {
+                // Already deleted or stale; ignore to keep DELETE idempotent
+            }
             return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
