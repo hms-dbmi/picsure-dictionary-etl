@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,13 +31,13 @@ public class AnVILServiceTest {
     @Autowired
     private AnVILService anVILService;
 
-    @Autowired
+    @MockitoBean
     private DatasetRepository datasetRepository;
 
-    @Autowired
+    @MockitoBean
     private ConsentRepository consentRepository;
 
-    @Autowired
+    @MockitoBean
     private DatasetMetadataRepository datasetMetadataRepository;
 
     private static String fileContents;
