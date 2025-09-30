@@ -157,41 +157,20 @@ public class DatasetController {
                 + metaUpdateCount + " dataset metadata entries from input csv.", HttpStatus.CREATED);
     }
 
+    @Transactional
     @DeleteMapping("/dataset")
     public ResponseEntity<String> deleteDataset(@RequestParam String datasetRef) {
 
-        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        // Rely on DB-level cascades: removing the dataset will cascade to related rows.
+        int deletedDatasets = datasetRepository.deleteByRef(datasetRef);
 
-        if (datasetData.isPresent()) {
-            Long datasetId = datasetData.get().getDatasetId();
+        // Remove the facet with the same name as the dataset ref (idempotent; 0 rows affected is OK)
+        facetRepository.deleteByName(datasetRef);
 
-            conceptRepository.findByDatasetId(datasetId).forEach(
-                    concept -> {
-                        Long conceptId = concept.getConceptNodeId();
-                        // find all child concept nodes and null the parent ids to prevent dependency
-                        // errors
-                        // potentially would want to instead set the parent id to dataset or the
-                        // parent's parent id - must do eval on use case of single var deletion
-                        conceptRepository.findByParentId(conceptId).forEach(child -> {
-                            child.setParentId(null);
-                            conceptRepository.save(child);
-                        });
-
-                        facetConceptRepository.deleteAll(facetConceptRepository.findByConceptNodeId(conceptId).get());
-                        conceptMetadataRepository.deleteAll(conceptMetadataRepository.findByConceptNodeId(conceptId));
-                        conceptRepository.delete(concept);
-                    });
-            datasetMetadataRepository.deleteAll(datasetMetadataRepository.findByDatasetId(datasetId));
-            if (facetRepository.findByName(datasetRef).isPresent()) {
-                facetRepository.delete(facetRepository.findByName(datasetRef).get());
-            }
-            consentRepository.deleteAll(consentRepository.findByDatasetId(datasetId));
-            datasetHarmonizationRepository.deleteAll(datasetHarmonizationRepository.findBySourceDatasetId(datasetId));
-            datasetRepository.delete(datasetData.get());
-            return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
-        } else {
+        if (deletedDatasets == 0) {
             return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
         }
+        return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
     }
 
     @GetMapping("/dataset/metadata")

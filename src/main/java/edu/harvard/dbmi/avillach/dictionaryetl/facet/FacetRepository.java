@@ -60,4 +60,9 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
         FROM dict.dataset
         """, nativeQuery = true)
     void createFacetForEachDatasetForCategory(@Param("catId") Long catId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM dict.facet WHERE name = :name", nativeQuery = true)
+    int deleteByName(@Param("name") String name);
 }
