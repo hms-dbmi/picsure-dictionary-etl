@@ -233,4 +233,8 @@ public class FacetService {
      + " where name = child_name;";
 
     }
+
+    public int deleteByName(String datasetRef) {
+        return facetRepository.deleteByName(datasetRef);
+    }
 }

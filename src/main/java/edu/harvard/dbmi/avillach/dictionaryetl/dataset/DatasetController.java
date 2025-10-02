@@ -3,6 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
+
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,10 @@ public class DatasetController {
     DatasetMetadataRepository datasetMetadataRepository;
     @Autowired
     DatasetHarmonizationRepository datasetHarmonizationRepository;
+    @Autowired
+    private DatasetService datasetService;
+    @Autowired
+    private FacetService facetService;
 
     @GetMapping("/dataset")
     public ResponseEntity<List<DatasetModel>> getAllDatasetModels() {
@@ -160,12 +166,8 @@ public class DatasetController {
     @Transactional
     @DeleteMapping("/dataset")
     public ResponseEntity<String> deleteDataset(@RequestParam String datasetRef) {
-
-        // Rely on DB-level cascades: removing the dataset will cascade to related rows.
-        int deletedDatasets = datasetRepository.deleteByRef(datasetRef);
-
-        // Remove the facet with the same name as the dataset ref (idempotent; 0 rows affected is OK)
-        facetRepository.deleteByName(datasetRef);
+        int deletedDatasets = datasetService.deleteByRef(datasetRef);
+        facetService.deleteByName(datasetRef);
 
         if (deletedDatasets == 0) {
             return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
