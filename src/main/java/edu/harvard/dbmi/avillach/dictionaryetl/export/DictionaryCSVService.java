@@ -7,6 +7,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.consent.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.*;
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -555,7 +556,7 @@ public class DictionaryCSVService {
 
                 // Parse and set values
                 String conceptType = concept.getConceptType();
-                row[6] = convertConceptValuesToDelimitedString(values, conceptType);
+                row[6] = convertConceptValuesToJsonString(values);
 
                 // Set metadata values
                 int col = 7;
@@ -580,23 +581,14 @@ public class DictionaryCSVService {
         }
     }
 
-    private String convertConceptValuesToDelimitedString(Optional<ConceptMetadataModel> valuesMetaData, String conceptType) {
+    private String convertConceptValuesToJsonString(Optional<ConceptMetadataModel> valuesMetaData) {
         if (valuesMetaData.isEmpty()) {
             return "";
         }
         ConceptMetadataModel conceptMetadataModel = valuesMetaData.get();
         String data = conceptMetadataModel.getValue();
-        String values;
-        if (conceptType.equalsIgnoreCase("categorical")) {
-            List<String> strings = this.columnMetaUtility.parseValues(data);
-            values = String.join("µ", strings);
-        } else {
-            Float max = this.columnMetaUtility.parseMax(data);
-            Float min = this.columnMetaUtility.parseMin(data);
-            values = min + "µ" + max;
-        }
-
-        return values;
+        JSONArray valueArray = new JSONArray(data);
+        return valueArray.toString();
     }
 
     /**
