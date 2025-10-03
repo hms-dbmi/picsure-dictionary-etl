@@ -123,7 +123,7 @@ public class DictionaryCSVService {
         String fullFacetPath = path + "/Facets.csv";
 
         List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
-        List<FacetModel> facetModels = this.facetService.findAllFacetsByDatasetIDs(datasetIDs);
+        List<FacetModel> facetModels = this.facetService.findAll();
 
         String[] facetCSVHeaders = getFacetCSVHeaders(facetMetadataKeyNames);
         this.csvUtility.createCSVFile(fullFacetPath, facetCSVHeaders);
@@ -308,14 +308,14 @@ public class DictionaryCSVService {
      * Generates a CSV file containing facet data
      *
      * @param fullFacetPath Path to the output CSV file
-     * @param facetCategoriesHeaders Headers for the CSV file
+     * @param facetHeaders Headers for the CSV file
      * @param facetMetadataKeyNames List of metadata key names
      * @param facetCategoryModels List of facet category models
      * @param facetModels List of facet models
      */
     private void generateFacetCSV(
             String fullFacetPath,
-            String[] facetCategoriesHeaders,
+            String[] facetHeaders,
             List<String> facetMetadataKeyNames,
             List<FacetCategoryModel> facetCategoryModels,
             List<FacetModel> facetModels) {
@@ -324,29 +324,22 @@ public class DictionaryCSVService {
         Map<Long, String> facetCategoryIdToName = new HashMap<>();
         facetCategoryModels.forEach(facetCategoryModel -> facetCategoryIdToName.put(facetCategoryModel.getFacetCategoryId(), facetCategoryModel.getName()));
 
-        // Create mapping from parent ID to facet model
-        Map<Long, FacetModel> parentIdToFacetModel = new HashMap<>();
-        facetModels.stream()
-                .filter(parentModel -> parentModel != null && parentModel.getParentId() != null)
-                .map(facetModel -> this.facetService.findByID(facetModel.getParentId()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(facetModel -> parentIdToFacetModel.put(facetModel.getParentId(), facetModel));
+
 
         // Create row mapper function
         Function<FacetModel, String[]> rowMapper = facet -> {
-            String[] row = new String[facetCategoriesHeaders.length];
+            String[] row = new String[facetHeaders.length];
 
             // Set basic facet information
             String facetCategoryName = facetCategoryIdToName.get(facet.getFacetCategoryId());
-            row[0] = facetCategoryName != null ? facetCategoryName : "";
+            row[0] = facetCategoryName;
             row[1] = facet.getName();
             row[2] = facet.getDisplay();
             row[3] = facet.getDescription();
 
             // Set parent facet information
-            FacetModel parentFacet = parentIdToFacetModel.get(facet.getParentId());
-            row[4] = parentFacet != null ? parentFacet.getName().replace("\\", "\\\\") : "";
+            FacetModel parentFacet = facetService.findByID(facet.getParentId()).orElse(null);
+            row[4] = parentFacet != null ? parentFacet.getName() : "";
 
             // Set metadata values
             int col = 5;
@@ -451,12 +444,11 @@ public class DictionaryCSVService {
      * @return Array of headers
      */
     private String[] getFacetCSVHeaders(List<String> facetMetadataKeyNames) {
-        String[] facetCSVHeaders = new String[]{
-            "facet_category", "facet_name(unique)", "display_name", "description", "parent_name"
-        };
+        ArrayList<String> facetCSVHeaders =
+            new ArrayList<>(List.of(new String[] {"facet_category", "facet_name(unique)", "display_name", "description", "parent_name"}));
         Collections.sort(facetMetadataKeyNames);
-        facetCSVHeaders = facetMetadataKeyNames.toArray(facetCSVHeaders);
-        return facetCSVHeaders;
+        facetCSVHeaders.addAll(facetMetadataKeyNames);
+        return facetCSVHeaders.toArray(String[]::new);
     }
 
     /**
