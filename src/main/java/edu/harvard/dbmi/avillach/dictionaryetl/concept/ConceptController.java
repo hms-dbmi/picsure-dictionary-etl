@@ -1,12 +1,15 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
-
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
+import com.opencsv.*;
+import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,29 +18,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import com.opencsv.CSVParser;
-import com.opencsv.CSVReaderBuilder;
-import com.opencsv.exceptions.CsvException;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.transaction.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api")
 public class ConceptController {
+    private static final Logger log = LoggerFactory.getLogger(ConceptController.class);
+    private final int BATCH_SIZE = 100;
     @Autowired
     ConceptRepository conceptRepository;
     @Autowired
@@ -48,13 +40,9 @@ public class ConceptController {
     FacetConceptRepository facetConceptRepository;
     @Autowired
     ConceptService conceptService;
-
+    String[] coreConceptHeaders = {"dataset_ref", "name", "display", "concept_type", "concept_path", "parent_concept_path"};
     @PersistenceContext
     private EntityManager entityManager;
-    private static final Logger log = LoggerFactory.getLogger(ConceptController.class);
-    private final int BATCH_SIZE = 100;
-    String[] coreConceptHeaders = {"dataset_ref", "name", "display", "concept_type", "concept_path",
-            "parent_concept_path"};
 
     @GetMapping("/concept")
     public ResponseEntity<Object> getAllConceptModels(@RequestParam(required = false) String datasetRef) {
@@ -80,9 +68,10 @@ public class ConceptController {
     }
 
     @PutMapping("/concept")
-    public ResponseEntity<Object> updateConcept(@RequestParam String conceptPath, @RequestParam String datasetRef,
-            @RequestParam String conceptType, @RequestParam String display, @RequestParam String name,
-            @RequestParam String parentPath) {
+    public ResponseEntity<Object> updateConcept(
+        @RequestParam String conceptPath, @RequestParam String datasetRef, @RequestParam String conceptType, @RequestParam String display,
+        @RequestParam String name, @RequestParam String parentPath
+    ) {
 
         Optional<ConceptModel> conceptData = conceptRepository.findByConceptPath(conceptPath);
         Optional<ConceptModel> parentData = conceptRepository.findByConceptPath(parentPath);
@@ -92,8 +81,9 @@ public class ConceptController {
             datasetId = datasetData.get().getDatasetId();
         } else {
             return new ResponseEntity<>(
-                    "Dataset not found: " + datasetRef + ". Failed to create/update concept " + conceptPath,
-                    HttpStatus.NOT_FOUND);
+                "Dataset not found: " + datasetRef + ". Failed to create/update concept " + conceptPath,
+                HttpStatus.NOT_FOUND
+            );
         }
 
         Long parentId;
@@ -116,10 +106,8 @@ public class ConceptController {
                 if (conceptType == null) {
                     conceptType = "categorical";
                 }
-                ConceptModel newConcept = conceptRepository
-                        .save(new ConceptModel(datasetId, name,
-                                display, conceptType, conceptPath,
-                                parentId));
+                ConceptModel newConcept =
+                    conceptRepository.save(new ConceptModel(datasetId, name, display, conceptType, conceptPath, parentId));
                 return new ResponseEntity<>(newConcept, HttpStatus.CREATED);
             } catch (Exception e) {
                 return new ResponseEntity<>(e.getLocalizedMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -157,8 +145,7 @@ public class ConceptController {
     // fetches all concepts still in the dictionary which arent currently in the
     // loader files
     @GetMapping("/concept/obsolete")
-    public ResponseEntity<Object> getObsoleteConcepts(@RequestParam String datasetRef,
-            @RequestBody String conceptNodeIds) {
+    public ResponseEntity<Object> getObsoleteConcepts(@RequestParam String datasetRef, @RequestBody String conceptNodeIds) {
         String[] inputArray = conceptNodeIds.split("\n");
         List<ConceptModel> validConcepts = new ArrayList<>();
         for (String s : inputArray) {
@@ -166,8 +153,9 @@ public class ConceptController {
                 validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(s)));
             } catch (NumberFormatException e) {
                 return new ResponseEntity<>(
-                        "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
-                        HttpStatus.BAD_REQUEST);
+                    "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
+                    HttpStatus.BAD_REQUEST
+                );
             }
         }
         Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
@@ -184,8 +172,7 @@ public class ConceptController {
 
     // removes all obsolete concepts from dictionary
     @DeleteMapping("/concept/obsolete")
-    public ResponseEntity<Object> deleteObsoleteConcepts(@RequestParam String datasetRef,
-            @RequestBody String conceptNodeIds) {
+    public ResponseEntity<Object> deleteObsoleteConcepts(@RequestParam String datasetRef, @RequestBody String conceptNodeIds) {
         String[] inputArray = conceptNodeIds.split("\n");
         List<ConceptModel> validConcepts = new ArrayList<>();
         for (String s : inputArray) {
@@ -193,8 +180,9 @@ public class ConceptController {
                 validConcepts.add(conceptRepository.getReferenceById(Long.parseLong(s)));
             } catch (NumberFormatException e) {
                 return new ResponseEntity<>(
-                        "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
-                        HttpStatus.BAD_REQUEST);
+                    "Unable to parse conceptNodeIds as numeric. Please check your input and try again",
+                    HttpStatus.BAD_REQUEST
+                );
             }
         }
         Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
@@ -214,56 +202,59 @@ public class ConceptController {
     }
 
     // Bulk insert/update from "ideal ingest" csv.
-      // Expected CSV Header:
-      // dataset_ref concept name display name concept_type concept_path
-      // parent_concept_path values {addt metakeys}
-      @Transactional
-      @PutMapping("/concept/csv")
-      public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input) {
-          Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
-          Long datasetId;
-          if (datasetData.isPresent()) {
-              datasetId = datasetData.get().getDatasetId();
-          } else {
-              return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
-          }
-          List<String[]> concepts;
-          Map<String, Integer> headerMap;
-          List<String> metaColumnNames;
-          try (CSVReader reader = new CSVReader(new StringReader(input))) {
-              String[] header = reader.readNext();
-              headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
-              metaColumnNames = CSVUtility.getExtraColumns(coreConceptHeaders, headerMap);
-              if (metaColumnNames == null) {
-                  return new ResponseEntity<>(
-                          "ERROR: Input headers are not as expected for " + datasetRef + ". \n" +
-                          "Verify that the following headers are present in the input csv file: " + String.join(", ", coreConceptHeaders)
-                          ,
-                          HttpStatus.BAD_REQUEST);
-              }
+    // Expected CSV Header:
+    // dataset_ref concept name display name concept_type concept_path
+    // parent_concept_path values {addt metakeys}
+    @Transactional
+    @PutMapping("/concept/csv")
+    public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input) {
+        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+        Long datasetId;
+        if (datasetData.isPresent()) {
+            datasetId = datasetData.get().getDatasetId();
+        } else {
+            return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
+        }
+        List<String[]> concepts;
+        Map<String, Integer> headerMap;
+        List<String> metaColumnNames;
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
+            String[] header = reader.readNext();
+            headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
+            metaColumnNames = CSVUtility.getExtraColumns(coreConceptHeaders, headerMap);
+            if (metaColumnNames == null) {
+                return new ResponseEntity<>(
+                    "ERROR: Input headers are not as expected for " + datasetRef + ". \n"
+                        + "Verify that the following headers are present in the input csv file: " + String.join(", ", coreConceptHeaders),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
 
-              concepts = reader.readAll();
-              concepts.remove(header);
-          } catch (IOException | CsvException e) {
-              log.error(e.toString());
-              log.error(Arrays.toString(e.getStackTrace()));
-              return new ResponseEntity<>(
-                      "Error reading ingestion csv for " + datasetRef + ". See logs for details.",
-                      HttpStatus.BAD_REQUEST);
-          }
-          if (concepts.isEmpty()) {
-              return new ResponseEntity<>(
-                      "No csv records found in " + datasetRef + "  input file.",
-                      HttpStatus.BAD_REQUEST);
-          }
-          String updateConceptsResponse = conceptService.updateConceptsFromCSV(datasetId, concepts, headerMap, metaColumnNames, BATCH_SIZE);
-          if (updateConceptsResponse.startsWith("Success")){
-              return new ResponseEntity<>(updateConceptsResponse, HttpStatus.OK);
-          }
-          return new ResponseEntity<>("An error occurred while trying to update concepts from CSV. Check logs for further information", HttpStatus.INTERNAL_SERVER_ERROR);
+            concepts = reader.readAll();
+            concepts.remove(header);
+        } catch (IOException | CsvException e) {
+            log.error(e.toString());
+            log.error(Arrays.toString(e.getStackTrace()));
+            return new ResponseEntity<>(
+                "Error reading ingestion csv for " + datasetRef + ". See logs for details.",
+                HttpStatus.BAD_REQUEST
+            );
+        }
+        if (concepts.isEmpty()) {
+            return new ResponseEntity<>("No csv records found in " + datasetRef + "  input file.", HttpStatus.BAD_REQUEST);
+        }
+        String updateConceptsResponse = conceptService.updateConceptsFromCSV(datasetId, concepts, headerMap, metaColumnNames, BATCH_SIZE);
+        if (updateConceptsResponse.startsWith("Success")) {
+            return new ResponseEntity<>(updateConceptsResponse, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(
+            "An error occurred while trying to update concepts from CSV. Check logs for further information",
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
 
 
-      }
+    }
 
     // Used for curated json from noncompliant studies
     /*
@@ -277,8 +268,8 @@ public class ConceptController {
      * JSONObject metadata {String description, JSONArray drs_uri, String or
      * JSONArray ~other metadata fields as needed~}
      * }
-     * 
-     * 
+     *
+     *
      */
     @Transactional
     @PutMapping("/concept/curated")
@@ -335,8 +326,8 @@ public class ConceptController {
                 });
                 // fetch updated concept node ids corresponding to concept paths
                 Map<Long, JSONObject> idMetaMap = new HashMap<>();
-                List<Object[]> refList = entityManager
-                        .createNativeQuery(service.getIdsFromPathsQuery(conceptMetaMap.keySet())).getResultList();
+                List<Object[]> refList =
+                    entityManager.createNativeQuery(service.getIdsFromPathsQuery(conceptMetaMap.keySet())).getResultList();
                 refList.forEach(entry -> {
                     Long id = Long.parseLong(entry[1].toString());
                     JSONObject metaJson = conceptMetaMap.get(entry[0].toString().replaceAll("'", "''"));
@@ -364,13 +355,16 @@ public class ConceptController {
                 entityManager.flush();
             }
         }
-        return new ResponseEntity<>("Successfully updated " + conceptUpdateCount + " concepts and " + metaUpdateCount
-                + " concept meta entries from JSON. \n", HttpStatus.OK);
+        return new ResponseEntity<>(
+            "Successfully updated " + conceptUpdateCount + " concepts and " + metaUpdateCount + " concept meta entries from JSON. \n",
+            HttpStatus.OK
+        );
     }
 
     @GetMapping("/concept/metadata")
     public ResponseEntity<Object> getAllConceptMetadataModels(
-            @RequestParam Optional<String> conceptPath) {
+        @RequestParam Optional<String> conceptPath
+    ) {
         try {
             List<ConceptMetadataModel> conceptMetadataModels = new ArrayList<>();
 
@@ -395,8 +389,10 @@ public class ConceptController {
     }
 
     @PutMapping("/concept/metadata")
-    public ResponseEntity<Object> updateConceptMetadata(@RequestParam String conceptPath,
-            @RequestParam String key, @RequestBody String values) {
+    public ResponseEntity<Object> updateConceptMetadata(
+        @RequestParam String conceptPath, @RequestParam String key,
+        @RequestBody String values
+    ) {
         Optional<ConceptModel> concept = conceptRepository.findByConceptPath(conceptPath);
         Long conceptNodeId;
         if (concept.isPresent()) {
@@ -404,8 +400,7 @@ public class ConceptController {
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
-                .findByConceptNodeIdAndKey(conceptNodeId, key);
+        Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository.findByConceptNodeIdAndKey(conceptNodeId, key);
 
         try {
             if (conceptMetadataData.isPresent()) {
@@ -416,9 +411,8 @@ public class ConceptController {
             } else {
                 // add new conceptMetadata when conceptMetadata not present in data
                 try {
-                    ConceptMetadataModel newConceptMetadata = conceptMetadataRepository
-                            .save(new ConceptMetadataModel(conceptNodeId, key,
-                                    values));
+                    ConceptMetadataModel newConceptMetadata =
+                        conceptMetadataRepository.save(new ConceptMetadataModel(conceptNodeId, key, values));
                     return new ResponseEntity<>(newConceptMetadata, HttpStatus.CREATED);
                 } catch (Exception e) {
                     log.info(e.getLocalizedMessage());
@@ -434,24 +428,24 @@ public class ConceptController {
 
     // Specifically for stigvar updates
     @PutMapping("/concept/metadata/stigvars")
-    public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate,
-            @RequestParam String value) {
+    public ResponseEntity<Object> updateStigvars(@RequestBody String conceptsToUpdate, @RequestParam String value) {
         try {
-            CSVParser csvParser =  new CSVParserBuilder().withEscapeChar('φ').build();
-            List<String> conceptList = new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream().map(line -> line[0]).toList();
+            CSVParser csvParser = new CSVParserBuilder().withEscapeChar('φ').build();
+            List<String> conceptList =
+                new CSVReaderBuilder(new StringReader(conceptsToUpdate)).withCSVParser(csvParser).build().readAll().stream()
+                    .map(line -> line[0]).toList();
 
             String[] concepts = conceptList.toArray(new String[0]);
             int upsertCount = conceptMetadataRepository.updateStigvarsFromConceptPaths(concepts, value);
-                   log.info("count:" + upsertCount);
-                   return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n",
-                           HttpStatus.CREATED);
+            log.info("count:" + upsertCount);
+            return new ResponseEntity<>("Successfully updated stigvar status for " + upsertCount + " concepts. \n", HttpStatus.CREATED);
 
+        } catch (IOException | CsvException e) {
+            return new ResponseEntity<>(
+                "Error reading conceptstoupdate csv. Error: \n" + Arrays.toString(e.getStackTrace()),
+                HttpStatus.BAD_REQUEST
+            );
         }
-        catch (IOException | CsvException e) {
-                    return new ResponseEntity<>(
-                            "Error reading conceptstoupdate csv. Error: \n" + Arrays.toString(e.getStackTrace()),
-                            HttpStatus.BAD_REQUEST);
-                }
 
     }
 
@@ -485,12 +479,10 @@ public class ConceptController {
     }
 
     @DeleteMapping("/concept/metadata")
-    public ResponseEntity<Object> deleteConceptMetadata(@RequestParam Optional<String> conceptPath,
-            @RequestParam String key) {
+    public ResponseEntity<Object> deleteConceptMetadata(@RequestParam Optional<String> conceptPath, @RequestParam String key) {
         if (conceptPath.isPresent()) {
             Long conceptId = conceptRepository.findByConceptPath(conceptPath.get()).get().getConceptNodeId();
-            Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository
-                    .findByConceptNodeIdAndKey(conceptId, key);
+            Optional<ConceptMetadataModel> conceptMetadataData = conceptMetadataRepository.findByConceptNodeIdAndKey(conceptId, key);
 
             if (conceptMetadataData.isPresent()) {
                 conceptMetadataRepository.delete(conceptMetadataData.get());

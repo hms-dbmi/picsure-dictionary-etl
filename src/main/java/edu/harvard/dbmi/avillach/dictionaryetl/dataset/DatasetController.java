@@ -1,14 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
@@ -16,6 +10,14 @@ import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -94,7 +96,8 @@ public class DatasetController {
         Map<String, Integer> headerMap;
         List<String> metaColumnNames = new ArrayList<>();
         List<String[]> datasets;
-        try (CSVReader reader = new CSVReader(new StringReader(input))) {
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
             String[] header = reader.readNext();
             headerMap = datasetService.buildCsvInputsHeaderMap(header);
             String[] coreDatasetHeaders = {"ref", "full_name", "abbreviation", "description"};
