@@ -120,7 +120,7 @@ public class DictionaryCSVService {
 
         // Create and Populate Facet CSV
         // -----------------------------------------------------------------------------------------
-        String fullFacetPath = path + "/Facet.csv";
+        String fullFacetPath = path + "/Facets.csv";
 
         List<String> facetMetadataKeyNames = this.facetService.getFacetMetadataKeyNames();
         List<FacetModel> facetModels = this.facetService.findAllFacetsByDatasetIDs(datasetIDs);
@@ -133,7 +133,7 @@ public class DictionaryCSVService {
         // Create Facet Concept List CSV
         // -----------------------------------------------------------------------------------------
         String fullFacetConceptListDatasetCSVDir = path + "/Facet_Concept_List_Dataset_CSVs/";
-        String fullFacetConceptListPath = path + "/Facet_Concept_List.csv";
+        String fullFacetConceptListPath = path + "/Facet_Concept_Lists.csv";
 
         String[] facetConceptListHeaders = facetModels.stream().map(FacetModel::getName).toArray(String[]::new);
         this.csvUtility.createCSVFile(fullFacetConceptListPath, facetConceptListHeaders);
