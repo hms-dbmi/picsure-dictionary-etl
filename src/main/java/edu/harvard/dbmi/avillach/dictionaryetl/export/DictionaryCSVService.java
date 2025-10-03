@@ -437,7 +437,7 @@ public class DictionaryCSVService {
      */
     private String[] getFacetCategoriesHeaders(List<String> facetCategoryMetadataKeyNames) {
         List<String> facetCategoriesHeaders = new ArrayList<>(List.of(
-            "facet_category", "facet_name", "display_name", "description", "parent_name"
+            "name(unique)", "display name", "description", "description", "parent_name"
         ));
         facetCategoriesHeaders.addAll(facetCategoryMetadataKeyNames);
         return facetCategoriesHeaders.toArray(new String[0]);
@@ -451,7 +451,7 @@ public class DictionaryCSVService {
      */
     private String[] getFacetCSVHeaders(List<String> facetMetadataKeyNames) {
         String[] facetCSVHeaders = new String[]{
-            "facet_category", "facet_name", "display_name", "description", "parent_name", "meta_1"
+            "facet_category", "facet_name(unique)", "display_name", "description", "parent_name"
         };
         Collections.sort(facetMetadataKeyNames);
         facetCSVHeaders = facetMetadataKeyNames.toArray(facetCSVHeaders);
@@ -467,7 +467,7 @@ public class DictionaryCSVService {
     private String[] getConceptCSVHeaders(List<String> metadataKeys) {
         List<String> headers = new ArrayList<>(List.of(
             "dataset_ref", "concept name", "display name", "concept_type",
-            "concept_path", "parent_concept_path", "values", "description"
+            "concept_path", "parent_concept_path", "values"
         ));
         Collections.sort(metadataKeys);
         headers.addAll(metadataKeys);
