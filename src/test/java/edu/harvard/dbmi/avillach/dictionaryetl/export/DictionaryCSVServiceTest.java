@@ -84,10 +84,10 @@ class DictionaryCSVServiceTest {
         Assertions.assertDoesNotThrow(() -> this.dictionaryCSVService.generateFullIngestCSVs(generatedFilePath));
 
         Path generatedFilesPath = Paths.get(resourcePath, "generatedFiles");
-        Assertions.assertTrue(generatedFilesPath.resolve("Facet.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Concept_List.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Facets.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Concept_Lists.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Facet_Categories.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Concept.csv").toFile().exists());
+        Assertions.assertTrue(generatedFilesPath.resolve("Concepts.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Consents.csv").toFile().exists());
         Assertions.assertTrue(generatedFilesPath.resolve("Datasets.csv").toFile().exists());
 
