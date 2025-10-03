@@ -100,6 +100,7 @@ public class DictionaryCSVService {
         String fullConceptPathDatasetCSVDir = path + "/Concept_Dataset_CSVs/";
 
         List<String> conceptMetadataKeys = this.conceptMetadataService.findMetadataKeysByDatasetID(datasetIDs);
+        conceptMetadataKeys.remove("values");
 
         String[] conceptCSVHeaders = getConceptCSVHeaders(conceptMetadataKeys);
         this.csvUtility.createCSVFile(fullConceptPath, conceptCSVHeaders);
