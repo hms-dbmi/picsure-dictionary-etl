@@ -190,6 +190,7 @@ public class CSVUtility {
             Map<String, Integer> inputsHeaders = new HashMap<>();
             for (int i = 0; i < inputHeaders.length; i++) {
                     inputsHeaders.put(inputHeaders[i], i);
+                log.info("Header map: {} to {}", inputHeaders[i], i);
             }
             return inputsHeaders;
     }
