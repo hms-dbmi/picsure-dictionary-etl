@@ -96,7 +96,7 @@ public class DictionaryCSVService {
 
         // Create Concept CSV
         // -----------------------------------------------------------------------------------------
-        String fullConceptPath = path + "/Concept.csv";
+        String fullConceptPath = path + "/Concepts.csv";
         String fullConceptPathDatasetCSVDir = path + "/Concept_Dataset_CSVs/";
 
         List<String> conceptMetadataKeys = this.conceptMetadataService.findMetadataKeysByDatasetID(datasetIDs);
