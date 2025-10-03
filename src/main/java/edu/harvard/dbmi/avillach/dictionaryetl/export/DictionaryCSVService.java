@@ -466,7 +466,7 @@ public class DictionaryCSVService {
      */
     private String[] getConceptCSVHeaders(List<String> metadataKeys) {
         List<String> headers = new ArrayList<>(List.of(
-            "dataset_ref", "concept name", "display name", "concept_type",
+            "dataset_ref", "name", "display", "concept_type",
             "concept_path", "parent_concept_path", "values"
         ));
         Collections.sort(metadataKeys);
