@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import jakarta.persistence.EntityManager;
@@ -47,7 +49,8 @@ public class FacetConceptService {
     public ResponseEntity<String> updateFacetConceptMappingsFromCSVs(@RequestBody String input) {
         List<String[]> conceptMappings;
         Map<String, Integer> headerMap;
-        try (CSVReader reader = new CSVReader(new StringReader(input))) {
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
             String[] header = reader.readNext();
             headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
             conceptMappings = reader.readAll();

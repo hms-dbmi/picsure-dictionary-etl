@@ -1,11 +1,14 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.Utility;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -22,11 +25,33 @@ public class CSVUtility {
     private static final Logger log = LoggerFactory.getLogger(CSVUtility.class);
     private static final int DEFAULT_BATCH_SIZE = 1000;
 
+    public static Map<String, Integer> buildCsvInputsHeaderMap(String[] inputHeaders) {
+        Map<String, Integer> inputsHeaders = new HashMap<>();
+        for (int i = 0; i < inputHeaders.length; i++) {
+            inputsHeaders.put(inputHeaders[i], i);
+            log.info("Header map: {} to {}", inputHeaders[i], i);
+        }
+        return inputsHeaders;
+    }
+
+    /*Used to get metadata keys for concepts, categories, facets and facet categories for concept/facet mappings*/
+    public static List<String> getExtraColumns(String[] coreHeaders, Map<String, Integer> inputHeaderMap) {
+        List<String> metaColumnNames = new ArrayList<>();
+        if (!inputHeaderMap.keySet().containsAll(Arrays.asList(coreHeaders))) {
+            return null;
+        }
+        inputHeaderMap.keySet().forEach(k -> {
+            if (!Arrays.asList(coreHeaders).contains(k)) {
+                metaColumnNames.add(k);
+            }
+        });
+        return metaColumnNames;
+    }
+
     /**
      * Creates a new CSV file with the specified headers
-     *
      * @param fullPath Full path to the CSV file
-     * @param headers  Headers for the CSV file
+     * @param headers Headers for the CSV file
      */
     public void createCSVFile(String fullPath, String... headers) {
         File file = new File(fullPath);
@@ -64,11 +89,10 @@ public class CSVUtility {
 
     /**
      * Writes data to a CSV file in batches
-     *
-     * @param filePath   Full path to the CSV file
-     * @param dataItems  List of data items to write
-     * @param rowMapper  Function to map a data item to a CSV row
-     * @param <T>        Type of data item
+     * @param filePath Full path to the CSV file
+     * @param dataItems List of data items to write
+     * @param rowMapper Function to map a data item to a CSV row
+     * @param <T> Type of data item
      */
     public <T> void writeDataToCSV(String filePath, List<T> dataItems, Function<T, String[]> rowMapper) {
         writeDataToCSV(filePath, dataItems, rowMapper, DEFAULT_BATCH_SIZE);
@@ -76,12 +100,11 @@ public class CSVUtility {
 
     /**
      * Writes data to a CSV file in batches
-     *
-     * @param filePath   Full path to the CSV file
-     * @param dataItems  List of data items to write
-     * @param rowMapper  Function to map a data item to a CSV row
-     * @param batchSize  Size of batches for writing
-     * @param <T>        Type of data item
+     * @param filePath Full path to the CSV file
+     * @param dataItems List of data items to write
+     * @param rowMapper Function to map a data item to a CSV row
+     * @param batchSize Size of batches for writing
+     * @param <T> Type of data item
      */
     public <T> void writeDataToCSV(String filePath, List<T> dataItems, Function<T, String[]> rowMapper, int batchSize) {
         try (CSVWriter writer = new CSVWriter(new FileWriter(filePath, true))) {
@@ -109,13 +132,15 @@ public class CSVUtility {
 
     /**
      * Merges a source CSV file into a destination CSV file, skipping the header row
-     *
-     * @param sourceFilePath      Source CSV file path
+     * @param sourceFilePath Source CSV file path
      * @param destinationFilePath Destination CSV file path
      */
     public void mergeCSVFiles(String sourceFilePath, String destinationFilePath) {
-        try (CSVReader reader = new CSVReader(new FileReader(sourceFilePath));
-             CSVWriter writer = new CSVWriter(new FileWriter(destinationFilePath, true))) {
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (
+            CSVReader reader = new CSVReaderBuilder(new FileReader(sourceFilePath)).withCSVParser(csvParser)
+                .build(); CSVWriter writer = new CSVWriter(new FileWriter(destinationFilePath, true))
+        ) {
             // Skip the header row
             reader.readNext();
             String[] nextLine;
@@ -129,7 +154,6 @@ public class CSVUtility {
 
     /**
      * Removes a directory if it is empty
-     *
      * @param directoryPath Path to the directory
      */
     public void removeDirectoryIfEmpty(String directoryPath) {
@@ -151,8 +175,7 @@ public class CSVUtility {
     /**
      * Removes a directory if it exists. This includes all files and subdirectories.
      * @param directoryPath Path to the directory
-     * @return true if the root directory was deleted, false otherwise. If we are unable to delete the directory, we will
-     * return false.
+     * @return true if the root directory was deleted, false otherwise. If we are unable to delete the directory, we will return false.
      */
     public boolean removeDirectoryIfExists(String directoryPath) {
         File directory = new File(directoryPath);
@@ -184,27 +207,5 @@ public class CSVUtility {
         }
 
         return false;
-    }
-
-    public static Map<String, Integer> buildCsvInputsHeaderMap(String[] inputHeaders) {
-            Map<String, Integer> inputsHeaders = new HashMap<>();
-            for (int i = 0; i < inputHeaders.length; i++) {
-                    inputsHeaders.put(inputHeaders[i], i);
-                log.info("Header map: {} to {}", inputHeaders[i], i);
-            }
-            return inputsHeaders;
-    }
-    /*Used to get metadata keys for concepts, categories, facets and facet categories for concept/facet mappings*/
-    public static List<String> getExtraColumns(String[] coreHeaders, Map<String, Integer> inputHeaderMap){
-        List<String> metaColumnNames = new ArrayList<>();
-        if (!inputHeaderMap.keySet().containsAll(Arrays.asList(coreHeaders))) {
-                        return null;
-         }
-        inputHeaderMap.keySet().forEach(k -> {
-              if (!Arrays.asList(coreHeaders).contains(k)) {
-                 metaColumnNames.add(k);
-              }
-          });
-          return metaColumnNames;
     }
 }
