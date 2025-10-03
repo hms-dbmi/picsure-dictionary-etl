@@ -245,8 +245,10 @@ public class ConceptController {
               concepts = reader.readAll();
               concepts.remove(header);
           } catch (IOException | CsvException e) {
+              log.error(e.toString());
+              log.error(Arrays.toString(e.getStackTrace()));
               return new ResponseEntity<>(
-                      "Error reading ingestion csv for " + datasetRef + ". Error: \n" + Arrays.toString(e.getStackTrace()),
+                      "Error reading ingestion csv for " + datasetRef + ". See logs for details.",
                       HttpStatus.BAD_REQUEST);
           }
           if (concepts.isEmpty()) {
