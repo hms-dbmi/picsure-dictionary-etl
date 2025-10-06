@@ -50,8 +50,9 @@ public class CSVUtility {
 
     /**
      * Creates a new CSV file with the specified headers
+     *
      * @param fullPath Full path to the CSV file
-     * @param headers Headers for the CSV file
+     * @param headers  Headers for the CSV file
      */
     public void createCSVFile(String fullPath, String... headers) {
         File file = new File(fullPath);
@@ -89,10 +90,11 @@ public class CSVUtility {
 
     /**
      * Writes data to a CSV file in batches
-     * @param filePath Full path to the CSV file
+     *
+     * @param filePath  Full path to the CSV file
      * @param dataItems List of data items to write
      * @param rowMapper Function to map a data item to a CSV row
-     * @param <T> Type of data item
+     * @param <T>       Type of data item
      */
     public <T> void writeDataToCSV(String filePath, List<T> dataItems, Function<T, String[]> rowMapper) {
         writeDataToCSV(filePath, dataItems, rowMapper, DEFAULT_BATCH_SIZE);
@@ -100,11 +102,12 @@ public class CSVUtility {
 
     /**
      * Writes data to a CSV file in batches
-     * @param filePath Full path to the CSV file
+     *
+     * @param filePath  Full path to the CSV file
      * @param dataItems List of data items to write
      * @param rowMapper Function to map a data item to a CSV row
      * @param batchSize Size of batches for writing
-     * @param <T> Type of data item
+     * @param <T>       Type of data item
      */
     public <T> void writeDataToCSV(String filePath, List<T> dataItems, Function<T, String[]> rowMapper, int batchSize) {
         try (CSVWriter writer = new CSVWriter(new FileWriter(filePath, true))) {
@@ -112,8 +115,12 @@ public class CSVUtility {
 
             for (T item : dataItems) {
                 String[] row = rowMapper.apply(item);
+                //Skip row if entirely empty
+                if (Arrays.stream(row).allMatch(String::isEmpty)) {
+                    log.info("Skipping empty row");
+                    continue;
+                }
                 batch.add(row);
-
                 if (batch.size() >= batchSize) {
                     writer.writeAll(batch);
                     writer.flush();
@@ -132,14 +139,15 @@ public class CSVUtility {
 
     /**
      * Merges a source CSV file into a destination CSV file, skipping the header row
-     * @param sourceFilePath Source CSV file path
+     *
+     * @param sourceFilePath      Source CSV file path
      * @param destinationFilePath Destination CSV file path
      */
     public void mergeCSVFiles(String sourceFilePath, String destinationFilePath) {
         RFC4180Parser csvParser = new RFC4180Parser();
         try (
-            CSVReader reader = new CSVReaderBuilder(new FileReader(sourceFilePath)).withCSVParser(csvParser)
-                .build(); CSVWriter writer = new CSVWriter(new FileWriter(destinationFilePath, true))
+                CSVReader reader = new CSVReaderBuilder(new FileReader(sourceFilePath)).withCSVParser(csvParser)
+                        .build(); CSVWriter writer = new CSVWriter(new FileWriter(destinationFilePath, true))
         ) {
             // Skip the header row
             reader.readNext();
@@ -154,6 +162,7 @@ public class CSVUtility {
 
     /**
      * Removes a directory if it is empty
+     *
      * @param directoryPath Path to the directory
      */
     public void removeDirectoryIfEmpty(String directoryPath) {
@@ -174,6 +183,7 @@ public class CSVUtility {
 
     /**
      * Removes a directory if it exists. This includes all files and subdirectories.
+     *
      * @param directoryPath Path to the directory
      * @return true if the root directory was deleted, false otherwise. If we are unable to delete the directory, we will return false.
      */

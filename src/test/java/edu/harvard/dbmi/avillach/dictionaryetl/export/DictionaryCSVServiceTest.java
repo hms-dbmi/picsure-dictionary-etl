@@ -1,6 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.DictionaryLoaderService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,10 +16,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,26 +30,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class DictionaryCSVServiceTest {
 
+    @Container
+    static final PostgreSQLContainer<?> databaseContainer =
+            new PostgreSQLContainer<>("postgres:16").withDatabaseName("testdb").withUsername("testuser").withPassword("testpass")
+                    .withCopyFileToContainer(MountableFile.forClasspathResource("schema.sql"), "/docker-entrypoint-initdb.d/schema.sql");
     private static String resourcePath;
-
     @Autowired
     private DictionaryCSVService dictionaryCSVService;
-
     @Autowired
     private DictionaryLoaderService dictionaryLoaderService;
-
+    @Autowired
+    private FacetService facetService;
     @Autowired
     private CSVUtility csvUtility;
-
-    @Container
-    static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("testpass")
-            .withCopyFileToContainer(
-                    MountableFile.forClasspathResource("schema.sql"),
-                    "/docker-entrypoint-initdb.d/schema.sql"
-            );
 
     @DynamicPropertySource
     static void mySQLProperties(DynamicPropertyRegistry registry) {
@@ -66,9 +62,8 @@ class DictionaryCSVServiceTest {
         ClassPathResource syntheaResource = new ClassPathResource("columnMeta_synthea.csv");
         assertNotNull(syntheaResource);
         String syntheaFilePath = syntheaResource.getFile().toPath().toString();
-        this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath +
-                                                                                     "/columnMetaErrors" +
-                                                                                     ".csv");
+        this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath + "/columnMetaErrors" + ".csv");
+        facetService.createDefaultFacets();
         // make a directory for the generated files
         String generatedFilePath = resourcePath + "/generatedFiles/";
         // Make the directory
@@ -84,15 +79,25 @@ class DictionaryCSVServiceTest {
         Assertions.assertDoesNotThrow(() -> this.dictionaryCSVService.generateFullIngestCSVs(generatedFilePath));
 
         Path generatedFilesPath = Paths.get(resourcePath, "generatedFiles");
-        Assertions.assertTrue(generatedFilesPath.resolve("Facets.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Concept_Lists.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Facet_Categories.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Concepts.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Consents.csv").toFile().exists());
-        Assertions.assertTrue(generatedFilesPath.resolve("Datasets.csv").toFile().exists());
 
-        //boolean deleted = this.csvUtility.removeDirectoryIfExists(generatedFilePath);
-        //assertTrue(deleted, "Directory should be deleted");
+        File facetCategoryFile = generatedFilesPath.resolve("Facet_Categories.csv").toFile();
+        Assertions.assertTrue(facetCategoryFile.exists());
+
+        File facetFile = generatedFilesPath.resolve("Facets.csv").toFile();
+        Assertions.assertTrue(facetFile.exists());
+
+        File facetConceptListFile = generatedFilesPath.resolve("Facet_Concept_Lists.csv").toFile();
+        Assertions.assertTrue(facetConceptListFile.exists());
+
+        File datasetFile = generatedFilesPath.resolve("Datasets.csv").toFile();
+        Assertions.assertTrue(datasetFile.exists());
+
+        File consentsFile = generatedFilesPath.resolve("Consents.csv").toFile();
+        Assertions.assertTrue(consentsFile.exists());
+
+        File conceptsFile = generatedFilesPath.resolve("Concepts.csv").toFile();
+        Assertions.assertTrue(conceptsFile.exists());
+
     }
 
 }
