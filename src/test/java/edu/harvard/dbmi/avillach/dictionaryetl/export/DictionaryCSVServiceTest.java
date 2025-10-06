@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.export;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.DictionaryLoaderService;
 import org.junit.jupiter.api.Assertions;
@@ -22,8 +24,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @ActiveProfiles("test")
@@ -34,6 +35,12 @@ class DictionaryCSVServiceTest {
     static final PostgreSQLContainer<?> databaseContainer =
             new PostgreSQLContainer<>("postgres:16").withDatabaseName("testdb").withUsername("testuser").withPassword("testpass")
                     .withCopyFileToContainer(MountableFile.forClasspathResource("schema.sql"), "/docker-entrypoint-initdb.d/schema.sql");
+    @Container
+    static final PostgreSQLContainer<?> reloadContainer =
+                new PostgreSQLContainer<>("postgres:16").withDatabaseName("testdb").withUsername("testuser").withPassword("testpass")
+                        .withCopyFileToContainer(MountableFile.forClasspathResource("schema.sql"), "/docker-entrypoint-initdb.d/schema.sql");
+
+
     private static String resourcePath;
     @Autowired
     private DictionaryCSVService dictionaryCSVService;
@@ -41,6 +48,11 @@ class DictionaryCSVServiceTest {
     private DictionaryLoaderService dictionaryLoaderService;
     @Autowired
     private FacetService facetService;
+    @Autowired
+    private ConceptService conceptService;
+    @Autowired
+    private DatasetService datasetService;
+
     @Autowired
     private CSVUtility csvUtility;
 
@@ -64,6 +76,8 @@ class DictionaryCSVServiceTest {
         String syntheaFilePath = syntheaResource.getFile().toPath().toString();
         this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath + "/columnMetaErrors" + ".csv");
         facetService.createDefaultFacets();
+        assertFalse(conceptService.findByDatasetID(datasetService.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()).isEmpty());
+        assertFalse(facetService.findAllFacetsByDatasetIDs(new Long[]{datasetService.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()}).isEmpty());
         // make a directory for the generated files
         String generatedFilePath = resourcePath + "/generatedFiles/";
         // Make the directory
@@ -98,6 +112,10 @@ class DictionaryCSVServiceTest {
         File conceptsFile = generatedFilesPath.resolve("Concepts.csv").toFile();
         Assertions.assertTrue(conceptsFile.exists());
 
-    }
 
+    }
+    @Test
+    void verifyGeneratedCSVs(){
+
+    }
 }

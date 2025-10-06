@@ -4,8 +4,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
 
 public enum ConceptTypes {
     CATEGORICAL("categorical"),
-    CONTINUOUS("continuous"),
-    INTERIOR("Interior");
+    CONTINUOUS("continuous");
     private String conceptType;
 
     ConceptTypes(String conceptType) {
@@ -26,7 +25,7 @@ public enum ConceptTypes {
 
     public static String conceptTypeFromColumnMeta(ColumnMeta columnMeta) {
         if (columnMeta == null) {
-            return INTERIOR.conceptType;
+            return CATEGORICAL.conceptType;
         }
 
         return conceptType(columnMeta.categorical());

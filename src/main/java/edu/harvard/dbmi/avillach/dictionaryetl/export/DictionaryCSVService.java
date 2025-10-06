@@ -25,6 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class DictionaryCSVService {
@@ -63,7 +64,8 @@ public class DictionaryCSVService {
         this.consentService = consentService;
         this.csvUtility = csvUtility;
 
-        this.maxConnections = dataSource.getConnection().getMetaData().getMaxConnections() - 2;
+        //this.maxConnections = dataSource.getConnection().getMetaData().getMaxConnections() - 2;
+        this.maxConnections = 4;
         this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
     }
 
@@ -280,27 +282,31 @@ public class DictionaryCSVService {
                     this.facetService.findFacetToConceptRelationshipsByDatasetID(dataset.getDatasetId());
 
 
-            // Group relationships by concept node ID for efficient lookup
-            Map<Long, List<ConceptToFacetDTO>> conceptToFacets =
-                    facetToConceptRelationships.stream().filter(dto -> dto.getConceptNodeId() != null)
-                            .collect(Collectors.groupingBy(ConceptToFacetDTO::getConceptNodeId));
+            // Group relationships by facet for efficient lookup
+            Map<String, List<ConceptToFacetDTO>> conceptToFacets =
+                    facetToConceptRelationships.stream().filter(dto -> dto.getFacetName() != null)
+                            .collect(Collectors.groupingBy(ConceptToFacetDTO::getFacetName));
 
+            int maxConceptListSize = conceptToFacets.values().stream().mapToInt(List::size).max().orElseThrow();
+            List<Integer> indexList = IntStream.rangeClosed(0, maxConceptListSize).boxed().collect(Collectors.toList());
             // Create a row mapper function for the CSV utility
-            Function<ConceptModel, String[]> rowMapper = concept -> {
+            Function<Integer, String[]> rowMapper = index -> {
                 String[] row = new String[facetConceptListHeaders.length];
-                List<ConceptToFacetDTO> conceptToFacetDTOs = conceptToFacets.get(concept.getConceptNodeId());
-
-                if (conceptToFacetDTOs != null) {
-                    for (ConceptToFacetDTO dto : conceptToFacetDTOs) {
-                        row[facetNameToPosition.get(dto.getFacetName())] = concept.getConceptPath().replace("\\", "\\\\");
-                    }
-                }
-
+                Arrays.stream(facetConceptListHeaders).toList().forEach(
+                        facet ->
+                        {
+                            if (conceptToFacets.containsKey(facet)) {
+                                if (index >= conceptToFacets.get(facet).size()) {
+                                    row[facetNameToPosition.get(facet)] = "";
+                                } else {
+                                    row[facetNameToPosition.get(facet)] = conceptToFacets.get(facet).get(index).getConceptPath().replace("\\", "\\\\");
+                                }
+                            }
+                        });
                 return row;
             };
-
             // Write the data to the CSV file
-            this.csvUtility.writeDataToCSV(datasetCSVPath, conceptModels, rowMapper);
+            this.csvUtility.writeDataToCSV(datasetCSVPath, indexList, rowMapper);
 
             // Add the file to the queue for merging
             this.readyFacetConceptListCSVs.add(datasetCSVPath);
