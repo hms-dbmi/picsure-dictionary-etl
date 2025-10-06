@@ -5,4 +5,5 @@ public interface ConceptToFacetDTO {
     Long getFacetId();
     Long getConceptNodeId();
     String getFacetName();
+    String getConceptPath();
 }

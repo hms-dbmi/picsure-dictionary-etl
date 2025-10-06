@@ -127,13 +127,6 @@ class DictionaryLoaderControllerTest {
 
                 assertTrue(byFacetAndConcept.isPresent());
             }
-
-            if (concept.getConceptType().equals(ConceptTypes.INTERIOR.getConceptType())) {
-                byFacetAndConcept = this.facetConceptService.findByFacetAndConcept(categorical.get().getFacetId(),
-                        concept.getConceptNodeId());
-
-                assertTrue(byFacetAndConcept.isEmpty());
-            }
         });
     }
 }

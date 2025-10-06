@@ -115,11 +115,6 @@ public class CSVUtility {
 
             for (T item : dataItems) {
                 String[] row = rowMapper.apply(item);
-                //Skip row if entirely empty
-                if (Arrays.stream(row).allMatch(String::isEmpty)) {
-                    log.info("Skipping empty row");
-                    continue;
-                }
                 batch.add(row);
                 if (batch.size() >= batchSize) {
                     writer.writeAll(batch);
@@ -152,7 +147,7 @@ public class CSVUtility {
             // Skip the header row
             reader.readNext();
             String[] nextLine;
-            while ((nextLine = reader.readNext()) != null) {
+            while ((nextLine = reader.readNext()) != null && !Arrays.stream(nextLine).allMatch(String::isEmpty)) {
                 writer.writeNext(nextLine);
             }
         } catch (IOException | CsvValidationException e) {
