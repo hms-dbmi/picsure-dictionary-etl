@@ -9,6 +9,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
