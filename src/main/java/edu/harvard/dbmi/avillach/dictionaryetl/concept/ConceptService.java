@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
@@ -10,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import jakarta.persistence.EntityManager;
+
+import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,13 +21,16 @@ import java.util.stream.Collectors;
 public class ConceptService {
 
     private final ConceptRepository conceptRepository;
+    private final DatasetRepository datasetRepository;
+
     private static final Logger log = LoggerFactory.getLogger(ConceptService.class);
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
-    public ConceptService(ConceptRepository conceptRepository) {
+    public ConceptService(ConceptRepository conceptRepository, DatasetRepository datasetRepository) {
         this.conceptRepository = conceptRepository;
+        this.datasetRepository = datasetRepository;
     }
 
     public ConceptModel save(ConceptModel conceptModel) {
@@ -39,12 +46,13 @@ public class ConceptService {
     }
 
     @Transactional
-    public String updateConceptsFromCSV(Long datasetId, List<String[]> concepts, Map<String, Integer> headerMap, List<String> metaColumnNames, int batch_size) {
+    public String updateConceptsFromCSV(List<String[]> concepts, Map<String, Integer> headerMap, List<String> metaColumnNames, int batch_size) {
         int varcount = concepts.size();
         log.debug("varcount: {}", varcount);
         int conceptUpdateCount = 0;
         int metaUpdateCount = 0;
         List<ConceptModel> conceptModels = new ArrayList<>();
+        Map<String, DatasetModel> datasetRefs = new HashMap<>();
         // map of concept path -> key/value map
         Map<String, Map<String, String>> metaMap = new HashMap<>();
         Map<String, String> parentMap = new HashMap<>();
@@ -52,6 +60,21 @@ public class ConceptService {
             String[] var = concepts.get(i);
             if (var.length < headerMap.size()) {
                 continue;
+            }
+            Long datasetId;
+            String datasetRef = var[headerMap.get("dataset_ref")];
+            if (!datasetRefs.containsKey(datasetRef)){
+                Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
+                 if (datasetData.isPresent()) {
+                     datasetId = datasetData.get().getDatasetId();
+                     datasetRefs.put(datasetRef, datasetData.get());
+                 } else {
+                     log.error("Dataset not found: {}.", datasetRef);
+                     return "ERROR: Dataset not found";
+                 }
+            }
+            else {
+                datasetId = datasetRefs.get(datasetRef).getDatasetId();
             }
             String conceptType = var[headerMap.get("concept_type")];
             String conceptPath = var[headerMap.get("concept_path")].replaceAll("'",

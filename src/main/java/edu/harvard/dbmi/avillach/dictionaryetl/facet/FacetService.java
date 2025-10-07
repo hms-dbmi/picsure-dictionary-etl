@@ -169,8 +169,11 @@ public class FacetService {
         Query facetQuery = entityManager.createNativeQuery(getUpsertFacetQuery(facetModels));
 
         facetUpdateCount += facetQuery.executeUpdate();
-        Query parentQuery = entityManager.createNativeQuery(getUpdateParentIdsQuery(parentMap));
-        parentUpdateCount += parentQuery.executeUpdate();
+        if(!parentMap.isEmpty()){
+            Query parentQuery = entityManager.createNativeQuery(getUpdateParentIdsQuery(parentMap));
+            parentUpdateCount += parentQuery.executeUpdate();
+        }
+
 
         //    TODO ADD QUERY TO ADD METADATA FOR FACETS
         return new ResponseEntity<>("Successfully updated " + facetUpdateCount + " facets and associated " + parentUpdateCount + " parent facets\n", HttpStatus.OK);
@@ -211,12 +214,6 @@ public class FacetService {
 
     }
 
-    public String getIdsFromNamesQuery(Set<String> names) {
-        String nameClause = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(names.stream()
-                                        .map(StringUtils::quote)
-                                        .collect(Collectors.toList())) + "])";
-        return "select name, facet_id from facet where name in (select " + nameClause + ")";
-    }
     public String getUpdateParentIdsQuery(Map<String, String> parentFacetMap) {
         String childNames = "UNNEST(ARRAY[" + StringUtils.collectionToCommaDelimitedString(
                 parentFacetMap.keySet().stream().map(StringUtils::quote)
