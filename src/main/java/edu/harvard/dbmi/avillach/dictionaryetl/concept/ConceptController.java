@@ -207,14 +207,8 @@ public class ConceptController {
     // parent_concept_path values {addt metakeys}
     @Transactional
     @PutMapping("/concept/csv")
-    public ResponseEntity<Object> updateConceptsFromCSV(@RequestParam String datasetRef, @RequestBody String input) {
-        Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
-        Long datasetId;
-        if (datasetData.isPresent()) {
-            datasetId = datasetData.get().getDatasetId();
-        } else {
-            return new ResponseEntity<>("Dataset not found: " + datasetRef + ".", HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<Object> updateConceptsFromCSV(@RequestBody String input) {
+
         List<String[]> concepts;
         Map<String, Integer> headerMap;
         List<String> metaColumnNames;
@@ -225,7 +219,7 @@ public class ConceptController {
             metaColumnNames = CSVUtility.getExtraColumns(coreConceptHeaders, headerMap);
             if (metaColumnNames == null) {
                 return new ResponseEntity<>(
-                    "ERROR: Input headers are not as expected for " + datasetRef + ". \n"
+                    "ERROR: Input headers are not as expected \n"
                         + "Verify that the following headers are present in the input csv file: " + String.join(", ", coreConceptHeaders),
                     HttpStatus.BAD_REQUEST
                 );
@@ -237,14 +231,14 @@ public class ConceptController {
             log.error(e.toString());
             log.error(Arrays.toString(e.getStackTrace()));
             return new ResponseEntity<>(
-                "Error reading ingestion csv for " + datasetRef + ". See logs for details.",
+                "Error reading ingestion csv. See logs for details.",
                 HttpStatus.BAD_REQUEST
             );
         }
         if (concepts.isEmpty()) {
-            return new ResponseEntity<>("No csv records found in " + datasetRef + "  input file.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("No csv records found in input file:", HttpStatus.BAD_REQUEST);
         }
-        String updateConceptsResponse = conceptService.updateConceptsFromCSV(datasetId, concepts, headerMap, metaColumnNames, BATCH_SIZE);
+        String updateConceptsResponse = conceptService.updateConceptsFromCSV(concepts, headerMap, metaColumnNames, BATCH_SIZE);
         if (updateConceptsResponse.startsWith("Success")) {
             return new ResponseEntity<>(updateConceptsResponse, HttpStatus.OK);
         }
@@ -274,7 +268,7 @@ public class ConceptController {
     @Transactional
     @PutMapping("/concept/curated")
     public ResponseEntity<Object> updateConceptsFromJSON(@RequestParam String datasetRef, @RequestBody String input) {
-        ConceptService service = new ConceptService(conceptRepository);
+        ConceptService service = new ConceptService(conceptRepository, datasetRepository);
         Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
         Long datasetId;
         if (datasetData.isPresent()) {
