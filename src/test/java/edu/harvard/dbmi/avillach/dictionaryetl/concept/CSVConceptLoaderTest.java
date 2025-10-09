@@ -19,6 +19,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,18 +77,18 @@ class CSVConceptLoaderTest {
     }
 
     @Test
-    void csvBatchConceptLoadTest() {
+    void csvBatchConceptLoadTest() throws IOException {
         //testing ingesting with hierarchy of ref1 -> ref2 (with categorical values) -> ref3 (with continuous values) with batch size of 2 (two batches)
         DatasetModel dataset = new DatasetModel("ref1", "REF1", "abv", "");
         datasetRepository.save(dataset);
         String csv = """
                 dataset_ref,name,display,concept_type,concept_path,parent_concept_path,values,desc
                 ref1,ref1,ref1,Categorical,\\\\ref1\\\\,,,
-                ref1,concept1,display1,Categorical,\\\\ref1\\\\concept1\\\\,\\\\ref1\\\\,"[\\"vals1\\", 0.2, \\"vals3\\"]",ipsum
+                ref1,concept1,display1,Categorical,\\\\ref1\\\\concept1\\\\,\\\\ref1\\\\,"[""vals1"",0.2,""vals3""]",ipsum
                 ref1,concept2,display2,Continuous,\\\\ref1\\\\concept1\\\\concept2\\\\,\\\\ref1\\\\concept1\\\\,"[0,0]",ipsum2
                 """;
 
-        ResponseEntity<Object> updateResponse = conceptController.updateConceptsFromCSV("ref1", csv);
+        ResponseEntity<Object> updateResponse = conceptController.updateConceptsFromCSV(csv);
         Assertions.assertSame(HttpStatus.OK, updateResponse.getStatusCode(), "Response Entity not as expected for CSV Loader call");
 
         List<ConceptModel> conceptList = conceptService.findAll();

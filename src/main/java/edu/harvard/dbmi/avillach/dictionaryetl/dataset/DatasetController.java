@@ -1,22 +1,24 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
-
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -65,8 +67,10 @@ public class DatasetController {
     }
 
     @PutMapping("/dataset")
-    public ResponseEntity<DatasetModel> updateDataset(@RequestParam String datasetRef,
-            @RequestParam String fullName, @RequestParam String abv, @RequestParam String desc) {
+    public ResponseEntity<DatasetModel> updateDataset(
+        @RequestParam String datasetRef, @RequestParam String fullName,
+        @RequestParam String abv, @RequestParam String desc
+    ) {
 
         Optional<DatasetModel> datasetData = datasetRepository.findByRef(datasetRef);
 
@@ -80,9 +84,7 @@ public class DatasetController {
         } else {
             // add new dataset when dataset not present in data
             try {
-                DatasetModel newDataset = datasetRepository
-                        .save(new DatasetModel(datasetRef,
-                                fullName, abv, desc));
+                DatasetModel newDataset = datasetRepository.save(new DatasetModel(datasetRef, fullName, abv, desc));
                 return new ResponseEntity<>(newDataset, HttpStatus.CREATED);
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
@@ -99,14 +101,13 @@ public class DatasetController {
         Map<String, Integer> headerMap;
         List<String> metaColumnNames = new ArrayList<>();
         List<String[]> datasets;
-        try (CSVReader reader = new CSVReader(new StringReader(input))) {
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
             String[] header = reader.readNext();
             headerMap = datasetService.buildCsvInputsHeaderMap(header);
-            String[] coreDatasetHeaders = { "ref", "full_name", "abbreviation", "description" };
+            String[] coreDatasetHeaders = {"ref", "full_name", "abbreviation", "description"};
             if (!headerMap.keySet().containsAll(Arrays.asList(coreDatasetHeaders))) {
-                return new ResponseEntity<>(
-                        "Headers in dataset ingest file incorrect",
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Headers in dataset ingest file incorrect", HttpStatus.BAD_REQUEST);
             } else {
                 headerMap.keySet().forEach(k -> {
                     if (!Arrays.asList(coreDatasetHeaders).contains(k)) {
@@ -118,13 +119,12 @@ public class DatasetController {
             datasets.remove(header);
         } catch (IOException | CsvException e) {
             return new ResponseEntity<>(
-                    "Error reading dataset ingestion csv. Error: \n" + Arrays.toString(e.getStackTrace()),
-                    HttpStatus.BAD_REQUEST);
+                "Error reading dataset ingestion csv. Error: \n" + Arrays.toString(e.getStackTrace()),
+                HttpStatus.BAD_REQUEST
+            );
         }
         if (datasets.isEmpty()) {
-            return new ResponseEntity<>(
-                    "No csv records found in dataset input file.",
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("No csv records found in dataset input file.", HttpStatus.BAD_REQUEST);
         }
         int datasetUpdateCount = 0;
         int metaUpdateCount = 0;
@@ -144,23 +144,25 @@ public class DatasetController {
                 datasetModel.setFullName(fullName);
             } else {
                 // add new dataset when dataset not present in data
-                datasetModel = new DatasetModel(ref,
-                        fullName, abbreviation, description);
+                datasetModel = new DatasetModel(ref, fullName, abbreviation, description);
             }
             datasetRepository.save(datasetModel);
             datasetUpdateCount++;
             for (String key : metaColumnNames) {
                 String value = dataset[headerMap.get(key)];
                 if (!value.isBlank()) {
-                    DatasetMetadataModel dmModel = datasetMetadataRepository.findByDatasetIdAndKey(datasetModel.getDatasetId(), key).orElse(new DatasetMetadataModel(datasetModel.getDatasetId(), key, value));
+                    DatasetMetadataModel dmModel = datasetMetadataRepository.findByDatasetIdAndKey(datasetModel.getDatasetId(), key)
+                        .orElse(new DatasetMetadataModel(datasetModel.getDatasetId(), key, value));
                     dmModel.setValue(value);
                     datasetMetadataRepository.save(dmModel);
                     metaUpdateCount++;
                 }
             }
         }
-        return new ResponseEntity<>("Successfully created/updated " + datasetUpdateCount + " datasets and "
-                + metaUpdateCount + " dataset metadata entries from input csv.", HttpStatus.CREATED);
+        return new ResponseEntity<>(
+            "Successfully created/updated " + datasetUpdateCount + " datasets and " + metaUpdateCount
+                + " dataset metadata entries from input csv.", HttpStatus.CREATED
+        );
     }
 
     @Transactional
@@ -173,11 +175,20 @@ public class DatasetController {
             return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
+
+
+    }
+
+    @DeleteMapping("/dataset/all")
+    public ResponseEntity<String> deleteAllDatasets(@RequestParam String datasetRef) {
+        datasetRepository.deleteAll();
+        return new ResponseEntity<>("All datasets deleted", HttpStatus.OK);
     }
 
     @GetMapping("/dataset/metadata")
     public ResponseEntity<List<DatasetMetadataModel>> getAllDatasetMetadataModels(
-            @RequestParam Optional<String> datasetRef) {
+        @RequestParam Optional<String> datasetRef
+    ) {
         try {
             List<DatasetMetadataModel> datasetMetadataModels = new ArrayList<>();
 
@@ -202,11 +213,12 @@ public class DatasetController {
     }
 
     @PutMapping("/dataset/metadata")
-    public ResponseEntity<DatasetMetadataModel> updateDatasetMetadata(@RequestParam String datasetRef,
-            @RequestParam String key, @RequestParam String values) {
+    public ResponseEntity<DatasetMetadataModel> updateDatasetMetadata(
+        @RequestParam String datasetRef, @RequestParam String key,
+        @RequestParam String values
+    ) {
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
-        Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId,
-                key);
+        Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId, key);
 
         try {
             if (datasetMetadataData.isPresent()) {
@@ -217,9 +229,8 @@ public class DatasetController {
             } else {
                 // add new datasetMetadata when datasetMetadata not present in data
                 try {
-                    DatasetMetadataModel newDatasetMetadata = datasetMetadataRepository
-                            .save(new DatasetMetadataModel(datasetId, key,
-                                    values));
+                    DatasetMetadataModel newDatasetMetadata =
+                        datasetMetadataRepository.save(new DatasetMetadataModel(datasetId, key, values));
                     return new ResponseEntity<>(newDatasetMetadata, HttpStatus.CREATED);
                 } catch (Exception e) {
                     System.out.println(e.getLocalizedMessage());
@@ -234,12 +245,10 @@ public class DatasetController {
     }
 
     @DeleteMapping("/dataset/metadata")
-    public ResponseEntity<DatasetMetadataModel> deleteDatasetMetadata(@RequestParam String datasetRef,
-            @RequestParam String key) {
+    public ResponseEntity<DatasetMetadataModel> deleteDatasetMetadata(@RequestParam String datasetRef, @RequestParam String key) {
 
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
-        Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId,
-                key);
+        Optional<DatasetMetadataModel> datasetMetadataData = datasetMetadataRepository.findByDatasetIdAndKey(datasetId, key);
 
         if (datasetMetadataData.isPresent()) {
             datasetMetadataRepository.delete(datasetMetadataData.get());
@@ -251,16 +260,17 @@ public class DatasetController {
 
     @PutMapping("/dataset/harmonization")
     public ResponseEntity<DatasetHarmonizationModel> updateDatasetHarmonization(
-            @RequestParam String harmonizedDatasetRef,
-            @RequestParam String sourceDatasetRef) {
+        @RequestParam String harmonizedDatasetRef,
+        @RequestParam String sourceDatasetRef
+    ) {
         Long harmonizedDatasetId = datasetRepository.findByRef(harmonizedDatasetRef).get().getDatasetId();
         Long sourceDatasetId = datasetRepository.findByRef(sourceDatasetRef).get().getDatasetId();
-        Optional<DatasetHarmonizationModel> existingHarmonization = datasetHarmonizationRepository
-                .findBySourceDatasetIdAndHarmonizedDatasetId(sourceDatasetId, harmonizedDatasetId);
+        Optional<DatasetHarmonizationModel> existingHarmonization =
+            datasetHarmonizationRepository.findBySourceDatasetIdAndHarmonizedDatasetId(sourceDatasetId, harmonizedDatasetId);
         if (existingHarmonization.isEmpty()) {
             try {
-                DatasetHarmonizationModel newDatasetHarmonization = datasetHarmonizationRepository
-                        .save(new DatasetHarmonizationModel(harmonizedDatasetId, sourceDatasetId));
+                DatasetHarmonizationModel newDatasetHarmonization =
+                    datasetHarmonizationRepository.save(new DatasetHarmonizationModel(harmonizedDatasetId, sourceDatasetId));
                 return new ResponseEntity<>(newDatasetHarmonization, HttpStatus.CREATED);
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
@@ -274,14 +284,14 @@ public class DatasetController {
 
     @DeleteMapping("/dataset/harmonization")
     public ResponseEntity<DatasetHarmonizationModel> deleteDatasetHarmonization(
-            @RequestParam String harmonizedDatasetRef,
-            @RequestParam String sourceDatasetRef) {
+        @RequestParam String harmonizedDatasetRef,
+        @RequestParam String sourceDatasetRef
+    ) {
 
         Long harmonizedDatasetId = datasetRepository.findByRef(harmonizedDatasetRef).get().getDatasetId();
         Long sourceDatasetId = datasetRepository.findByRef(sourceDatasetRef).get().getDatasetId();
-        Optional<DatasetHarmonizationModel> datasetHarmonizationData = datasetHarmonizationRepository
-                .findBySourceDatasetIdAndHarmonizedDatasetId(
-                        sourceDatasetId, harmonizedDatasetId);
+        Optional<DatasetHarmonizationModel> datasetHarmonizationData =
+            datasetHarmonizationRepository.findBySourceDatasetIdAndHarmonizedDatasetId(sourceDatasetId, harmonizedDatasetId);
 
         if (datasetHarmonizationData.isPresent()) {
             datasetHarmonizationRepository.delete(datasetHarmonizationData.get());

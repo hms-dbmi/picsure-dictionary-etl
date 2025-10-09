@@ -83,9 +83,9 @@ public class CSVFacetLoaderTest {
                 """;
         String facetConceptCSV = """
                 child1,child2
-                \\\\ref\\\\concept1\\\\,\\\\ref\\\\concept2\\\\
-                \\\\ref\\\\concept2\\\\,\\\\ref\\\\concept3\\\\
-                \\\\ref\\\\concept3\\\\,
+                \\ref\\concept1\\,\\ref\\concept2\\
+                \\ref\\concept2\\,\\ref\\concept3\\
+                \\ref\\concept3\\,
                 """;
 
         DatasetModel dataset = new DatasetModel("ref", "", "", "");

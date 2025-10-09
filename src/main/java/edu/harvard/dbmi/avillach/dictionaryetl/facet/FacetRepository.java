@@ -2,6 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -37,14 +38,15 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     List<FacetModel> findAllFacetsByDatasetIDs(Long[] datasetIDs);
 
     @Query(value = """
-        SELECT f.facet_id AS facetId,
-               cn.concept_node_id AS conceptNodeId,
-               f.name AS facetName
-        FROM dict.facet f
-                 JOIN dict.facet__concept_node fcn ON f.facet_id = fcn.facet_id
-                 JOIN dict.concept_node cn ON fcn.concept_node_id = cn.concept_node_id
-        WHERE cn.dataset_id = :datasetID
-        """, nativeQuery = true)
+            SELECT f.facet_id AS facetId,
+                   cn.concept_node_id AS conceptNodeId,
+                   f.name AS facetName,
+                   cn.concept_path AS conceptPath
+            FROM dict.facet f
+                     JOIN dict.facet__concept_node fcn ON f.facet_id = fcn.facet_id
+                     JOIN dict.concept_node cn ON fcn.concept_node_id = cn.concept_node_id
+            WHERE cn.dataset_id = :datasetID
+            """, nativeQuery = true)
     List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(@Param("datasetID") Long datasetID);
 
     @Modifying
@@ -55,10 +57,10 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     @Modifying
     @Transactional
     @Query(value = """
-        INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
-        SELECT :catId, REF, REF, FULL_NAME
-        FROM dict.dataset
-        """, nativeQuery = true)
+            INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
+            SELECT :catId, REF, REF, FULL_NAME
+            FROM dict.dataset
+            """, nativeQuery = true)
     void createFacetForEachDatasetForCategory(@Param("catId") Long catId);
 
     @Modifying

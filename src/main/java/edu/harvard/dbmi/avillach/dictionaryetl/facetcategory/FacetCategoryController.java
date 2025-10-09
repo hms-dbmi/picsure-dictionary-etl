@@ -36,11 +36,12 @@ public class FacetCategoryController {
     }
 
     @PutMapping("/facetCategory")
-    public ResponseEntity<FacetCategoryModel> updateFacetCategory(@RequestParam String name,
-            @RequestParam String display, @RequestParam String description) {
+    public ResponseEntity<FacetCategoryModel> updateFacetCategory(
+        @RequestParam String name, @RequestParam String display,
+        @RequestParam String description
+    ) {
 
-        Optional<FacetCategoryModel> facetCategoryData = facetCategoryRepository
-                .findByName(name);
+        Optional<FacetCategoryModel> facetCategoryData = facetCategoryRepository.findByName(name);
 
         if (facetCategoryData.isPresent()) {
             // update already existing facetCategory
@@ -51,9 +52,7 @@ public class FacetCategoryController {
         } else {
             // add new facetCategory when facetCategory not present in data
             try {
-                FacetCategoryModel newFacetCategory = facetCategoryRepository
-                        .save(new FacetCategoryModel(name,
-                                display, description));
+                FacetCategoryModel newFacetCategory = facetCategoryRepository.save(new FacetCategoryModel(name, display, description));
                 return new ResponseEntity<>(newFacetCategory, HttpStatus.CREATED);
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
@@ -63,18 +62,24 @@ public class FacetCategoryController {
 
     }
 
-    @DeleteMapping("/facetCategory")
-    public ResponseEntity<FacetCategoryModel> deleteFacetCategory(@RequestParam String name) {
+    @DeleteMapping("/facet/category")
+    public ResponseEntity<HttpStatus> deleteFacetCategory(@RequestParam String name) {
 
-        Optional<FacetCategoryModel> facetCategoryData = facetCategoryRepository
-                .findByName(name);
-
+        Optional<FacetCategoryModel> facetCategoryData = facetCategoryRepository.findByName(name);
         if (facetCategoryData.isPresent()) {
             facetCategoryRepository.delete(facetCategoryData.get());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
+    }
+
+    @DeleteMapping("/facet/category/all")
+    public ResponseEntity<HttpStatus> deleteAllFacetCategories(@RequestParam Optional<String> name) {
+
+        facetCategoryRepository.deleteAll();
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 
@@ -83,10 +88,10 @@ public class FacetCategoryController {
         name(unique)	display name	description
         */
 
-        @Transactional
-        @PutMapping("/facet/category/csv")
-        public ResponseEntity<String> updateFacetCategoriesFromCSVs(@RequestBody String input) {
-            return categoryService.updateFacetCategoriesFromCSVs(input);
-        }
+    @Transactional
+    @PutMapping("/facet/category/csv")
+    public ResponseEntity<String> updateFacetCategoriesFromCSVs(@RequestBody String input) {
+        return categoryService.updateFacetCategoriesFromCSVs(input);
+    }
 
 }

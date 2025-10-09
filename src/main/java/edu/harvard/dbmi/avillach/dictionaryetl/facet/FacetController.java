@@ -2,6 +2,9 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import java.util.*;
 
+
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
