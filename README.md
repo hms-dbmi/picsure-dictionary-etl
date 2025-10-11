@@ -61,3 +61,131 @@ If you do not have `pg_restore` and `pg_dump`, you can install them by following
    ```
 
    If the command doesn’t work immediately, you may need to restart your terminal.
+
+
+## Facet Loader
+
+This project includes a Facet Loader that ingests a JSON payload describing Facet Categories, their Facets (including nested children), and mapping rules to automatically associate facets with concept nodes based on a concept path.
+
+What it does:
+- Upserts facet categories and facets by name (idempotent). If a name already exists it is updated; otherwise it is created.
+- Builds a facet hierarchy using parent_id based on the JSON nesting of facets.
+- Evaluates expressions to map facets to concept nodes (rows in dict.concept_node) and writes relationships into dict.facet__concept_node.
+
+API endpoint:
+- POST /api/facet-loader/load
+- Request body is a JSON array of objects each containing a Facet_Category.
+- Returns a JSON object with counts: categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated.
+
+Example request body (minimal):
+[
+  {
+    "Facet_Category": {
+      "Name": "Consortium_Curated_Facets",
+      "Display": "Consortium Curated Facets",
+      "Description": "Consortium Curated Facets Description",
+      "Facets": [
+        {
+          "Name": "Recover Adult",
+          "Display": "RECOVER Adult",
+          "Description": "Recover adult parent facet.",
+          "Facets": [
+            {
+              "Name": "Infected",
+              "Display": "Infected",
+              "Description": "Infected Facet Description"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
+
+Example with expressions (maps facets to concept nodes by concept_path):
+- Concept path sample: \\phs003436\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\
+- Nodes (by index):
+  - 0: phs003436
+  - 1: Recover_Adult
+  - 2: biostats_derived
+  - 3: visits
+  - 4: inf
+  - 5: 12
+  - 6: pasc_cc_2024
+- Negative indices are allowed (e.g., -1 is last node, -2 second to last, etc.).
+
+Example payload fragment using expressions:
+{
+  "Facet_Category": {
+    "Name": "Consortium_Curated_Facets",
+    "Facets": [
+      {
+        "Name": "Recover Adult",
+        "Expressions": [
+          { "Logic": "equal", "Regex": "(?i)Recover_Adult$", "Node_Position": 1 }
+        ],
+        "Facets": [
+          {
+            "Name": "Infected",
+            "Expressions": [
+              { "Logic": "equal", "Regex": "(?i)\\binf(ected)?\\b", "Node_Position": -3 }
+            ]
+          },
+          {
+            "Name": "Adult Dataset (not derived)",
+            "Expression": [
+              { "Logic": "not", "Regex": "(?i).*derived.*", "Node_Position": 2 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
+Expression evaluation rules:
+- Supported Logic values: equal and not (case-insensitive).
+- Regex is Java regex; inline flags such as (?i) for case-insensitive are supported.
+- nodePosition is zero-based, negative values allowed to index from the end (e.g., -1 is last node).
+- All expressions listed for a facet are ANDed; all must match for a concept_path to qualify.
+- Out-of-bounds node positions or invalid regex cause the expression to evaluate to false.
+- If a facet contains no expressions, it is not automatically mapped to any concept nodes (still created in the hierarchy).
+
+Alias handling in payload:
+- Facet name must be provided as Name.
+- Expressions can be provided as Expressions or Expression.
+- Node position must be provided as Node_Position.
+
+Pre-requisites for mapping:
+- dict.concept_node should already be populated (e.g., via the Dictionary Loader) so that concept_path values exist to evaluate.
+
+cURL example:
+- Save payload to payload.json and run:
+  curl -X POST \
+       -H "Content-Type: application/json" \
+       --data-binary @payload.json \
+       http://localhost:8080/api/facet-loader/load
+
+Sample response:
+{
+  "categoriesCreated": 1,
+  "categoriesUpdated": 0,
+  "facetsCreated": 5,
+  "facetsUpdated": 0
+}
+
+Idempotency and updates:
+- Re-posting the same payload will update existing categories/facets and keep the hierarchy; counts will reflect updates rather than creations.
+- Facet-to-concept mappings avoid duplicates using ON CONFLICT semantics in the repository/service layer.
+
+Tests you can run (Docker required for Testcontainers):
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderControllerTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderServiceTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderMappingIntegrationTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetExpressionEvaluatorTest test
+Or run all tests:
+- mvn test
+
+Troubleshooting:
+- If no concept nodes are mapped after posting, verify that concept_node rows exist and your node positions/regex align with your concept_path structure.
+- Ensure the app is running on the expected port and CORS origin (Facet Loader controller is configured with CrossOrigin for http://localhost:8081 by default).
