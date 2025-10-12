@@ -63,6 +63,19 @@ If you do not have `pg_restore` and `pg_dump`, you can install them by following
    If the command doesn’t work immediately, you may need to restart your terminal.
 
 
+## Table of Contents
+
+- [Code Formatting](#code-formatting)
+- [Uploading a TSV file for /anvil/upload-tsv data ingest](#uploading-a-tsv-file-for-anvilupload-tsv-data-ingest)
+- [Local Database for Development](#local-database-for-development)
+- [Facet Loader](#facet-loader)
+  - [API: Load Facets](#facet-loader)
+  - [Expression Evaluation](#expression-evaluation-rules)
+  - [Clear facets and categories](#clear-facets-and-categories)
+  - [Testing with FacetLoader.http](#testing-requests-with-facetloaderhttp)
+- [Tests](#tests-you-can-run-docker-required-for-testcontainers)
+- [Troubleshooting](#troubleshooting)
+
 ## Facet Loader
 
 This project includes a Facet Loader that ingests a JSON payload describing Facet Categories, their Facets (including nested children), and mapping rules to automatically associate facets with concept nodes based on a concept path.
@@ -189,3 +202,60 @@ Or run all tests:
 Troubleshooting:
 - If no concept nodes are mapped after posting, verify that concept_node rows exist and your node positions/regex align with your concept_path structure.
 - Ensure the app is running on the expected port and CORS origin (Facet Loader controller is configured with CrossOrigin for http://localhost:8081 by default).
+
+## Clear facets and categories
+
+Use this endpoint to remove facet categories and/or specific facets (including all their descendants) by name. The service will also remove facet-to-concept mappings first to preserve referential integrity.
+
+- Endpoint: POST /api/facet-loader/clear
+- Request body (JSON):
+
+  {
+    "facetCategories": ["CategoryName1", "CategoryName2"],
+    "facets": ["FacetNameA", "FacetNameB"]
+  }
+
+- Both properties are optional. Provide one or both:
+  - facetCategories: Deletes each listed category by name, all facets within, and all mappings. Returns counts.
+  - facets: Deletes each listed facet by name and all of its descendants in the hierarchy, plus all related mappings. Other categories/facets remain intact.
+
+- Response body (JSON):
+
+  {
+    "categoriesDeleted": 1,
+    "facetsDeleted": 7,
+    "mappingsDeleted": 42
+  }
+
+Behavior notes:
+- Deletions are name-based and case-sensitive to match stored names.
+- For categories, the service deletes mappings, then facets, then the category record.
+- For facets, the service deletes mappings, then deletes the facet and all descendants in a breadth-first traversal.
+- Requests are idempotent: nonexistent names are ignored (counted as zero deletions).
+
+cURL example (clear by category):
+
+  curl -X POST \
+       -H "Content-Type: application/json" \
+       --data-binary '{
+         "facetCategories": ["Consortium_Curated_Facets"]
+       }' \
+       http://localhost:8080/api/facet-loader/clear
+
+cURL example (clear by facet names):
+
+  curl -X POST \
+       -H "Content-Type: application/json" \
+       --data-binary '{
+         "facets": ["Recover Adult", "Infected"]
+       }' \
+       http://localhost:8080/api/facet-loader/clear
+
+## Testing requests with FacetLoader.http
+
+A FacetLoader.http file is included at the repository root with ready-to-run sample requests compatible with the IntelliJ HTTP Client.
+
+How to use:
+- Open FacetLoader.http in IntelliJ IDEA or any IDE that supports the HTTP Client.
+- Adjust the @host variable at the top if your application runs on a different port (e.g., 8086 in Docker).
+- Click the gutter icons to execute requests for loading facets and clearing by category/facet names.

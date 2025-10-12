@@ -22,4 +22,10 @@ public class FacetLoaderController {
         FacetLoaderService.Result result = service.load(payload);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
+    @PostMapping("/clear")
+    public ResponseEntity<FacetLoaderService.ClearResult> clear(@RequestBody FacetClearRequest request) {
+        FacetLoaderService.ClearResult result = service.clear(request);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
 }

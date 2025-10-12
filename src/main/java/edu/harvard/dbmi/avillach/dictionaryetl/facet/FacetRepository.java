@@ -17,6 +17,10 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
 
     Optional<FacetModel> findByName(String name);
 
+    List<FacetModel> findAllByParentId(Long parentId);
+
+    long countByFacetCategoryId(Long facetCategoryId);
+
     @Modifying
     @Transactional
     @Query(value = """
@@ -67,4 +71,9 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     @Transactional
     @Query(value = "DELETE FROM dict.facet WHERE name = :name", nativeQuery = true)
     int deleteByName(@Param("name") String name);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM dict.facet WHERE facet_id IN (:ids)", nativeQuery = true)
+    int deleteByIds(@Param("ids") List<Long> ids);
 }

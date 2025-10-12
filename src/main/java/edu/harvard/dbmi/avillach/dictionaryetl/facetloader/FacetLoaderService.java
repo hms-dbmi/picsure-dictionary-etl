@@ -29,6 +29,82 @@ public class FacetLoaderService {
         this.facetConceptRepository = facetConceptRepository;
     }
 
+    public ClearResult clear(FacetClearRequest request) {
+        long categoriesDeleted = 0;
+        long facetsDeleted = 0;
+        long mappingsDeleted = 0;
+
+        if (request == null) return new ClearResult(0,0,0);
+
+        // 1) Clear by category names
+        if (request.facetCategories != null) {
+            for (String catName : request.facetCategories) {
+                if (catName == null || catName.isBlank()) continue;
+                Optional<FacetCategoryModel> opt = facetCategoryRepository.findByName(catName);
+                if (opt.isEmpty()) continue;
+                FacetCategoryModel cat = opt.get();
+
+                // count before delete
+                long facetCount = facetRepository.countByFacetCategoryId(cat.getFacetCategoryId());
+                long mappingCount = facetConceptRepository.countAllForCategory(cat.getFacetCategoryId());
+
+                // delete mappings and facets for category
+                facetConceptRepository.deleteAllForCategory(cat.getFacetCategoryId());
+                facetRepository.deleteAllForCategory(cat.getFacetCategoryId());
+
+                // delete category
+                facetCategoryRepository.deleteById(cat.getFacetCategoryId());
+
+                categoriesDeleted += 1;
+                facetsDeleted += facetCount;
+                mappingsDeleted += mappingCount;
+            }
+        }
+
+        // 2) Clear by facet names (including their descendants)
+        if (request.facets != null) {
+            for (String facetName : request.facets) {
+                if (facetName == null || facetName.isBlank()) continue;
+                Optional<FacetModel> optFacet = facetRepository.findByName(facetName);
+                if (optFacet.isEmpty()) continue;
+                FacetModel root = optFacet.get();
+
+                List<Long> ids = collectFacetSubtreeIds(root.getFacetId());
+                if (ids.isEmpty()) continue;
+
+                long mappingCount = facetConceptRepository.countAllForFacetIds(ids);
+
+                // delete mappings then facets
+                facetConceptRepository.deleteAllForFacetIds(ids);
+                facetRepository.deleteByIds(ids);
+
+                facetsDeleted += ids.size();
+                mappingsDeleted += mappingCount;
+            }
+        }
+
+        return new ClearResult(categoriesDeleted, facetsDeleted, mappingsDeleted);
+    }
+
+    private List<Long> collectFacetSubtreeIds(Long rootId) {
+        java.util.ArrayList<Long> ids = new java.util.ArrayList<>();
+        java.util.ArrayDeque<Long> q = new java.util.ArrayDeque<>();
+        q.add(rootId);
+        while (!q.isEmpty()) {
+            Long id = q.removeFirst();
+            ids.add(id);
+            List<FacetModel> children = facetRepository.findAllByParentId(id);
+            if (children != null) {
+                for (FacetModel c : children) {
+                    if (c != null && c.getFacetId() != null) {
+                        q.addLast(c.getFacetId());
+                    }
+                }
+            }
+        }
+        return ids;
+    }
+
     public Result load(List<FacetCategoryWrapper> payload) {
         int categoriesCreated = 0;
         int categoriesUpdated = 0;
@@ -127,6 +203,8 @@ public class FacetLoaderService {
     }
 
     public record Result(int categoriesCreated, int categoriesUpdated, int facetsCreated, int facetsUpdated) {}
+
+    public record ClearResult(long categoriesDeleted, long facetsDeleted, long mappingsDeleted) {}
 
     private record Counts(int created, int updated) {}
 
