@@ -13,8 +13,11 @@ public class ConsentService {
         this.consentRepository = consentRepository;
     }
 
-
     public List<ConsentModel> findByDatasetID(Long datasetId) {
         return consentRepository.findByDatasetId(datasetId);
+    }
+
+    public int deleteByDatasetRef(String ref) {
+        return consentRepository.deleteByDatasetRef(ref);
     }
 }

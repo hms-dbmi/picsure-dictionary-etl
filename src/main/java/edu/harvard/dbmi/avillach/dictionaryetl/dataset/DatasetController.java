@@ -6,7 +6,7 @@ import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
@@ -40,7 +40,7 @@ public class DatasetController {
     FacetConceptRepository facetConceptRepository;
 
     @Autowired
-    ConsentRepository consentRepository;
+    private ConsentService consentService;
 
     @Autowired
     DatasetMetadataRepository datasetMetadataRepository;
@@ -168,6 +168,10 @@ public class DatasetController {
     @Transactional
     @DeleteMapping("/dataset")
     public ResponseEntity<String> deleteDataset(@RequestParam String datasetRef) {
+        // Ensure we delete any related rows that are not covered by FK ON DELETE CASCADE
+        // Specifically, consents have no FK constraint to dataset in the current test schema
+        consentService.deleteByDatasetRef(datasetRef);
+
         int deletedDatasets = datasetService.deleteByRef(datasetRef);
         facetService.deleteByName(datasetRef);
 
@@ -175,8 +179,6 @@ public class DatasetController {
             return new ResponseEntity<>("No dataset found to delete", HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>("Dataset deleted", HttpStatus.OK);
-
-
     }
 
     @DeleteMapping("/dataset/all")
