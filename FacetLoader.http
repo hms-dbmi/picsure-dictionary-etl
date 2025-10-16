@@ -1,0 +1,53 @@
+### Facet Loader HTTP requests (IntelliJ HTTP Client)
+# Adjust the host if your app runs on a different port (e.g., 8086 for Docker)
+@host = http://localhost:8080
+
+### Load sample facets
+POST {{host}}/api/facet-loader/load
+Content-Type: application/json
+
+[
+  {
+    "Facet_Category": {
+      "Name": "Sample_Category",
+      "Display": "Sample Category",
+      "Description": "Demo category created via HTTP file",
+      "Facets": [
+        {
+          "Name": "Demo Facet",
+          "Display": "Demo Facet",
+          "Description": "Top-level facet",
+          "Expressions": [
+            { "regex": "(?i)^demographics$", "node": 0 }
+          ],
+          "Facets": [
+            {
+              "Name": "Child",
+              "Display": "Child",
+              "Description": "Child facet for demo",
+              "Expressions": [
+                { "regex": "(?i)^child$", "node": -1 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
+
+### Clear by category name
+POST {{host}}/api/facet-loader/clear
+Content-Type: application/json
+
+{
+  "facetCategories": ["Sample_Category"]
+}
+
+### Clear by facet name (and its descendants)
+POST {{host}}/api/facet-loader/clear
+Content-Type: application/json
+
+{
+  "facets": ["Demo Facet"]
+}

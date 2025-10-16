@@ -64,6 +64,25 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
   @Modifying
   @Transactional
   @Query(value = """
+      DELETE FROM dict.facet__concept_node WHERE facet_id IN (:facetIds)
+      """, nativeQuery = true)
+  int deleteAllForFacetIds(@Param("facetIds") List<Long> facetIds);
+
+  @Query(value = """
+      SELECT COUNT(*) FROM dict.facet__concept_node WHERE facet_id IN (
+          SELECT facet_id FROM dict.facet WHERE facet_category_id = :facetCategoryId
+      )
+      """, nativeQuery = true)
+  long countAllForCategory(@Param("facetCategoryId") Long facetCategoryId);
+
+  @Query(value = """
+      SELECT COUNT(*) FROM dict.facet__concept_node WHERE facet_id IN (:facetIds)
+      """, nativeQuery = true)
+  long countAllForFacetIds(@Param("facetIds") List<Long> facetIds);
+
+  @Modifying
+  @Transactional
+  @Query(value = """
       INSERT INTO dict.facet__concept_node (concept_node_id, facet_id)
       SELECT concept_node.concept_node_id, facet.facet_id
       FROM dict.concept_node
