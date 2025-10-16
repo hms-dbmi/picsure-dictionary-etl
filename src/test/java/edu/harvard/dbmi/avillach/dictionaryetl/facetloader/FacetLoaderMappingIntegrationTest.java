@@ -94,9 +94,8 @@ class FacetLoaderMappingIntegrationTest {
         infected.description = "Infected Facet Description";
         infected.expressions = new ArrayList<>();
         FacetExpressionDTO expInf = new FacetExpressionDTO();
-        expInf.logic = "equal";
         expInf.regex = "(?i)\\binf(ected)?\\b";
-        expInf.nodePosition = -3; // third from the end
+        expInf.node = -3; // third from the end
         infected.expressions.add(expInf);
 
         FacetDTO parent = new FacetDTO();
@@ -105,9 +104,8 @@ class FacetLoaderMappingIntegrationTest {
         parent.description = "Recover adult parent facet.";
         parent.expressions = new ArrayList<>();
         FacetExpressionDTO expParent = new FacetExpressionDTO();
-        expParent.logic = "equal";
-        expParent.regex = "(?i)Recover_Adult$";
-        expParent.nodePosition = 1; // 2nd node
+        expParent.exactly = "Recover_Adult";
+        expParent.node = 1; // 2nd node
         parent.expressions.add(expParent);
         parent.facets = List.of(infected);
 

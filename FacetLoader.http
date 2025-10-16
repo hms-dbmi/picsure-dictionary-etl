@@ -18,7 +18,7 @@ Content-Type: application/json
           "Display": "Demo Facet",
           "Description": "Top-level facet",
           "Expressions": [
-            { "Logic": "equal", "Regex": "(?i)^demographics$", "Node_Position": 0 }
+            { "regex": "(?i)^demographics$", "node": 0 }
           ],
           "Facets": [
             {
@@ -26,7 +26,7 @@ Content-Type: application/json
               "Display": "Child",
               "Description": "Child facet for demo",
               "Expressions": [
-                { "Logic": "equal", "Regex": "(?i)^child$", "Node_Position": -1 }
+                { "regex": "(?i)^child$", "node": -1 }
               ]
             }
           ]

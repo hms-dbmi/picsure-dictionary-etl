@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -18,5 +19,6 @@ public class FacetDTO {
     @JsonProperty("Facets")
     public List<FacetDTO> facets;
     @JsonProperty("Expressions")
+    @JsonAlias("Expression")
     public List<FacetExpressionDTO> expressions;
 }

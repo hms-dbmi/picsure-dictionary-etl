@@ -5,17 +5,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Evaluates FacetExpressionDTO rules against a concept_path.
- * <p>
- * Semantics (initial):
- * - Supports Logic values: "equal" and "not" (case-insensitive).
- * - Expressions within a facet are ANDed together; all must evaluate to true
- *   for the facet to apply to the concept path.
- * - nodePosition is a zero-based index addressing the concept path segments.
- *   Negative positions are supported (e.g., -1 is last node, -2 is second to last, etc.).
- * - If a nodePosition is out of bounds or missing, the expression evaluates to false.
- * - Regex strings are compiled as-is; inline flags such as (?i) are supported by Java's Pattern.
- * </p>
+ * Evaluates FacetExpressionDTO rules against a concept_path using the simplified
+ * expression format: each entry may specify one or more of {exactly, contains, regex}
+ * and must include a node index. All entries are ANDed together.
  */
 public final class FacetExpressionEvaluator {
 
@@ -35,31 +27,43 @@ public final class FacetExpressionEvaluator {
     }
 
     public static boolean evaluate(FacetExpressionDTO expr, String conceptPath) {
-        if (expr == null || expr.nodePosition == null || expr.regex == null || expr.regex.isBlank() || conceptPath == null) {
+        if (expr == null || expr.node == null || conceptPath == null) {
             return false;
         }
-        String node = getNodeAt(conceptPath, expr.nodePosition);
-        if (node == null) return false;
+        String nodeVal = getNodeAt(conceptPath, expr.node);
+        if (nodeVal == null) return false;
 
-        boolean matches;
-        try {
-            Pattern p = Pattern.compile(expr.regex);
-            matches = p.matcher(node).find();
-        } catch (Exception e) {
-            // Bad regex: treat as non-match
+        boolean ok = true;
+
+        // exactly match
+        if (expr.exactly != null && !expr.exactly.isBlank()) {
+            ok &= nodeVal.equals(expr.exactly);
+            if (!ok) return false;
+        }
+        // contains substring
+        if (expr.contains != null && !expr.contains.isBlank()) {
+            ok &= nodeVal.contains(expr.contains);
+            if (!ok) return false;
+        }
+        // regex match
+        if (expr.regex != null && !expr.regex.isBlank()) {
+            try {
+                Pattern p = Pattern.compile(expr.regex);
+                ok &= p.matcher(nodeVal).find();
+                if (!ok) return false;
+            } catch (Exception e) {
+                return false; // bad regex
+            }
+        }
+
+        // If none of the matchers were provided, treat as non-match
+        if ((expr.exactly == null || expr.exactly.isBlank()) &&
+            (expr.contains == null || expr.contains.isBlank()) &&
+            (expr.regex == null || expr.regex.isBlank())) {
             return false;
         }
 
-        String logic = expr.logic == null ? "" : expr.logic.trim().toLowerCase();
-        switch (logic) {
-            case "equal":
-                return matches;
-            case "not":
-                return !matches;
-            default:
-                // Unsupported logic -> do not apply
-                return false;
-        }
+        return ok;
     }
 
     /**

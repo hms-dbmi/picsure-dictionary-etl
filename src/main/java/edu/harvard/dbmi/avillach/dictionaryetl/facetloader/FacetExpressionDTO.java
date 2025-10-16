@@ -5,11 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FacetExpressionDTO {
-    @JsonProperty("Logic")
-    public String logic;
-    @JsonProperty("Regex")
+    // New simpler expression entry format. Only one of exactly/contains/regex is typically provided per entry.
+    @JsonProperty("exactly")
+    public String exactly;
+
+    @JsonProperty("contains")
+    public String contains;
+
+    @JsonProperty("regex")
     public String regex;
+
     // Node position index within concept path nodes (zero-based; negative allowed)
-    @JsonProperty("Node_Position")
-    public Integer nodePosition;
+    @JsonProperty("node")
+    public Integer node;
 }

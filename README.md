@@ -135,19 +135,13 @@ Example payload fragment using expressions:
       {
         "Name": "Recover Adult",
         "Expressions": [
-          { "Logic": "equal", "Regex": "(?i)Recover_Adult$", "Node_Position": 1 }
+          { "exactly": "Recover_Adult", "node": 1 }
         ],
         "Facets": [
           {
             "Name": "Infected",
             "Expressions": [
-              { "Logic": "equal", "Regex": "(?i)\\binf(ected)?\\b", "Node_Position": -3 }
-            ]
-          },
-          {
-            "Name": "Adult Dataset (not derived)",
-            "Expression": [
-              { "Logic": "not", "Regex": "(?i).*derived.*", "Node_Position": 2 }
+              { "regex": "(?i)\\\binf(ected)?\\\b", "node": -3 }
             ]
           }
         ]
@@ -157,17 +151,17 @@ Example payload fragment using expressions:
 }
 
 Expression evaluation rules:
-- Supported Logic values: equal and not (case-insensitive).
-- Regex is Java regex; inline flags such as (?i) for case-insensitive are supported.
-- nodePosition is zero-based, negative values allowed to index from the end (e.g., -1 is last node).
-- All expressions listed for a facet are ANDed; all must match for a concept_path to qualify.
-- Out-of-bounds node positions or invalid regex cause the expression to evaluate to false.
+- Supported keys per expression entry: exactly, contains, regex (use one or more).
+- Each entry must include node (zero-based index; negatives allowed, e.g., -1 is last node).
+- Semantics: all expression entries are ANDed. Within a single entry, all provided keys must match the node value.
+- Regex uses Java syntax; inline flags like (?i) are supported. Exactly/contains are literal string matches.
+- Out-of-bounds node indices or invalid regex cause that entry to evaluate to false.
 - If a facet contains no expressions, it is not automatically mapped to any concept nodes (still created in the hierarchy).
 
 Alias handling in payload:
 - Facet name must be provided as Name.
 - Expressions can be provided as Expressions or Expression.
-- Node position must be provided as Node_Position.
+- Node index must be provided as node.
 
 Pre-requisites for mapping:
 - dict.concept_node should already be populated (e.g., via the Dictionary Loader) so that concept_path values exist to evaluate.

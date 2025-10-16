@@ -87,9 +87,8 @@ class FacetLoaderClearIntegrationTest {
 
         // Category 1: ToClear, with Parent and Child facets, both map to the concept
         FacetExpressionDTO expA0 = new FacetExpressionDTO();
-        expA0.logic = "equal";
-        expA0.regex = "(?i)^A$";
-        expA0.nodePosition = 0;
+        expA0.exactly = "A";
+        expA0.node = 0;
 
         FacetDTO child = new FacetDTO();
         child.name = "Child";
@@ -102,9 +101,8 @@ class FacetLoaderClearIntegrationTest {
         parent.display = "Parent";
         parent.expressions = new ArrayList<>();
         FacetExpressionDTO expB1 = new FacetExpressionDTO();
-        expB1.logic = "equal";
-        expB1.regex = "(?i)^B$";
-        expB1.nodePosition = 1;
+        expB1.exactly = "B";
+        expB1.node = 1;
         parent.expressions.add(expB1);
         parent.facets = List.of(child);
 
@@ -119,9 +117,8 @@ class FacetLoaderClearIntegrationTest {
 
         // Category 2: KeepCat, with Root->Leaf; will clear by facet name (Root)
         FacetExpressionDTO expA0b = new FacetExpressionDTO();
-        expA0b.logic = "equal";
-        expA0b.regex = "(?i)^A$";
-        expA0b.nodePosition = 0;
+        expA0b.exactly = "A";
+        expA0b.node = 0;
 
         FacetDTO leaf = new FacetDTO();
         leaf.name = "Leaf";
@@ -134,9 +131,8 @@ class FacetLoaderClearIntegrationTest {
         root.display = "Root";
         root.expressions = new ArrayList<>();
         FacetExpressionDTO expC2 = new FacetExpressionDTO();
-        expC2.logic = "equal";
-        expC2.regex = "(?i)^C$";
-        expC2.nodePosition = 2;
+        expC2.exactly = "C";
+        expC2.node = 2;
         root.expressions.add(expC2);
         root.facets = List.of(leaf);
 
