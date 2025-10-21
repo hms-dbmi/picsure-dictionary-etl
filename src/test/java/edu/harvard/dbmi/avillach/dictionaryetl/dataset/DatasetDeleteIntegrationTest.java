@@ -1,5 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
@@ -38,6 +40,9 @@ public class DatasetDeleteIntegrationTest {
 
     @Autowired
     private FacetCategoryRepository facetCategoryRepository;
+
+    @Autowired
+    private ConsentRepository consentRepository;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -98,5 +103,36 @@ public class DatasetDeleteIntegrationTest {
         Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         Assertions.assertEquals("No dataset found to delete", response.getBody());
         Assertions.assertTrue(facetRepository.findByName("REF_INT_2").isEmpty());
+    }
+
+    @Test
+    void deleteDataset_removesConsents_andLeavesNoOrphans() {
+        // Create dataset
+        DatasetModel dataset = new DatasetModel("REF_INT_3", "Full Name 3", "ABV3", "Desc3");
+        datasetRepository.save(dataset);
+
+        // Create a consent linked to the dataset (note: consent table has no FK in schema.sql)
+        ConsentModel consent = new ConsentModel(
+                dataset.getDatasetId(),
+                "DUO:0000001",
+                "Test consent",
+                "AUTHZ",
+                10L,
+                20L,
+                30L
+        );
+        consentRepository.save(consent);
+
+        // Sanity checks
+        Assertions.assertTrue(datasetRepository.findByRef("REF_INT_3").isPresent());
+        Assertions.assertFalse(consentRepository.findByDatasetId(dataset.getDatasetId()).isEmpty());
+
+        // Delete the dataset via controller
+        ResponseEntity<String> response = datasetController.deleteDataset("REF_INT_3");
+
+        // Verify response and that both dataset and consents are gone
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertTrue(datasetRepository.findByRef("REF_INT_3").isEmpty());
+        Assertions.assertTrue(consentRepository.findByDatasetId(dataset.getDatasetId()).isEmpty());
     }
 }

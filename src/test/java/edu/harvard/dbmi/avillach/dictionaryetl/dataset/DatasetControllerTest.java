@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,11 +25,15 @@ class DatasetControllerTest {
     @Mock
     private FacetService facetService;
 
+    @Mock
+    private ConsentService consentService;
+
     @BeforeEach
     void setUp() {
         controller = new DatasetController();
         ReflectionTestUtils.setField(controller, "datasetService", datasetService);
         ReflectionTestUtils.setField(controller, "facetService", facetService);
+        ReflectionTestUtils.setField(controller, "consentService", consentService);
     }
 
     @Test
@@ -40,9 +45,10 @@ class DatasetControllerTest {
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertEquals("No dataset found to delete", response.getBody());
+        verify(consentService, times(1)).deleteByDatasetRef(ref);
         verify(datasetService, times(1)).deleteByRef(ref);
         verify(facetService, times(1)).deleteByName(ref);
-        verifyNoMoreInteractions(datasetService, facetService);
+        verifyNoMoreInteractions(datasetService, facetService, consentService);
     }
 
     @Test
@@ -54,8 +60,9 @@ class DatasetControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("Dataset deleted", response.getBody());
+        verify(consentService, times(1)).deleteByDatasetRef(ref);
         verify(datasetService, times(1)).deleteByRef(ref);
         verify(facetService, times(1)).deleteByName(ref);
-        verifyNoMoreInteractions(datasetService, facetService);
+        verifyNoMoreInteractions(datasetService, facetService, consentService);
     }
 }
