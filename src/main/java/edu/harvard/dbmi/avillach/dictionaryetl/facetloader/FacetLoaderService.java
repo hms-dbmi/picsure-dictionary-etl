@@ -8,10 +8,14 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import org.hibernate.engine.jdbc.batch.spi.Batch;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 public class FacetLoaderService {
@@ -105,6 +109,7 @@ public class FacetLoaderService {
         return ids;
     }
 
+    @Transactional
     public Result load(List<FacetCategoryWrapper> payload) {
         int categoriesCreated = 0;
         int categoriesUpdated = 0;
@@ -208,16 +213,94 @@ public class FacetLoaderService {
 
     private record Counts(int created, int updated) {}
 
-    private void mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
+    @Transactional(readOnly = true)
+    public void mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
         if (expressions == null || expressions.isEmpty()) return;
-        List<ConceptModel> concepts = conceptRepository.findAll();
-        for (ConceptModel concept : concepts) {
-            String path = concept.getConceptPath();
-            if (FacetExpressionEvaluator.facetAppliesToConceptPath(expressions, path)) {
-                if (facetConceptRepository.findByFacetIdAndConceptNodeId(facetId, concept.getConceptNodeId()).isEmpty()) {
-                    facetConceptRepository.save(new FacetConceptModel(facetId, concept.getConceptNodeId()));
+
+        // Precompile all expressions
+        List<CompiledExpr> compiledExprs = expressions.stream()
+                .map(CompiledExpr::new).toList();
+
+        try(Stream<ConceptPathRow> conceptPathRowStream = conceptRepository.streamNodeIdAndPath()) {
+            final int BATCH = 1000; // This can be tuned
+            ArrayList<Long> buffer = new ArrayList<>(BATCH);
+
+            conceptPathRowStream.forEach(row -> {
+                if (applies(compiledExprs, row.getConceptPath())) {
+                    buffer.add(row.getConceptNodeId());
+                    if(buffer.size() >= BATCH) {
+                        facetConceptRepository.bulkMapFacetToConceptNodes(facetId, buffer.toArray(Long[]::new));
+                        buffer.clear();
+                    }
                 }
+            });
+
+            if(!buffer.isEmpty()) {
+                facetConceptRepository.bulkMapFacetToConceptNodes(facetId, buffer.toArray(Long[]::new));
             }
         }
     }
+
+    // Local helper that uses precompiled regex when available, but preserves current semantics
+    private static boolean applies(List<CompiledExpr> compiled, String conceptPath) {
+        if (compiled == null || compiled.isEmpty()) return false;
+        for (CompiledExpr ce : compiled) {
+            FacetExpressionDTO e = ce.src;
+            if (!evaluateWithCache(e, ce.regex, conceptPath)) return false;
+        }
+        return true;
+    }
+
+    private static boolean evaluateWithCache(FacetExpressionDTO expr, java.util.regex.Pattern cachedRegex, String conceptPath) {
+        // Mirror FacetExpressionEvaluator.evaluate semantics, but reuse regex
+        if (expr == null || conceptPath == null) return false;
+        java.util.List<String> nodes = FacetExpressionEvaluator.splitConceptPath(conceptPath);
+        if (nodes.isEmpty()) return false;
+        boolean hasMatcher = !isBlank(expr.exactly) || !isBlank(expr.contains) || !isBlank(expr.regex);
+        if (!hasMatcher) return false;
+
+        java.util.function.Predicate<String> matchesNode = nodeVal -> {
+            boolean ok = true;
+            if (!isBlank(expr.exactly)) { ok &= nodeVal.equals(expr.exactly); if (!ok) return false; }
+            if (!isBlank(expr.contains)) { ok &= nodeVal.contains(expr.contains); if (!ok) return false; }
+            if (!isBlank(expr.regex)) {
+                try {
+                    java.util.regex.Pattern p = (cachedRegex != null) ? cachedRegex : java.util.regex.Pattern.compile(expr.regex);
+                    ok &= p.matcher(nodeVal).find();
+                    if (!ok) return false;
+                } catch (Exception ignoreBadRegex) { return false; }
+            }
+            return ok;
+        };
+
+        if (expr.node != null) {
+            String nodeVal = getNodeAt(nodes, expr.node);
+            return nodeVal != null && matchesNode.test(nodeVal);
+        }
+
+        for (String nodeVal : nodes) {
+            if (matchesNode.test(nodeVal)) return true;
+        }
+        return false;
+    }
+
+    private static boolean isBlank(String s) { return s == null || s.isBlank(); }
+
+    private static String getNodeAt(java.util.List<String> nodes, int nodePosition) {
+        if (nodes == null || nodes.isEmpty()) return null;
+        int idx = nodePosition >= 0 ? nodePosition : nodes.size() + nodePosition;
+        if (idx < 0 || idx >= nodes.size()) return null;
+        return nodes.get(idx);
+    }
+
+//    private void mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
+//        if (expressions == null || expressions.isEmpty()) return;
+//        // TODO: Optimization - Load concepts in chunks to be process to reduce amount of ram used
+//        List<ConceptModel> concepts = conceptRepository.findAll();
+//        // TODO: Investigate - Can I batch insert the facet to concept nodes?
+//        concepts.parallelStream()
+//                .filter(concept -> FacetExpressionEvaluator.facetAppliesToConceptPath(expressions, concept.getConceptPath()))
+//                .filter(concept -> facetConceptRepository.existsByFacetIdAndConceptNodeId(facetId, concept.getConceptNodeId()))
+//                .forEach(concept -> facetConceptRepository.mapFacetToConceptNode(facetId, concept.getConceptNodeId()));
+//    }
 }

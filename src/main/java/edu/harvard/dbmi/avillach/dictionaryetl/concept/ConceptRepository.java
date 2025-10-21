@@ -2,8 +2,15 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.ConceptPathRow;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
@@ -16,4 +23,17 @@ public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
     Optional<List<ConceptModel>> findByName(String name);
 
     List<ConceptModel> findByConceptType(String conceptType);
+
+    @Query(value = """
+        SELECT concept_node_id AS conceptNodeId, concept_path AS conceptPath
+        FROM dict.concept_node
+        """, nativeQuery = true)
+    @QueryHints({
+            @QueryHint(name = "hibernate.jdbc.fetch_size", value = "1000"),
+            @QueryHint(name = "hibernate.query.readOnly", value = "true"),
+            @QueryHint(name = "hibernate.query.cacheable", value = "false")
+    })
+    @Transactional(readOnly = true)
+    Stream<ConceptPathRow> streamNodeIdAndPath();
+
 }

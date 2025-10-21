@@ -152,7 +152,9 @@ Example payload fragment using expressions:
 
 Expression evaluation rules:
 - Supported keys per expression entry: exactly, contains, regex (use one or more).
-- Each entry must include node (zero-based index; negatives allowed, e.g., -1 is last node).
+- node is optional:
+  - If node is provided, we evaluate only that node (zero-based; negatives allowed, e.g., -1 is last node).
+  - If node is omitted, the expression scans all nodes in the concept_path and evaluates true if any node matches.
 - Semantics: all expression entries are ANDed. Within a single entry, all provided keys must match the node value.
 - Regex uses Java syntax; inline flags like (?i) are supported. Exactly/contains are literal string matches.
 - Out-of-bounds node indices or invalid regex cause that entry to evaluate to false.

@@ -49,4 +49,41 @@ class FacetExpressionEvaluatorTest {
 
         assertFalse(FacetExpressionEvaluator.evaluate(expr, path));
     }
+
+    @Test
+    void omitNode_shouldScanAllNodes_andMatchContains() {
+        String path = "\\A\\BXYZ\\C\\";
+        FacetExpressionDTO expr = new FacetExpressionDTO();
+        expr.contains = "B"; // should match node 1 when scanning all
+        // expr.node omitted (null)
+        assertTrue(FacetExpressionEvaluator.evaluate(expr, path));
+        assertTrue(FacetExpressionEvaluator.facetAppliesToConceptPath(List.of(expr), path));
+    }
+
+    @Test
+    void omitNode_shouldScanAllNodes_andMatchExactlyLast() {
+        String path = "\\root\\mid\\leaf\\";
+        FacetExpressionDTO expr = new FacetExpressionDTO();
+        expr.exactly = "leaf";
+        // node omitted, should still match
+        assertTrue(FacetExpressionEvaluator.evaluate(expr, path));
+    }
+
+    @Test
+    void mixedEntries_AND_semantics_withOmittedNode() {
+        String path = "\\A\\B\\C\\";
+        FacetExpressionDTO anyC = new FacetExpressionDTO();
+        anyC.exactly = "C"; // matches last when scanning all nodes
+        FacetExpressionDTO specificB = new FacetExpressionDTO();
+        specificB.exactly = "B";
+        specificB.node = 1;
+        assertTrue(FacetExpressionEvaluator.facetAppliesToConceptPath(List.of(anyC, specificB), path));
+    }
+
+    @Test
+    void omitNode_butNoMatchers_returnsFalse() {
+        String path = "\\A\\B\\C\\";
+        FacetExpressionDTO empty = new FacetExpressionDTO();
+        assertFalse(FacetExpressionEvaluator.evaluate(empty, path));
+    }
 }

@@ -6,8 +6,9 @@ import java.util.regex.Pattern;
 
 /**
  * Evaluates FacetExpressionDTO rules against a concept_path using the simplified
- * expression format: each entry may specify one or more of {exactly, contains, regex}
- * and must include a node index. All entries are ANDed together.
+ * expression format: each entry may specify one or more of {exactly, contains, regex}.
+ * Node is optional: if provided, we evaluate only that node; if omitted, we scan all nodes
+ * and return true if any node satisfies the entry. All entries are ANDed together.
  */
 public final class FacetExpressionEvaluator {
 
@@ -27,25 +28,41 @@ public final class FacetExpressionEvaluator {
     }
 
     public static boolean evaluate(FacetExpressionDTO expr, String conceptPath) {
-        if (expr == null || expr.node == null || conceptPath == null) {
+        if (expr == null || conceptPath == null) {
             return false;
         }
-        String nodeVal = getNodeAt(conceptPath, expr.node);
-        if (nodeVal == null) return false;
+        List<String> nodes = splitConceptPath(conceptPath);
+        if (nodes.isEmpty()) return false;
 
+        // If no matcher fields are provided, treat as non-match
+        if (isEmpty(expr)) return false;
+
+        // If node index provided, evaluate only that node
+        if (expr.node != null) {
+            String nodeVal = getNodeAt(nodes, expr.node);
+            if (nodeVal == null) return false;
+            return matchesNode(expr, nodeVal);
+        }
+
+        // No node provided: evaluate against ALL nodes; true if any matches
+        for (String nodeVal : nodes) {
+            if (matchesNode(expr, nodeVal)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesNode(FacetExpressionDTO expr, String nodeVal) {
         boolean ok = true;
-
-        // exactly match
         if (expr.exactly != null && !expr.exactly.isBlank()) {
             ok &= nodeVal.equals(expr.exactly);
             if (!ok) return false;
         }
-        // contains substring
         if (expr.contains != null && !expr.contains.isBlank()) {
             ok &= nodeVal.contains(expr.contains);
             if (!ok) return false;
         }
-        // regex match
         if (expr.regex != null && !expr.regex.isBlank()) {
             try {
                 Pattern p = Pattern.compile(expr.regex);
@@ -55,15 +72,13 @@ public final class FacetExpressionEvaluator {
                 return false; // bad regex
             }
         }
-
-        // If none of the matchers were provided, treat as non-match
-        if ((expr.exactly == null || expr.exactly.isBlank()) &&
-            (expr.contains == null || expr.contains.isBlank()) &&
-            (expr.regex == null || expr.regex.isBlank())) {
-            return false;
-        }
-
         return ok;
+    }
+
+    private static boolean isEmpty(FacetExpressionDTO expr) {
+        return (expr.exactly == null || expr.exactly.isBlank())
+            && (expr.contains == null || expr.contains.isBlank())
+            && (expr.regex == null || expr.regex.isBlank());
     }
 
     /**
@@ -71,7 +86,12 @@ public final class FacetExpressionEvaluator {
      */
     static String getNodeAt(String conceptPath, int nodePosition) {
         List<String> nodes = splitConceptPath(conceptPath);
-        if (nodes.isEmpty()) return null;
+        return getNodeAt(nodes, nodePosition);
+    }
+
+    // Overload for pre-split nodes
+    private static String getNodeAt(List<String> nodes, int nodePosition) {
+        if (nodes == null || nodes.isEmpty()) return null;
         int idx = nodePosition >= 0 ? nodePosition : nodes.size() + nodePosition; // negative index support
         if (idx < 0 || idx >= nodes.size()) return null;
         return nodes.get(idx);

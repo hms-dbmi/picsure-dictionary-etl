@@ -1,6 +1,6 @@
 ### Facet Loader HTTP requests (IntelliJ HTTP Client)
 # Adjust the host if your app runs on a different port (e.g., 8086 for Docker)
-@host = http://localhost:8080
+@host = http://localhost:8090
 
 ### Load sample facets
 POST {{host}}/api/facet-loader/load
@@ -51,3 +51,100 @@ Content-Type: application/json
 {
   "facets": ["Demo Facet"]
 }
+
+### Load Recover facets
+POST {{host}}/api/facet-loader/load
+Content-Type: application/json
+Timeout: 99999999
+
+[
+  {
+    "Facet_Category": {
+      "Name": "Consortium_Curated_Facets",
+      "Display": "Consortium Curated Facets",
+      "Description": "Consortium Curated Facets Description",
+      "Facets": [
+        {
+          "Name": "Recover Adult",
+          "Display": "RECOVER Adult",
+          "Description": "Recover adult parent facet.",
+          "Study_ID": "phs003436",
+          "Expressions": [
+            { "regex": "(?i)Recover_adult$", "node": 1 }
+          ],
+          "Facets": [
+            {
+              "Name": "Infected",
+              "Display": "Infected",
+              "Description": "Infected Facet Description",
+              "Expressions": [
+                { "regex": "(?i)\\binf(ected)?\\b" },
+                { "regex": "(?i)^(?!.*\\bnoninf?\\b).*" }
+              ]
+            },
+            {
+              "Name": "Non-infected",
+              "Display": "Non-infected",
+              "Description": "Non-infected Facet Description",
+              "Expressions": [
+                { "regex": "(?i)\\bnoninf?\\b" }
+              ]
+            },
+            {
+              "Name": "PASC Status",
+              "Display": "PASC Status",
+              "Description": "PASC Status Facet Description",
+              "Expressions": [
+                {
+                  "regex": "(?i)(pasc_pg2023|pasc_pg2024|pasc_jama2023|pasc_jama2024|pasc_cc_2024|visit_month_curr|infect_yn_curr)"
+                }
+              ]
+            },
+            {
+              "Name": "Tests performed",
+              "Display": "Tests performed",
+              "Description": "Facet indicating whether specific tests were performed (yes/no flags).",
+              "Expressions": [
+                {
+                  "regex": "(?i)(bmri_yn|chestct_yn|cmri_yn|cpet_yn|colon_yn|ekg_yn|compaudio_yn|rttestrain_yn|emg_yn|endopat_yn|facsleep_yn|fibro_yn|ent_yn|eye_yn|neuropsych_yn|ges_yn|noxisiess_yn|lumbar_yn|mini_yn|muscbx_yn|nervecond_yn|neuropath_yn|nihtool_yn|glucose_yn|plascatech_yn|pft_yn|comprehab_yn|renalultra_yn|rhcath_yn|sixmin_yn|skinbx_yn|tilt_yn|upsit_yn|vision_yn)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Recover Pediatrics",
+          "Display": "RECOVER Pediatrics",
+          "Description": "Recover pediatrics parent facet.",
+          "Study_ID": "phs003431",
+          "Facets": [
+            {
+              "Name": "Caregiver",
+              "Display": "Caregiver",
+              "Description": "Facet for all Recover Pediatric Caregiver variables.",
+              "Expressions": [
+                { "regex": "(?i)RECOVER_Caregiver$", "node": 1 }
+              ]
+            },
+            {
+              "Name": "Pediatric",
+              "Display": "Pediatric",
+              "Description": "Facet for all Recover Pediatric variables.",
+              "Expressions": [
+                { "regex": "(?i)RECOVER_Pediatrics$", "node": 1 }
+              ]
+            },
+            {
+              "Name": "Congenital",
+              "Display": "Congential",
+              "Description": "Facet for all Recover Pediatric Congenital variables.",
+              "Expressions": [
+                { "regex": "(?i)RECOVER_Congenital$", "node": 1 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
