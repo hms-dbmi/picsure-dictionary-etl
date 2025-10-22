@@ -1,7 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
@@ -10,6 +15,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,12 +32,23 @@ public class FacetLoaderService {
     private final ConceptRepository conceptRepository;
     private final FacetConceptRepository facetConceptRepository;
 
+    // Meta repositories + object mapper
+    private final FacetMetadataRepository facetMetadataRepository;
+    private final ObjectMapper objectMapper;
+
+    private static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
+    private static final String KEY_FACET_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
+
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,
-                              ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository) {
+                              ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository,
+                              FacetMetadataRepository facetMetadataRepository,
+                              ObjectMapper objectMapper) {
         this.facetCategoryRepository = facetCategoryRepository;
         this.facetRepository = facetRepository;
         this.conceptRepository = conceptRepository;
         this.facetConceptRepository = facetConceptRepository;
+        this.facetMetadataRepository = facetMetadataRepository;
+        this.objectMapper = objectMapper.copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
     public ClearResult clear(FacetClearRequest request) {
@@ -148,7 +166,7 @@ public class FacetLoaderService {
             // Recursively process facets
             if (dto.facets != null) {
                 for (FacetDTO f : dto.facets) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames());
+                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false);
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
                 }
@@ -159,7 +177,7 @@ public class FacetLoaderService {
                 List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
     }
 
-    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO, String categoryName, LoadAccum accum, List<FacetNameNested> createdCollector) {
+    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO, String categoryName, LoadAccum accum, List<FacetNameNested> createdCollector, boolean facetCleared) {
         if (facetDTO == null) return new Counts(0, 0);
         String name = facetDTO.name;
         if (name == null || name.isBlank()) return new Counts(0, 0);
@@ -188,15 +206,35 @@ public class FacetLoaderService {
             createdCollector.add(createdNode);
         }
 
-        // Map facet to concepts based on expressions (equals, not) and capture how many were mapped in this run
+        // Clear facet mappings if expressions changed (or are now empty)
+        try {
+            String exprJson = canonicalizeExpressions(facetDTO.expressions);
+            String exprHash = sha256Hex(exprJson);
+            String prevHash = getFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH);
+            boolean changed = (prevHash == null) || !prevHash.equals(exprHash);
+            if (changed || facetDTO.expressions == null || facetDTO.expressions.isEmpty()) {
+                facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+                facetCleared = true;
+            }
+            // Persist expressions and hash
+            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS, exprJson);
+            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH, exprHash);
+        } catch (Exception e) {
+            if (!facetCleared) {
+                facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+                facetCleared = true;
+            }
+        }
+
+        // Always remap to catch new concepts
         long mapped = mapFacetToConcepts(facet.getFacetId(), facetDTO.expressions);
         accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
 
         if (facetDTO.facets != null) {
             for (FacetDTO child : facetDTO.facets) {
-                // If current facet was created, nest children under it; otherwise, keep at current level
+                // If the current facet was created, nest children under it; otherwise, keep at the current level
                 List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
-                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child, categoryName, accum, nextCollector);
+                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child, categoryName, accum, nextCollector, facetCleared);
                 created += c.created();
                 updated += c.updated();
             }
@@ -207,6 +245,40 @@ public class FacetLoaderService {
 
     private static String defaultStr(String val, String def) {
         return (val == null || val.isBlank()) ? def : val;
+    }
+
+    private String canonicalizeExpressions(List<FacetExpressionDTO> expressions) throws JsonProcessingException {
+        if (expressions == null) return "[]";
+        return objectMapper.writeValueAsString(expressions);
+    }
+
+    private static String sha256Hex(String s) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(s.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void upsertFacetMeta(long facetId, String key, String value) {
+        facetMetadataRepository.findByFacetIdAndKey(facetId, key)
+                .ifPresentOrElse(existing -> {
+                    existing.setValue(value);
+                    facetMetadataRepository.save(existing);
+                }, () -> {
+                    FacetMetadataModel created = new FacetMetadataModel(facetId, key, value);
+                    facetMetadataRepository.save(created);
+                });
+    }
+
+    private String getFacetMeta(long facetId, String key) {
+        return facetMetadataRepository.findByFacetIdAndKey(facetId, key)
+                .map(FacetMetadataModel::getValue)
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)
