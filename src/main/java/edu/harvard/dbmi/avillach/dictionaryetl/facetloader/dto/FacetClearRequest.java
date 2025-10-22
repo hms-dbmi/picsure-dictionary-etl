@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
+package edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

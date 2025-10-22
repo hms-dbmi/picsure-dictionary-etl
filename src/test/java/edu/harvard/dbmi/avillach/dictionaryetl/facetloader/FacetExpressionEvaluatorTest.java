@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetExpressionDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

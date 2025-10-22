@@ -1,5 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.CompiledExpr;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetExpressionDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -12,7 +15,8 @@ import java.util.regex.Pattern;
  */
 public final class FacetExpressionEvaluator {
 
-    private FacetExpressionEvaluator() {}
+    private FacetExpressionEvaluator() {
+    }
 
     public static boolean facetAppliesToConceptPath(List<FacetExpressionDTO> expressions, String conceptPath) {
         if (expressions == null || expressions.isEmpty()) {
@@ -53,6 +57,56 @@ public final class FacetExpressionEvaluator {
         return false;
     }
 
+    public static boolean applies(List<CompiledExpr> compiled, String conceptPath) {
+        if (compiled == null || compiled.isEmpty()) return false;
+        for (CompiledExpr ce : compiled) {
+            FacetExpressionDTO e = ce.src;
+            if (!evaluateWithCache(e, ce.regex, conceptPath)) return false;
+        }
+        return true;
+    }
+
+    private static boolean evaluateWithCache(FacetExpressionDTO expr, java.util.regex.Pattern cachedRegex, String conceptPath) {
+        // Mirror FacetExpressionEvaluator.evaluate semantics, but reuse regex
+        if (expr == null || conceptPath == null) return false;
+        java.util.List<String> nodes = FacetExpressionEvaluator.splitConceptPath(conceptPath);
+        if (nodes.isEmpty()) return false;
+        boolean hasMatcher = !isBlank(expr.exactly) || !isBlank(expr.contains) || !isBlank(expr.regex);
+        if (!hasMatcher) return false;
+
+        java.util.function.Predicate<String> matchesNode = nodeVal -> {
+            boolean ok = true;
+            if (!isBlank(expr.exactly)) {
+                ok &= nodeVal.equals(expr.exactly);
+                if (!ok) return false;
+            }
+            if (!isBlank(expr.contains)) {
+                ok &= nodeVal.contains(expr.contains);
+                if (!ok) return false;
+            }
+            if (!isBlank(expr.regex)) {
+                try {
+                    java.util.regex.Pattern p = (cachedRegex != null) ? cachedRegex : java.util.regex.Pattern.compile(expr.regex);
+                    ok &= p.matcher(nodeVal).find();
+                    if (!ok) return false;
+                } catch (Exception ignoreBadRegex) {
+                    return false;
+                }
+            }
+            return ok;
+        };
+
+        if (expr.node != null) {
+            String nodeVal = getNodeAt(nodes, expr.node);
+            return nodeVal != null && matchesNode.test(nodeVal);
+        }
+
+        for (String nodeVal : nodes) {
+            if (matchesNode.test(nodeVal)) return true;
+        }
+        return false;
+    }
+
     private static boolean matchesNode(FacetExpressionDTO expr, String nodeVal) {
         boolean ok = true;
         if (expr.exactly != null && !expr.exactly.isBlank()) {
@@ -75,21 +129,13 @@ public final class FacetExpressionEvaluator {
         return ok;
     }
 
+
     private static boolean isEmpty(FacetExpressionDTO expr) {
         return (expr.exactly == null || expr.exactly.isBlank())
-            && (expr.contains == null || expr.contains.isBlank())
-            && (expr.regex == null || expr.regex.isBlank());
+               && (expr.contains == null || expr.contains.isBlank())
+               && (expr.regex == null || expr.regex.isBlank());
     }
 
-    /**
-     * Returns the node at the given position within the concept path, or null if out of bounds.
-     */
-    static String getNodeAt(String conceptPath, int nodePosition) {
-        List<String> nodes = splitConceptPath(conceptPath);
-        return getNodeAt(nodes, nodePosition);
-    }
-
-    // Overload for pre-split nodes
     private static String getNodeAt(List<String> nodes, int nodePosition) {
         if (nodes == null || nodes.isEmpty()) return null;
         int idx = nodePosition >= 0 ? nodePosition : nodes.size() + nodePosition; // negative index support
@@ -110,5 +156,9 @@ public final class FacetExpressionEvaluator {
             }
         }
         return nodes;
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 }

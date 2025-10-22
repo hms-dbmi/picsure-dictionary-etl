@@ -7,6 +7,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetCategoryWrapper;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.Result;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,9 +99,9 @@ class FacetLoaderControllerTest {
         List<FacetCategoryWrapper> payload = objectMapper.readValue(
                 json, new TypeReference<List<FacetCategoryWrapper>>(){});
 
-        ResponseEntity<FacetLoaderService.Result> response = controller.load(payload);
+        ResponseEntity<Result> response = controller.load(payload);
         Assertions.assertEquals(200, response.getStatusCode().value());
-        FacetLoaderService.Result result = response.getBody();
+        Result result = response.getBody();
         Assertions.assertNotNull(result);
         Assertions.assertEquals(1, result.categoriesCreated());
         Assertions.assertEquals(2, result.facetsCreated());

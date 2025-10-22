@@ -5,6 +5,10 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetCategoryDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetCategoryWrapper;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.Result;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +92,7 @@ class FacetLoaderServiceTest {
         wrapper.facetCategory = catDto;
 
         // First load
-        FacetLoaderService.Result result1 = service.load(List.of(wrapper));
+        Result result1 = service.load(List.of(wrapper));
         Assertions.assertEquals(1, result1.categoriesCreated());
         Assertions.assertEquals(0, result1.categoriesUpdated());
         Assertions.assertEquals(2, result1.facetsCreated());
@@ -106,7 +110,7 @@ class FacetLoaderServiceTest {
         Assertions.assertEquals(cat.get().getFacetCategoryId(), infectedFacet.get().getFacetCategoryId());
 
         // Second load (idempotency/update path)
-        FacetLoaderService.Result result2 = service.load(List.of(wrapper));
+        Result result2 = service.load(List.of(wrapper));
         Assertions.assertEquals(0, result2.categoriesCreated());
         Assertions.assertEquals(1, result2.categoriesUpdated());
         Assertions.assertEquals(0, result2.facetsCreated());

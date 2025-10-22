@@ -10,6 +10,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,7 +161,7 @@ class FacetLoaderClearIntegrationTest {
         // perform clear by category name
         FacetClearRequest clearReq = new FacetClearRequest();
         clearReq.facetCategories = List.of("ToClear");
-        FacetLoaderService.ClearResult clearRes = service.clear(clearReq);
+        ClearResult clearRes = service.clear(clearReq);
         assertEquals(1, clearRes.categoriesDeleted());
         assertEquals(2, clearRes.facetsDeleted()); // Parent + Child
         assertTrue(clearRes.mappingsDeleted() >= 2); // both parent and child mapped
@@ -178,7 +179,7 @@ class FacetLoaderClearIntegrationTest {
         // perform clear by facet name (should remove root and leaf under KeepCat, but keep category)
         FacetClearRequest clearReq2 = new FacetClearRequest();
         clearReq2.facets = List.of("Root");
-        FacetLoaderService.ClearResult clearRes2 = service.clear(clearReq2);
+        ClearResult clearRes2 = service.clear(clearReq2);
         assertEquals(0, clearRes2.categoriesDeleted());
         assertEquals(2, clearRes2.facetsDeleted()); // Root + Leaf
         assertTrue(clearRes2.mappingsDeleted() >= 2);

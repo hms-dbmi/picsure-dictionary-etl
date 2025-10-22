@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.ConceptPathRow;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.ConceptPathRow;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

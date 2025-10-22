@@ -70,7 +70,7 @@ Timeout: 99999999
           "Description": "Recover adult parent facet.",
           "Study_ID": "phs003436",
           "Expressions": [
-            { "regex": "(?i)Recover_adult$", "node": 1 }
+            { "regex": "(?i)RECOVER_Adult_v5$", "node": 1 }
           ],
           "Facets": [
             {
@@ -78,7 +78,7 @@ Timeout: 99999999
               "Display": "Infected",
               "Description": "Infected Facet Description",
               "Expressions": [
-                { "regex": "(?i)\\binf(ected)?\\b" },
+                { "regex": "(?i)\\binf?\\b" },
                 { "regex": "(?i)^(?!.*\\bnoninf?\\b).*" }
               ]
             },

@@ -1,14 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
-import org.hibernate.engine.jdbc.batch.spi.Batch;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import static edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetExpressionEvaluator.applies;
 
 @Service
 public class FacetLoaderService {
@@ -116,7 +116,9 @@ public class FacetLoaderService {
         int facetsCreated = 0;
         int facetsUpdated = 0;
 
-        if (payload == null) return new Result(0, 0, 0, 0);
+        LoadAccum accum = new LoadAccum(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+
+        if (payload == null) return new Result(0, 0, 0, 0, List.of(), List.of(), List.of());
 
         for (FacetCategoryWrapper wrapper : payload) {
             if (wrapper == null || wrapper.facetCategory == null) continue;
@@ -140,22 +142,24 @@ public class FacetLoaderService {
                 category = new FacetCategoryModel(dto.name, defaultStr(dto.display, dto.name), defaultStr(dto.description, ""));
                 facetCategoryRepository.save(category);
                 categoriesCreated++;
+                accum.createdCategoryNames().add(category.getName());
             }
 
             // Recursively process facets
             if (dto.facets != null) {
                 for (FacetDTO f : dto.facets) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f);
-                    facetsCreated += c.created;
-                    facetsUpdated += c.updated;
+                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames());
+                    facetsCreated += c.created();
+                    facetsUpdated += c.updated();
                 }
             }
         }
 
-        return new Result(categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated);
+        return new Result(categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated,
+                List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
     }
 
-    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO) {
+    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO, String categoryName, LoadAccum accum, List<FacetNameNested> createdCollector) {
         if (facetDTO == null) return new Counts(0, 0);
         String name = facetDTO.name;
         if (name == null || name.isBlank()) return new Counts(0, 0);
@@ -166,6 +170,7 @@ public class FacetLoaderService {
         FacetModel facet;
         int created = 0;
         int updated = 0;
+        FacetNameNested createdNode = null;
         if (optFacet.isPresent()) {
             facet = optFacet.get();
             facet.setFacetCategoryId(categoryId);
@@ -179,16 +184,21 @@ public class FacetLoaderService {
             facet = new FacetModel(categoryId, name, display, description, parentId);
             facetRepository.save(facet);
             created++;
+            createdNode = new FacetNameNested(name);
+            createdCollector.add(createdNode);
         }
 
-        // Map facet to concepts based on expressions (equals, not)
-        mapFacetToConcepts(facet.getFacetId(), facetDTO.expressions);
+        // Map facet to concepts based on expressions (equals, not) and capture how many were mapped in this run
+        long mapped = mapFacetToConcepts(facet.getFacetId(), facetDTO.expressions);
+        accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
 
         if (facetDTO.facets != null) {
             for (FacetDTO child : facetDTO.facets) {
-                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child);
-                created += c.created;
-                updated += c.updated;
+                // If current facet was created, nest children under it; otherwise, keep at current level
+                List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
+                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child, categoryName, accum, nextCollector);
+                created += c.created();
+                updated += c.updated();
             }
         }
 
@@ -199,23 +209,11 @@ public class FacetLoaderService {
         return (val == null || val.isBlank()) ? def : val;
     }
 
-    private static String firstNonBlank(String... vals) {
-        if (vals == null) return null;
-        for (String v : vals) {
-            if (v != null && !v.isBlank()) return v;
-        }
-        return null;
-    }
-
-    public record Result(int categoriesCreated, int categoriesUpdated, int facetsCreated, int facetsUpdated) {}
-
-    public record ClearResult(long categoriesDeleted, long facetsDeleted, long mappingsDeleted) {}
-
-    private record Counts(int created, int updated) {}
-
     @Transactional(readOnly = true)
-    public void mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
-        if (expressions == null || expressions.isEmpty()) return;
+    public long mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
+        if (expressions == null || expressions.isEmpty()) return 0L;
+
+        long before = facetConceptRepository.countForFacet(facetId);
 
         // Precompile all expressions
         List<CompiledExpr> compiledExprs = expressions.stream()
@@ -239,68 +237,10 @@ public class FacetLoaderService {
                 facetConceptRepository.bulkMapFacetToConceptNodes(facetId, buffer.toArray(Long[]::new));
             }
         }
+
+        long after = facetConceptRepository.countForFacet(facetId);
+        long delta = after - before;
+        return (delta < 0) ? 0L : delta;
     }
 
-    // Local helper that uses precompiled regex when available, but preserves current semantics
-    private static boolean applies(List<CompiledExpr> compiled, String conceptPath) {
-        if (compiled == null || compiled.isEmpty()) return false;
-        for (CompiledExpr ce : compiled) {
-            FacetExpressionDTO e = ce.src;
-            if (!evaluateWithCache(e, ce.regex, conceptPath)) return false;
-        }
-        return true;
-    }
-
-    private static boolean evaluateWithCache(FacetExpressionDTO expr, java.util.regex.Pattern cachedRegex, String conceptPath) {
-        // Mirror FacetExpressionEvaluator.evaluate semantics, but reuse regex
-        if (expr == null || conceptPath == null) return false;
-        java.util.List<String> nodes = FacetExpressionEvaluator.splitConceptPath(conceptPath);
-        if (nodes.isEmpty()) return false;
-        boolean hasMatcher = !isBlank(expr.exactly) || !isBlank(expr.contains) || !isBlank(expr.regex);
-        if (!hasMatcher) return false;
-
-        java.util.function.Predicate<String> matchesNode = nodeVal -> {
-            boolean ok = true;
-            if (!isBlank(expr.exactly)) { ok &= nodeVal.equals(expr.exactly); if (!ok) return false; }
-            if (!isBlank(expr.contains)) { ok &= nodeVal.contains(expr.contains); if (!ok) return false; }
-            if (!isBlank(expr.regex)) {
-                try {
-                    java.util.regex.Pattern p = (cachedRegex != null) ? cachedRegex : java.util.regex.Pattern.compile(expr.regex);
-                    ok &= p.matcher(nodeVal).find();
-                    if (!ok) return false;
-                } catch (Exception ignoreBadRegex) { return false; }
-            }
-            return ok;
-        };
-
-        if (expr.node != null) {
-            String nodeVal = getNodeAt(nodes, expr.node);
-            return nodeVal != null && matchesNode.test(nodeVal);
-        }
-
-        for (String nodeVal : nodes) {
-            if (matchesNode.test(nodeVal)) return true;
-        }
-        return false;
-    }
-
-    private static boolean isBlank(String s) { return s == null || s.isBlank(); }
-
-    private static String getNodeAt(java.util.List<String> nodes, int nodePosition) {
-        if (nodes == null || nodes.isEmpty()) return null;
-        int idx = nodePosition >= 0 ? nodePosition : nodes.size() + nodePosition;
-        if (idx < 0 || idx >= nodes.size()) return null;
-        return nodes.get(idx);
-    }
-
-//    private void mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> expressions) {
-//        if (expressions == null || expressions.isEmpty()) return;
-//        // TODO: Optimization - Load concepts in chunks to be process to reduce amount of ram used
-//        List<ConceptModel> concepts = conceptRepository.findAll();
-//        // TODO: Investigate - Can I batch insert the facet to concept nodes?
-//        concepts.parallelStream()
-//                .filter(concept -> FacetExpressionEvaluator.facetAppliesToConceptPath(expressions, concept.getConceptPath()))
-//                .filter(concept -> facetConceptRepository.existsByFacetIdAndConceptNodeId(facetId, concept.getConceptNodeId()))
-//                .forEach(concept -> facetConceptRepository.mapFacetToConceptNode(facetId, concept.getConceptNodeId()));
-//    }
 }

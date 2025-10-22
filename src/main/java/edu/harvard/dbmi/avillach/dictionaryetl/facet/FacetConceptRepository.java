@@ -92,6 +92,11 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
             """, nativeQuery = true)
     long countAllForFacetIds(@Param("facetIds") List<Long> facetIds);
 
+    @Query(value = """
+            SELECT COUNT(*) FROM dict.facet__concept_node WHERE facet_id = :facetId
+            """, nativeQuery = true)
+    long countForFacet(@Param("facetId") Long facetId);
+
     @Modifying
     @Transactional
     @Query(value = """
