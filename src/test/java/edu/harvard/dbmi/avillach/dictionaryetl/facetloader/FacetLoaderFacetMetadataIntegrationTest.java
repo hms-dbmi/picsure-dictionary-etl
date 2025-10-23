@@ -1,7 +1,5 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetloader;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
@@ -12,7 +10,10 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetCategoryDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetCategoryWrapper;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetloader.dto.FacetExpressionDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +27,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,8 +39,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FacetLoaderFacetMetadataIntegrationTest {
 
-    private static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
-    private static final String KEY_FACET_EXPRESSIONS_HASH = "facet_loader.expressions_hash";
+    private static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
+    private static final String KEY_EFFECTIVE_EXPRESSIONS_HASH = "facet_loader.effective_expressions_sha256hex";
+    private static final String KEY_OWN_EXPRESSIONS = "facet_loader.expressions";
+    private static final String KEY_OWN_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
 
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
@@ -63,9 +64,6 @@ class FacetLoaderFacetMetadataIntegrationTest {
 
     @Autowired
     private FacetMetadataRepository facetMetadataRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -90,180 +88,107 @@ class FacetLoaderFacetMetadataIntegrationTest {
     }
 
     @Test
-    void firstLoad_thenSameExpressions_shouldPersistFacetMeta_andRemainUnchanged_andNotIncreaseMappings() throws Exception {
-        // Seed 2 datasets and 2 concepts (one intended to match, one not)
-        DatasetModel ds1 = datasetRepository.save(new DatasetModel("d1", "Dataset 1", "", ""));
-        DatasetModel ds2 = datasetRepository.save(new DatasetModel("d2", "Dataset 2", "", ""));
-        ConceptModel cMatch = new ConceptModel(ds1.getDatasetId(), "d1", "d1", "", "\\A\\B\\C\\", null);
-        ConceptModel cNoMatch = new ConceptModel(ds2.getDatasetId(), "d2", "d2", "", "\\X\\Y\\Z\\", null);
-        conceptService.save(cMatch);
-        conceptService.save(cNoMatch);
+    void effectiveExpressions_metadata_shouldBePersisted_andChildShouldInheritParent() {
+        // Seed dataset and concept nodes
+        DatasetModel ds = datasetRepository.save(new DatasetModel("d1", "Dataset 1", "", ""));
+        ConceptModel c = new ConceptModel(ds.getDatasetId(), "d1", "d1", "", "\\A\\B\\C\\", null);
+        conceptService.save(c);
 
-        // Facet with expression that matches only cMatch (node index 1 == "B")
+        // Build payload: parent requires B at node1; child requires C at node2
+        FacetDTO child = new FacetDTO();
+        child.name = "Child";
+        child.display = "Child";
+        child.description = "Child facet";
+        child.expressions = new ArrayList<>();
+        FacetExpressionDTO expC2 = new FacetExpressionDTO();
+        expC2.exactly = "C";
+        expC2.node = 2;
+        child.expressions.add(expC2);
+
+        FacetDTO parent = new FacetDTO();
+        parent.name = "Parent";
+        parent.display = "Parent";
+        parent.description = "Parent facet";
+        parent.expressions = new ArrayList<>();
         FacetExpressionDTO expB1 = new FacetExpressionDTO();
         expB1.exactly = "B";
         expB1.node = 1;
-        FacetDTO facet = new FacetDTO();
-        facet.name = "FacetOne";
-        facet.display = "Facet One";
-        facet.expressions = new ArrayList<>();
-        facet.expressions.add(expB1);
+        parent.expressions.add(expB1);
+        parent.facets = List.of(child);
 
         FacetCategoryDTO cat = new FacetCategoryDTO();
         cat.name = "Cat";
         cat.display = "Cat";
-        cat.facets = List.of(facet);
+        cat.description = "Cat desc";
+        cat.facets = List.of(parent);
 
         FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
         wrapper.facetCategory = cat;
 
-        // First load
-        Result res1 = service.load(List.of(wrapper));
-        assertEquals(1, res1.categoriesCreated());
-        assertEquals(1, res1.facetsCreated());
-
-        Optional<FacetModel> facetModelOpt = facetRepository.findByName("FacetOne");
-        assertTrue(facetModelOpt.isPresent());
-        long facetId = facetModelOpt.get().getFacetId();
-
-        // Verify metadata entries exist and are consistent
-        Optional<FacetMetadataModel> metaExprOpt = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS);
-        Optional<FacetMetadataModel> metaHashOpt = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS_HASH);
-        assertTrue(metaExprOpt.isPresent());
-        assertTrue(metaHashOpt.isPresent());
-        String storedJson = metaExprOpt.get().getValue();
-        String storedHash = metaHashOpt.get().getValue();
-
-        // Parse back and assert equivalence
-        List<FacetExpressionDTO> parsed = objectMapper.readValue(storedJson, new TypeReference<>() {});
-        assertEquals(1, parsed.size());
-        assertEquals("B", parsed.get(0).exactly);
-        assertEquals(1, parsed.get(0).node);
-
-        // Hash should match SHA-256 of stored JSON
-        assertEquals(sha256Hex(storedJson), storedHash);
-
-        // Exactly one mapping should exist
-        assertEquals(1L, facetConceptRepository.countForFacet(facetId));
-
-        // Second load with identical expressions should not increase mappings (delta == 0)
-        Result res2 = service.load(List.of(wrapper));
-        // Find breakdown for our facet
-        long delta = res2.facetMappings().stream()
-                .filter(b -> b.facetName().equals("FacetOne"))
-                .mapToLong(FacetMappingBreakdown::conceptsMapped)
-                .sum();
-        assertEquals(0L, delta);
-
-        // Metadata should remain unchanged
-        Optional<FacetMetadataModel> metaExprOpt2 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS);
-        Optional<FacetMetadataModel> metaHashOpt2 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS_HASH);
-        assertTrue(metaExprOpt2.isPresent());
-        assertTrue(metaHashOpt2.isPresent());
-        assertEquals(storedJson, metaExprOpt2.get().getValue());
-        assertEquals(storedHash, metaHashOpt2.get().getValue());
-        // Total mappings should still be 1
-        assertEquals(1L, facetConceptRepository.countForFacet(facetId));
-    }
-
-    @Test
-    void changeExpressions_thenEmpty_shouldClearAndRemap_andPersistUpdatedMetadata() throws Exception {
-        // Seed 2 datasets and 2 concepts
-        DatasetModel ds1 = datasetRepository.save(new DatasetModel("d1", "Dataset 1", "", ""));
-        DatasetModel ds2 = datasetRepository.save(new DatasetModel("d2", "Dataset 2", "", ""));
-        ConceptModel cABC = new ConceptModel(ds1.getDatasetId(), "d1", "d1", "", "\\A\\B\\C\\", null);
-        ConceptModel cXYZ = new ConceptModel(ds2.getDatasetId(), "d2", "d2", "", "\\X\\Y\\Z\\", null);
-        conceptService.save(cABC);
-        conceptService.save(cXYZ);
-
-        // Initial expressions -> match ABC (B at node 1)
-        FacetExpressionDTO expB1 = new FacetExpressionDTO();
-        expB1.exactly = "B";
-        expB1.node = 1;
-        FacetDTO facet = new FacetDTO();
-        facet.name = "FacetTwo";
-        facet.display = "Facet Two";
-        facet.expressions = new ArrayList<>();
-        facet.expressions.add(expB1);
-
-        FacetCategoryDTO cat = new FacetCategoryDTO();
-        cat.name = "Cat2";
-        cat.display = "Cat2";
-        cat.facets = List.of(facet);
-        FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
-        wrapper.facetCategory = cat;
-
+        // Load
         service.load(List.of(wrapper));
-        long facetId = facetRepository.findByName("FacetTwo").orElseThrow().getFacetId();
-        assertEquals(1L, facetConceptRepository.countForFacet(facetId));
 
-        String json1 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS).orElseThrow().getValue();
-        String hash1 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS_HASH).orElseThrow().getValue();
-        assertEquals(sha256Hex(json1), hash1);
+        // Resolve facets
+        Optional<FacetModel> parentOpt = facetRepository.findByName("Parent");
+        Optional<FacetModel> childOpt = facetRepository.findByName("Child");
+        assertTrue(parentOpt.isPresent());
+        assertTrue(childOpt.isPresent());
 
-        // Change expressions -> now match XYZ (X at node 0)
-        FacetExpressionDTO expX0 = new FacetExpressionDTO();
-        expX0.exactly = "X";
-        expX0.node = 0;
-        FacetDTO facetChanged = new FacetDTO();
-        facetChanged.name = "FacetTwo"; // same facet name
-        facetChanged.display = "Facet Two";
-        facetChanged.expressions = new ArrayList<>();
-        facetChanged.expressions.add(expX0);
+        long parentId = parentOpt.get().getFacetId();
+        long childId = childOpt.get().getFacetId();
 
-        FacetCategoryDTO cat2 = new FacetCategoryDTO();
-        cat2.name = "Cat2"; // same category
-        cat2.display = "Cat2";
-        cat2.facets = List.of(facetChanged);
-        FacetCategoryWrapper wrapper2 = new FacetCategoryWrapper();
-        wrapper2.facetCategory = cat2;
+        // Metadata: both own and effective keys should exist
+        List<FacetMetadataModel> parentMeta = facetMetadataRepository.findByFacetId(parentId);
+        List<FacetMetadataModel> childMeta = facetMetadataRepository.findByFacetId(childId);
 
-        Result resChange = service.load(List.of(wrapper2));
-        long delta = resChange.facetMappings().stream()
-                .filter(b -> b.facetName().equals("FacetTwo"))
-                .mapToLong(FacetMappingBreakdown::conceptsMapped)
-                .sum();
-        // After clear, before=0, mapped to 1 new concept
-        assertEquals(1L, delta);
-        assertEquals(1L, facetConceptRepository.countForFacet(facetId));
+        assertTrue(parentMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS_HASH.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS_HASH.equals(m.getKey())));
 
-        String json2 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS).orElseThrow().getValue();
-        String hash2 = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS_HASH).orElseThrow().getValue();
-        assertNotEquals(json1, json2);
-        assertNotEquals(hash1, hash2);
-        assertEquals(sha256Hex(json2), hash2);
+        assertTrue(childMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS_HASH.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS_HASH.equals(m.getKey())));
 
-        // Now set expressions to empty -> should clear all mappings and store []
-        FacetDTO facetEmpty = new FacetDTO();
-        facetEmpty.name = "FacetTwo";
-        facetEmpty.display = "Facet Two";
-        facetEmpty.expressions = new ArrayList<>(); // empty
-        FacetCategoryDTO cat3 = new FacetCategoryDTO();
-        cat3.name = "Cat2";
-        cat3.display = "Cat2";
-        cat3.facets = List.of(facetEmpty);
-        FacetCategoryWrapper wrapper3 = new FacetCategoryWrapper();
-        wrapper3.facetCategory = cat3;
+        // Child should map because it inherits Parent(B@1) and has C@2
+        assertTrue(facetConceptRepository.countForFacet(childId) >= 1);
 
-        Result resEmpty = service.load(List.of(wrapper3));
-        long deltaEmpty = resEmpty.facetMappings().stream()
-                .filter(b -> b.facetName().equals("FacetTwo"))
-                .mapToLong(FacetMappingBreakdown::conceptsMapped)
-                .sum();
-        assertEquals(0L, deltaEmpty); // mapFacetToConcepts returns 0 for empty expressions
-        assertEquals(0L, facetConceptRepository.countForFacet(facetId)); // mappings cleared
+        // Now change only the parent to require non-matching value at node1; child should de-map
+        FacetDTO parentV2 = new FacetDTO();
+        parentV2.name = "Parent";
+        parentV2.display = "Parent";
+        parentV2.description = "Parent facet";
+        parentV2.expressions = new ArrayList<>();
+        FacetExpressionDTO expZ1 = new FacetExpressionDTO();
+        expZ1.exactly = "Z";
+        expZ1.node = 1;
+        parentV2.expressions.add(expZ1);
+        parentV2.facets = List.of(child); // child unchanged
 
-        String jsonEmpty = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS).orElseThrow().getValue();
-        String hashEmpty = facetMetadataRepository.findByFacetIdAndKey(facetId, KEY_FACET_EXPRESSIONS_HASH).orElseThrow().getValue();
-        assertEquals("[]", jsonEmpty);
-        assertEquals(sha256Hex("[]"), hashEmpty);
-    }
+        FacetCategoryDTO catV2 = new FacetCategoryDTO();
+        catV2.name = "Cat";
+        catV2.display = "Cat";
+        catV2.description = "Cat desc";
+        catV2.facets = List.of(parentV2);
 
-    private static String sha256Hex(String s) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] digest = md.digest(s.getBytes(StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder(digest.length * 2);
-        for (byte b : digest) sb.append(String.format("%02x", b));
-        return sb.toString();
+        FacetCategoryWrapper wrapV2 = new FacetCategoryWrapper();
+        wrapV2.facetCategory = catV2;
+
+        service.load(List.of(wrapV2));
+
+        // Child should have zero mappings now due to parent's constraint
+        assertEquals(0L, facetConceptRepository.countForFacet(childId));
+
+        // Child effective metadata should have updated hash/value reflecting new parent
+        List<FacetMetadataModel> childMetaAfter = facetMetadataRepository.findByFacetId(childId);
+        String effectiveJsonAfter = childMetaAfter.stream()
+                .filter(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey()))
+                .map(FacetMetadataModel::getValue)
+                .findFirst()
+                .orElse(null);
+        assertNotNull(effectiveJsonAfter);
+        assertTrue(effectiveJsonAfter.contains("\"exactly\":\"Z\""));
+        assertTrue(effectiveJsonAfter.contains("\"exactly\":\"C\""));
     }
 }

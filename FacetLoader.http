@@ -70,6 +70,7 @@ Timeout: 99999999
           "Description": "Recover adult parent facet.",
           "Study_ID": "phs003436",
           "Expressions": [
+            { "exactly": "phs003436", "node": 0 },
             { "regex": "(?i)RECOVER_Adult_v5$", "node": 1 }
           ],
           "Facets": [
@@ -245,3 +246,27 @@ Timeout: 99999999
     }
   }
 ]
+
+### Generate RECOVER Adult months facets (on-demand, nested under parent)
+POST {{host}}/api/facet-loader/recover/months/generate
+Content-Type: application/json
+
+{
+  "categoryName": "Consortium_Curated_Facets",
+  "parentFacetName": "Recover Adult",
+  "parentFacetDisplay": "RECOVER Adult",
+  "studyId": "phs003436",
+  "adultNodeRegex": "(?i)RECOVER_Adult(_v\\d+)?$",
+  "pathPrefixRegex": "(?i)\\\\phs003436\\\\",  
+  "clearParentFacetFirst": true,
+  "dryRun": false
+}
+
+### Dry-run: discover months only, no DB changes
+POST {{host}}/api/facet-loader/recover/months/generate
+Content-Type: application/json
+
+{
+  "pathPrefixRegex": "(?i)\\\\RECOVER_Adult",
+  "dryRun": true
+}
