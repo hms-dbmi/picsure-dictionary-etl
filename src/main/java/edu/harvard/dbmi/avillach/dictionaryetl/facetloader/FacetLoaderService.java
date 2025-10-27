@@ -281,14 +281,8 @@ public class FacetLoaderService {
     }
 
     private void upsertFacetMeta(long facetId, String key, String value) {
-        facetMetadataRepository.findByFacetIdAndKey(facetId, key)
-                .ifPresentOrElse(existing -> {
-                    existing.setValue(value);
-                    facetMetadataRepository.save(existing);
-                }, () -> {
-                    FacetMetadataModel created = new FacetMetadataModel(facetId, key, value);
-                    facetMetadataRepository.save(created);
-                });
+        // Database-level UPSERT to avoid unique-constraint violations under concurrency
+        facetMetadataRepository.upsert(facetId, key, value);
     }
 
     private String getFacetMeta(long facetId, String key) {
