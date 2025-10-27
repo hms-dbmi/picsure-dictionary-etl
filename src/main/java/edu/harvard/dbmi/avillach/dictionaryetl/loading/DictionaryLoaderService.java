@@ -82,10 +82,6 @@ public class DictionaryLoaderService {
                         .filter(Objects::nonNull)
                         .map(String::trim)
                         .map(String::toLowerCase)
-                        .flatMap(s -> {
-                            String base = baseStudy(s);
-                            return base.equals(s) ? Stream.of(s) : Stream.of(s, base);
-                        })
                         .collect(java.util.stream.Collectors.toSet());
 
         this.startProcessing();
