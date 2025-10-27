@@ -38,6 +38,8 @@ public class FacetLoaderService {
 
     private static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
     private static final String KEY_FACET_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
+    private static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
+    private static final String KEY_EFFECTIVE_EXPRESSIONS_HASH = "facet_loader.effective_expressions_sha256hex";
 
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,
                               ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository,
@@ -166,7 +168,7 @@ public class FacetLoaderService {
             // Recursively process facets
             if (dto.facets != null) {
                 for (FacetDTO f : dto.facets) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false);
+                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, null);
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
                 }
@@ -177,7 +179,7 @@ public class FacetLoaderService {
                 List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
     }
 
-    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO, String categoryName, LoadAccum accum, List<FacetNameNested> createdCollector, boolean facetCleared) {
+    private Counts upsertFacetRecursive(Long categoryId, Long parentId, FacetDTO facetDTO, String categoryName, LoadAccum accum, List<FacetNameNested> createdCollector, boolean facetCleared, List<FacetExpressionDTO> inherited) {
         if (facetDTO == null) return new Counts(0, 0);
         String name = facetDTO.name;
         if (name == null || name.isBlank()) return new Counts(0, 0);
@@ -206,19 +208,33 @@ public class FacetLoaderService {
             createdCollector.add(createdNode);
         }
 
-        // Clear facet mappings if expressions changed (or are now empty)
+        // Compute effective expressions = inherited + own (AND semantics when evaluated)
+        List<FacetExpressionDTO> effective = new ArrayList<>();
+        if (inherited != null && !inherited.isEmpty()) {
+            effective.addAll(inherited);
+        }
+        if (facetDTO.expressions != null && !facetDTO.expressions.isEmpty()) {
+            effective.addAll(facetDTO.expressions);
+        }
+
         try {
-            String exprJson = canonicalizeExpressions(facetDTO.expressions);
-            String exprHash = sha256Hex(exprJson);
-            String prevHash = getFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH);
-            boolean changed = (prevHash == null) || !prevHash.equals(exprHash);
-            if (changed || facetDTO.expressions == null || facetDTO.expressions.isEmpty()) {
+            // Persist own expressions and hash (for traceability)
+            String ownJson = canonicalizeExpressions(facetDTO.expressions);
+            String ownHash = sha256Hex(ownJson);
+            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS, ownJson);
+            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH, ownHash);
+
+            // Persist effective expressions and hash; clear mappings if changed or now empty
+            String effectiveJson = canonicalizeExpressions(effective);
+            String effectiveHash = sha256Hex(effectiveJson);
+            String prevEffectiveHash = getFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS_HASH);
+            boolean effectiveChanged = (prevEffectiveHash == null) || !prevEffectiveHash.equals(effectiveHash);
+            if (effectiveChanged || effective.isEmpty()) {
                 facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
                 facetCleared = true;
             }
-            // Persist expressions and hash
-            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS, exprJson);
-            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH, exprHash);
+            upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS, effectiveJson);
+            upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS_HASH, effectiveHash);
         } catch (Exception e) {
             if (!facetCleared) {
                 facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
@@ -226,15 +242,15 @@ public class FacetLoaderService {
             }
         }
 
-        // Always remap to catch new concepts
-        long mapped = mapFacetToConcepts(facet.getFacetId(), facetDTO.expressions);
+        // Map using the EFFECTIVE expressions (parent AND child)
+        long mapped = mapFacetToConcepts(facet.getFacetId(), effective);
         accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
 
         if (facetDTO.facets != null) {
             for (FacetDTO child : facetDTO.facets) {
                 // If the current facet was created, nest children under it; otherwise, keep at the current level
                 List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
-                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child, categoryName, accum, nextCollector, facetCleared);
+                Counts c = upsertFacetRecursive(categoryId, facet.getFacetId(), child, categoryName, accum, nextCollector, facetCleared, effective);
                 created += c.created();
                 updated += c.updated();
             }
