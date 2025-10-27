@@ -61,7 +61,7 @@ public class DictionaryLoaderService {
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
      */
     public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
-        // Backward-compatible signature delegates to new overload with no filtering
+        // Backward-compatible signature delegates to a new overload with no filtering
         return processColumnMetaCSV(csvPath, errorFile, null);
     }
 
@@ -151,8 +151,7 @@ public class DictionaryLoaderService {
         String root = rootSegment(conceptPath);
         if (root == null) return false;
         String rootLc = root.toLowerCase();
-        String rootBase = baseStudy(rootLc);
-        return allowedStudies.contains(rootLc) || allowedStudies.contains(rootBase);
+        return allowedStudies.contains(rootLc);
     }
 
     private static String rootSegment(String conceptPath) {
@@ -161,12 +160,6 @@ public class DictionaryLoaderService {
         int end = conceptPath.indexOf("\\", start);
         if (end == -1) return conceptPath.substring(start);
         return conceptPath.substring(start, end);
-    }
-
-    private static String baseStudy(String ref) {
-        if (ref == null) return null;
-        int dot = ref.indexOf('.');
-        return dot == -1 ? ref : ref.substring(0, dot);
     }
 
     /**
