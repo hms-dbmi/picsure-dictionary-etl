@@ -20,6 +20,10 @@ public class ConceptMetadataService {
         return this.conceptMetadataRepository.save(conceptMetadataModel);
     }
 
+    public int upsert(long conceptNodeId, String key, String value) {
+        return this.conceptMetadataRepository.upsert(conceptNodeId, key, value);
+    }
+
     public List<ConceptMetadataModel> findByConceptID(Long conceptID) {
         if (conceptID == null) {
             return List.of();

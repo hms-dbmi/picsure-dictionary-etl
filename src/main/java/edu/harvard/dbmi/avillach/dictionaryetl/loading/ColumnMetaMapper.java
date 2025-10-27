@@ -28,8 +28,8 @@ public class ColumnMetaMapper {
 
             String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
 
-            double min = 0;
-            double max = 0;
+            Double min = null;
+            Double max = null;
             if (!isCategorical) {
                 if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
                     min = Double.parseDouble(columns[5]);

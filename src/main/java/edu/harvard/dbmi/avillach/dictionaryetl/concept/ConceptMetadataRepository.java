@@ -32,6 +32,18 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             """, nativeQuery = true)
     int updateStigvarsFromConceptPaths(@Param(value = "paths") String[] paths, String val);
 
+    @Modifying
+    @Transactional
+    @Query(value = """
+            insert into dict.concept_node_meta (concept_node_id, key, value)
+            values (:conceptNodeId, :key, :value)
+            on conflict (key, concept_node_id)
+            do update set value = EXCLUDED.value
+            """, nativeQuery = true)
+    int upsert(@Param("conceptNodeId") long conceptNodeId,
+               @Param("key") String key,
+               @Param("value") String value);
+
     @Query(value = """
             select new edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptStigvarIdentificationModel(
                 concept_node.name,

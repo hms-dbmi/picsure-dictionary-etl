@@ -404,8 +404,8 @@ public class DictionaryLoaderService {
             }
 
             String valuesJson = this.columnMetaUtility.listToJson(values);
-            ConceptMetadataModel metadataModel = new ConceptMetadataModel(conceptID, "values", valuesJson);
-            this.conceptMetadataService.save(metadataModel);
+            // Use idempotent upsert to avoid unique constraint violations on (key, concept_node_id)
+            this.conceptMetadataService.upsert(conceptID, "values", valuesJson);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
