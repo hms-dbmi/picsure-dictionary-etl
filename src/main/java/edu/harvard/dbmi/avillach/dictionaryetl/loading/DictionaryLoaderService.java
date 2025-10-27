@@ -373,11 +373,11 @@ public class DictionaryLoaderService {
     private Long createConceptModel(ConceptNode currentNode, ColumnMeta columnMeta, Long datasetID,
                                     Long parentConceptID) {
         log.debug("Creating concept model for concept path: {}", currentNode.getName());
-        return this.conceptPaths.computeIfAbsent(currentNode.getName(), name -> {
-            Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(name);
+        return this.conceptPaths.computeIfAbsent(currentNode.getConceptPath(), conceptPath -> {
+            Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(conceptPath);
             ConceptModel conceptModel;
             if (optConceptModel.isEmpty()) {
-                String conceptPath = currentNode.getConceptPath();
+                String name = currentNode.getName();
                  conceptModel = new ConceptModel(
                         datasetID,
                         name,
