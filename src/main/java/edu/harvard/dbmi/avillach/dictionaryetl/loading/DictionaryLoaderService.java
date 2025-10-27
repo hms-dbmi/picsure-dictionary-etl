@@ -61,6 +61,11 @@ public class DictionaryLoaderService {
      * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
      */
     public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
+        // Backward-compatible signature delegates to new overload with no filtering
+        return processColumnMetaCSV(csvPath, errorFile, null);
+    }
+
+    public String processColumnMetaCSV(String csvPath, String errorFile, List<String> studies) throws RuntimeException {
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
         } else if (!errorFile.endsWith(".csv")) {
@@ -71,28 +76,53 @@ public class DictionaryLoaderService {
             csvPath = "/opt/local/hpds/columnMeta.csv";
         }
 
+        // Normalize allowed studies (case-insensitive) and include base phs expansion
+        final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? null :
+                studies.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .flatMap(s -> {
+                            String base = baseStudy(s);
+                            return base.equals(s) ? Stream.of(s) : Stream.of(s, base);
+                        })
+                        .collect(java.util.stream.Collectors.toSet());
+
         this.startProcessing();
         try (BufferedReader br = new BufferedReader(new FileReader(csvPath))) {
-            final String[] previousConceptPath = {""};
-            List<ColumnMeta> columnMetas = new ArrayList<>();
-            Stream<String> lines = br.lines();
-            lines.forEach(line -> {
-                Optional<ColumnMeta> columnMeta = this.columnMetaMapper.mapCSVRowToColumnMeta(line);
-                if (columnMeta.isPresent()) {
-                    if (!previousConceptPath[0].equals(columnMeta.get().name())) {
-                        // We have reached a new concept path. We can add this list of column metas to the queue
-                        // and start processing the next set of concept paths.
-                        if (!columnMetas.isEmpty()) {
-                            readyToLoadMetadata.add(new ArrayList<>(columnMetas));
-                            columnMetas.clear();
-                            previousConceptPath[0] = columnMeta.get().name();
-                            this.task.getAndAdd(1);
-                        }
-                    }
+            String line;
+            String currentConcept = null;
+            List<ColumnMeta> group = new ArrayList<>();
+            boolean groupAllowed = true;
 
-                    columnMetas.add(columnMeta.get());
+            while ((line = br.readLine()) != null) {
+                Optional<ColumnMeta> columnMetaOpt = this.columnMetaMapper.mapCSVRowToColumnMeta(line);
+                if (columnMetaOpt.isEmpty()) {
+                    continue;
                 }
-            });
+                ColumnMeta meta = columnMetaOpt.get();
+                String conceptName = meta.name();
+
+                if (!Objects.equals(conceptName, currentConcept)) {
+                    // Flush previous group if any
+                    if (!group.isEmpty() && groupAllowed) {
+                        readyToLoadMetadata.add(new ArrayList<>(group));
+                        this.task.getAndAdd(1);
+                    }
+                    group.clear();
+                    currentConcept = conceptName;
+                    groupAllowed = isAllowedByStudy(conceptName, allowedStudies);
+                }
+                if (groupAllowed) {
+                    group.add(meta);
+                }
+            }
+
+            // Flush the final group
+            if (!group.isEmpty() && groupAllowed) {
+                readyToLoadMetadata.add(new ArrayList<>(group));
+                this.task.getAndAdd(1);
+            }
 
             // Wait until the queue has finished processing.
             while (this.task.get() != 0) {
@@ -112,6 +142,31 @@ public class DictionaryLoaderService {
         }
 
         return "Success";
+    }
+
+    private static boolean isAllowedByStudy(String conceptPath, Set<String> allowedStudies) {
+        if (allowedStudies == null || allowedStudies.isEmpty()) {
+            return true;
+        }
+        String root = rootSegment(conceptPath);
+        if (root == null) return false;
+        String rootLc = root.toLowerCase();
+        String rootBase = baseStudy(rootLc);
+        return allowedStudies.contains(rootLc) || allowedStudies.contains(rootBase);
+    }
+
+    private static String rootSegment(String conceptPath) {
+        if (conceptPath == null || conceptPath.isEmpty()) return null;
+        int start = conceptPath.startsWith("\\") ? 1 : 0;
+        int end = conceptPath.indexOf("\\", start);
+        if (end == -1) return conceptPath.substring(start);
+        return conceptPath.substring(start, end);
+    }
+
+    private static String baseStudy(String ref) {
+        if (ref == null) return null;
+        int dot = ref.indexOf('.');
+        return dot == -1 ? ref : ref.substring(0, dot);
     }
 
     /**

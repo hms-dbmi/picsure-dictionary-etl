@@ -20,6 +20,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -402,6 +404,49 @@ public class DictionaryLoaderServiceTest {
         List<ConceptModel> all = this.conceptService.findAll();
         assertFalse(all.isEmpty());
         assertTrue(all.size() >= 32);
+    }
+
+    @Test
+    void processColumnMetaCSV_withStudyFilter_onlyIncludedProcessed() throws IOException {
+        // Build a tiny CSV with two different study roots
+        String line1 = "\\phs001234.v3.p1\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
+        String line2 = "\\phs009999.v1.p2\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
+        Path tmpCsv = Files.createTempFile("cmfilter", ".csv");
+        Files.write(tmpCsv, List.of(line1, line2), StandardCharsets.UTF_8);
+        Path tmpErr = Files.createTempFile("cmerr", ".csv");
+
+        // Allow only the first study (full ref)
+        String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234.v3.p1"));
+        assertEquals("Success", result);
+
+        // Only one dataset should be created and it should be the allowed one
+        List<DatasetModel> datasets = this.datasetService.findAll();
+        assertEquals(1, datasets.size());
+        assertEquals("phs001234", datasets.getFirst().getRef());
+
+        // Concepts created should be for a single path (root + demo + AGE)
+        List<ConceptModel> concepts = this.conceptService.findAll();
+        assertEquals(3, concepts.size());
+    }
+
+    @Test
+    void processColumnMetaCSV_withBaseStudyFilter_matchesVersioned() throws IOException {
+        String line1 = "\\phs001234.v3.p1\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
+        String line2 = "\\phs009999.v1.p2\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
+        Path tmpCsv = Files.createTempFile("cmbase", ".csv");
+        Files.write(tmpCsv, List.of(line1, line2), StandardCharsets.UTF_8);
+        Path tmpErr = Files.createTempFile("cmerr2", ".csv");
+
+        // Provide only base study id; should match phs001234.v3.p1 rows
+        String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234"));
+        assertEquals("Success", result);
+
+        List<DatasetModel> datasets = this.datasetService.findAll();
+        assertEquals(1, datasets.size());
+        assertEquals("phs001234", datasets.getFirst().getRef());
+
+        List<ConceptModel> concepts = this.conceptService.findAll();
+        assertEquals(3, concepts.size());
     }
 
     @Test

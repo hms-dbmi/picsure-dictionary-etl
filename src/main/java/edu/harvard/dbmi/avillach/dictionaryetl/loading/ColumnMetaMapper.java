@@ -69,6 +69,29 @@ public class ColumnMetaMapper {
                 conceptPath = conceptPath.substring(0, secondLastBackslash + 1);
             }
         }
+        // Normalize the root study identifier to base phs (e.g., phs001234.v3.p1 -> phs001234)
+        conceptPath = normalizeRootStudyToBasePhs(conceptPath);
+        return conceptPath;
+    }
+
+    /**
+     * Ensures the first segment of the concept path uses the base phs identifier (before the first dot),
+     * e.g., "\\phs001234.v3.p1\\..." becomes "\\phs001234\\...". Non-phs roots are left unchanged.
+     */
+    private static String normalizeRootStudyToBasePhs(String conceptPath) {
+        if (conceptPath == null || conceptPath.isEmpty() || conceptPath.charAt(0) != '\\') {
+            return conceptPath;
+        }
+        int secondBackslash = conceptPath.indexOf("\\", 1);
+        if (secondBackslash == -1) {
+            return conceptPath;
+        }
+        String root = conceptPath.substring(1, secondBackslash);
+        int dotIdx = root.indexOf('.');
+        if (dotIdx > 0 && root.startsWith("phs")) {
+            String base = root.substring(0, dotIdx);
+            return "\\" + base + conceptPath.substring(secondBackslash);
+        }
         return conceptPath;
     }
 

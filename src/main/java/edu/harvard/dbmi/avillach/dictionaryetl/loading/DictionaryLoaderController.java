@@ -59,7 +59,11 @@ public class DictionaryLoaderController {
                 if (clearDatabase) {
                     databaseCleanupUtility.truncateTablesAllTables();
                 }
-                response = this.dictionaryLoaderService.processColumnMetaCSV(request.csvPath(), request.errorDirectory());
+                response = this.dictionaryLoaderService.processColumnMetaCSV(
+                        request.csvPath(),
+                        request.errorDirectory(),
+                        request.studies()
+                );
                 if (includeDefaultFacets) {
                     this.facetService.createDefaultFacets();
                 }
@@ -73,4 +77,5 @@ public class DictionaryLoaderController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 }
