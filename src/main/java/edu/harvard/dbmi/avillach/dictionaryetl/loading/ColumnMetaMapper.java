@@ -39,6 +39,9 @@ public class ColumnMetaMapper {
                 }
             }
 
+            String col9  = getOptional(columns, 9);
+            String col10 = getOptional(columns, 10);
+
             return Optional.of(new ColumnMeta(
                     conceptPath,
                     columns[1],
@@ -49,8 +52,8 @@ public class ColumnMetaMapper {
                     max,
                     columns[7],
                     columns[8],
-                    columns[9],
-                    columns[10]
+                    col9,
+                    col10
             ));
         } catch (IOException e) {
             log.error("Unable to parse line {}", csvRow);
@@ -103,6 +106,13 @@ public class ColumnMetaMapper {
         // µ is used as our delimiter between categorical values.
         String[] categoricalValues = column.split("µ");
         return List.of(categoricalValues);
+    }
+
+    private static String getOptional(String[] columns, int idx) {
+        if (idx >= columns.length) return null;
+        String v = columns[idx];
+        if (!StringUtils.hasLength(v) || NULL.equalsIgnoreCase(v)) return null;
+        return v;
     }
 
 }
