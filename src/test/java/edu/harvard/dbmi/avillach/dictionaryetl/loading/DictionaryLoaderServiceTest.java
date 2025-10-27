@@ -409,14 +409,14 @@ public class DictionaryLoaderServiceTest {
     @Test
     void processColumnMetaCSV_withStudyFilter_onlyIncludedProcessed() throws IOException {
         // Build a tiny CSV with two different study roots
-        String line1 = "\\phs001234.v3.p1\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
-        String line2 = "\\phs009999.v1.p2\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
+        String line1 = "\\phs001234\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
+        String line2 = "\\phs009999\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
         Path tmpCsv = Files.createTempFile("cmfilter", ".csv");
         Files.write(tmpCsv, List.of(line1, line2), StandardCharsets.UTF_8);
         Path tmpErr = Files.createTempFile("cmerr", ".csv");
 
         // Allow only the first study (full ref)
-        String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234.v3.p1"));
+        String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234"));
         assertEquals("Success", result);
 
         // Only one dataset should be created and it should be the allowed one
@@ -431,13 +431,12 @@ public class DictionaryLoaderServiceTest {
 
     @Test
     void processColumnMetaCSV_withBaseStudyFilter_matchesVersioned() throws IOException {
-        String line1 = "\\phs001234.v3.p1\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
-        String line2 = "\\phs009999.v1.p2\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
+        String line1 = "\\phs001234\\demo\\AGE\\,8,0,false,,0.0,100.0,0,10,1,1";
+        String line2 = "\\phs009999\\demo\\AGE\\,8,0,false,,0.0,100.0,10,20,1,1";
         Path tmpCsv = Files.createTempFile("cmbase", ".csv");
         Files.write(tmpCsv, List.of(line1, line2), StandardCharsets.UTF_8);
         Path tmpErr = Files.createTempFile("cmerr2", ".csv");
 
-        // Provide only base study id; should match phs001234.v3.p1 rows
         String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234"));
         assertEquals("Success", result);
 

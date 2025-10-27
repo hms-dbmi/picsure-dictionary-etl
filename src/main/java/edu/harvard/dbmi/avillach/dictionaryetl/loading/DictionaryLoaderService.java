@@ -233,9 +233,9 @@ public class DictionaryLoaderService {
                                        "for a concept path.");
         }
 
-        // As the list is processed the min and max will adjust to based on the "values" of other concepts.
+        // As the list is processed the min and max will adjust based on the "values" of other concepts.
         final Double[] min = {columnMetas.getFirst().min()};
-        final Double[] max = {columnMetas.getLast().max()};
+        final Double[] max = {columnMetas.getFirst().max()};
 
         columnMetas.forEach(columnMeta -> {
             if (columnMeta.categorical()) {
