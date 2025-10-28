@@ -36,9 +36,10 @@ public class FacetLoaderService {
     private final FacetMetadataRepository facetMetadataRepository;
     private final ObjectMapper objectMapper;
 
-    private static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
+    public static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
     private static final String KEY_FACET_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
-    private static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
+
+    public static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
     private static final String KEY_EFFECTIVE_EXPRESSIONS_HASH = "facet_loader.effective_expressions_sha256hex";
 
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,

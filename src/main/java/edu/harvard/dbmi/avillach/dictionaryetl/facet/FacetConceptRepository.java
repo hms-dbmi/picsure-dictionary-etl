@@ -115,10 +115,11 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
     @Modifying
     @Transactional
     @Query(value = """
-                INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
-                SELECT :facetId, x.id
-                FROM unnest(:conceptNodeIds) AS x(id)
-                ON CONFLICT DO NOTHING
-            """, nativeQuery = true)
-    void bulkMapFacetToConceptNodes(Long facetId, Long[] conceptNodeIds);
+    INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
+    SELECT :facetId, x.id
+    FROM unnest(:conceptNodeIds) AS x(id)
+    ON CONFLICT DO NOTHING
+    """, nativeQuery = true)
+    int bulkMapFacetToConceptNodes(@Param("facetId") Long facetId, @Param("conceptNodeIds") Long[] conceptNodeIds);
+
 }

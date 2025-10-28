@@ -2,54 +2,12 @@
 # Adjust the host if your app runs on a different port (e.g., 8086 for Docker)
 @host = http://localhost:8090
 
-### Load sample facets
-POST {{host}}/api/facet-loader/load
-Content-Type: application/json
-
-[
-  {
-    "Facet_Category": {
-      "Name": "Sample_Category",
-      "Display": "Sample Category",
-      "Description": "Demo category created via HTTP file",
-      "Facets": [
-        {
-          "Name": "Demo Facet",
-          "Display": "Demo Facet",
-          "Description": "Top-level facet",
-          "Expressions": [
-            { "regex": "(?i)^demographics$", "node": 0 }
-          ],
-          "Facets": [
-            {
-              "Name": "Child",
-              "Display": "Child",
-              "Description": "Child facet for demo",
-              "Expressions": [
-                { "regex": "(?i)^child$", "node": -1 }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  }
-]
-
-### Clear by category name
+### Clear all Consortium_Curated_Facets
 POST {{host}}/api/facet-loader/clear
 Content-Type: application/json
 
 {
-  "facetCategories": ["Sample_Category"]
-}
-
-### Clear by facet name (and its descendants)
-POST {{host}}/api/facet-loader/clear
-Content-Type: application/json
-
-{
-  "facets": ["Demo Facet"]
+  "Facet_Categories": ["Consortium_Curated_Facets"]
 }
 
 ### Load Recover facets
@@ -68,10 +26,10 @@ Timeout: 99999999
           "Name": "Recover Adult",
           "Display": "RECOVER Adult",
           "Description": "Recover adult parent facet.",
-          "Study_ID": "phs003436",
+          "Study_ID": "phs003463",
           "Expressions": [
-            { "exactly": "phs003436", "node": 0 },
-            { "regex": "(?i)RECOVER_Adult_v5$", "node": 1 }
+            { "exactly": "phs003463", "node": 0 },
+            { "regex": "(?i)RECOVER_Adult$", "node": 1 }
           ],
           "Facets": [
             {
@@ -79,105 +37,7 @@ Timeout: 99999999
               "Display": "Infected",
               "Description": "Infected Facet Description",
               "Expressions": [
-                { "regex": "(?i)inf" },
-                { "regex": "(?i)^(?!.*noninf).*" }
-              ]
-            },
-            {
-              "Name": "Non-infected",
-              "Display": "Non-infected",
-              "Description": "Non-infected Facet Description",
-              "Expressions": [
-                { "regex": "(?i)\\bnon[\\W_]*inf" }
-              ]
-            },
-            {
-              "Name": "PASC Status",
-              "Display": "PASC Status",
-              "Description": "PASC Status Facet Description",
-              "Expressions": [
-                {
-                  "regex": "(?i)(pasc_pg2023|pasc_pg2024|pasc_jama2023|pasc_jama2024|pasc_cc_2024|visit_month_curr|infect_yn_curr)"
-                }
-              ]
-            },
-            {
-              "Name": "Tests performed",
-              "Display": "Tests performed",
-              "Description": "Facet indicating whether specific tests were performed (yes/no flags).",
-              "Expressions": [
-                {
-                  "regex": "(?i)(bmri_yn|chestct_yn|cmri_yn|cpet_yn|colon_yn|ekg_yn|compaudio_yn|rttestrain_yn|emg_yn|endopat_yn|facsleep_yn|fibro_yn|ent_yn|eye_yn|neuropsych_yn|ges_yn|noxisiess_yn|lumbar_yn|mini_yn|muscbx_yn|nervecond_yn|neuropath_yn|nihtool_yn|glucose_yn|plascatech_yn|pft_yn|comprehab_yn|renalultra_yn|rhcath_yn|sixmin_yn|skinbx_yn|tilt_yn|upsit_yn|vision_yn)"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "Name": "Recover Pediatrics",
-          "Display": "RECOVER Pediatrics",
-          "Description": "Recover pediatrics parent facet.",
-          "Study_ID": "phs003431",
-          "Facets": [
-            {
-              "Name": "Caregiver",
-              "Display": "Caregiver",
-              "Description": "Facet for all Recover Pediatric Caregiver variables.",
-              "Expressions": [
-                { "regex": "(?i)RECOVER_Caregiver$", "node": 1 }
-              ]
-            },
-            {
-              "Name": "Pediatric",
-              "Display": "Pediatric",
-              "Description": "Facet for all Recover Pediatric variables.",
-              "Expressions": [
-                { "regex": "(?i)RECOVER_Pediatrics$", "node": 1 }
-              ]
-            },
-            {
-              "Name": "Congenital",
-              "Display": "Congential",
-              "Description": "Facet for all Recover Pediatric Congenital variables.",
-              "Expressions": [
-                { "regex": "(?i)RECOVER_Congenital$", "node": 1 }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  }
-]
-
-### Test Load Recover facets with changed expression
-POST {{host}}/api/facet-loader/load
-Content-Type: application/json
-Timeout: 99999999
-
-[
-  {
-    "Facet_Category": {
-      "Name": "Consortium_Curated_Facets",
-      "Display": "Consortium Curated Facets",
-      "Description": "Consortium Curated Facets Description",
-      "Facets": [
-        {
-          "Name": "Recover Adult",
-          "Display": "RECOVER Adult",
-          "Description": "Recover adult parent facet.",
-          "Study_ID": "phs003436",
-          "Expressions": [
-            { "regex": "(?i)RECOVER_Adult_v5$", "node": 1 }
-          ],
-          "Facets": [
-            {
-              "Name": "Infected",
-              "Display": "Infected",
-              "Description": "Infected Facet Description",
-              "Expressions": [
-                { "regex": "(?i)inf" },
-                { "regex": "(?i)^(?!.*noninf).*" }
+                { "regex": "(?i)^(?=.*\\binf\\b)(?!.*\\bnon[\\W_]*inf\\b).*" }
               ]
             },
             {
@@ -250,15 +110,16 @@ Timeout: 99999999
 ### Generate RECOVER Adult months facets (on-demand, nested under parent)
 POST {{host}}/api/facet-loader/recover/months/generate
 Content-Type: application/json
+Timeout: 99999999
 
 {
   "categoryName": "Consortium_Curated_Facets",
   "parentFacetName": "Recover Adult",
   "parentFacetDisplay": "RECOVER Adult",
-  "studyId": "phs003436",
-  "adultNodeRegex": "(?i)RECOVER_Adult(_v\\d+)?$",
-  "pathPrefixRegex": "(?i)\\\\phs003436\\\\",  
-  "clearParentFacetFirst": true,
+  "studyId": "phs003463",
+  "adultNodeRegex": "(?i)RECOVER_Adult$",
+  "pathPrefixRegex": "(?i)\\\\phs003463\\\\",
+  "clearParentFacetFirst": false,
   "dryRun": false
 }
 
