@@ -44,7 +44,7 @@ public class RecoverMonthsFacetGeneratorService {
     public GenerateRecoverMonthsResponse generate(GenerateRecoverMonthsRequest req) {
         GenerateRecoverMonthsResponse out = new GenerateRecoverMonthsResponse();
         Optional<FacetCategoryModel> consortiumCuratedFacets = facetCategoryService.findByName("Consortium_Curated_Facets");
-        Optional<FacetModel> recoverAdultOptional = facetService.findByName("Recover Adult");
+        Optional<FacetModel> recoverAdultOptional = facetService.findByName("RECOVER Adult Curated");
         if (consortiumCuratedFacets.isPresent() && recoverAdultOptional.isPresent()) {
             Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey = facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS);
             if (facetMetadataByFacetIDAndKey.isPresent()) {

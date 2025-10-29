@@ -23,8 +23,8 @@ Timeout: 99999999
       "Description": "Consortium Curated Facets Description",
       "Facets": [
         {
-          "Name": "Recover Adult",
-          "Display": "RECOVER Adult",
+          "Name": "RECOVER Adult Curated",
+          "Display": "RECOVER Adult Curated",
           "Description": "Recover adult parent facet.",
           "Study_ID": "phs003463",
           "Expressions": [
@@ -71,10 +71,15 @@ Timeout: 99999999
           ]
         },
         {
-          "Name": "Recover Pediatrics",
-          "Display": "RECOVER Pediatrics",
+          "Name": "RECOVER Pediatric Curated",
+          "Display": "RECOVER Pediatric Curated",
           "Description": "Recover pediatrics parent facet.",
           "Study_ID": "phs003461",
+          "Expressions": [
+            {
+              "exactly": "phs003461"
+            }
+          ],
           "Facets": [
             {
               "Name": "Caregiver",
