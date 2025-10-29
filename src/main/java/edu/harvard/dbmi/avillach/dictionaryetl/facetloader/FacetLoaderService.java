@@ -243,11 +243,13 @@ public class FacetLoaderService {
             }
         }
 
-        // Map using the EFFECTIVE expressions (parent AND child)
-        long mapped = mapFacetToConcepts(facet.getFacetId(), effective);
-        accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
-
-        if (facetDTO.facets != null) {
+        long mapped;
+        boolean hasChildren = facetDTO.facets != null && !facetDTO.facets.isEmpty();
+        if (!hasChildren) {
+            // Leaf facet: map using EFFECTIVE expressions (ancestor AND own)
+            mapped = mapFacetToConcepts(facet.getFacetId(), effective);
+        } else {
+            // Has children: process children first so they are fully mapped
             for (FacetDTO child : facetDTO.facets) {
                 // If the current facet was created, nest children under it; otherwise, keep at the current level
                 List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
@@ -255,8 +257,16 @@ public class FacetLoaderService {
                 created += c.created();
                 updated += c.updated();
             }
+
+            // Parent should only have the union of its children’s mapped concepts.
+            // Always clear existing parent mappings before rebuilding from children
+            facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+
+            // Insert union of direct children’s concept mappings into the parent
+            mapped = facetConceptRepository.mapParentToUnionOfDirectChildren(facet.getFacetId());
         }
 
+        accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
         return new Counts(created, updated);
     }
 

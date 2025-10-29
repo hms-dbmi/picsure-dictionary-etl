@@ -141,9 +141,7 @@ class FacetLoaderMappingIntegrationTest {
         assertTrue(c2Opt.isPresent());
         assertTrue(c3Opt.isPresent());
 
-        // Parent facet should map only to c1
-        Optional<FacetConceptModel> m1 = facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, c1Opt.get().getConceptNodeId());
-        assertTrue(m1.isPresent());
+        // Parent facet should not include concepts outside its children
         assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, c2Opt.get().getConceptNodeId()).isEmpty());
         assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, c3Opt.get().getConceptNodeId()).isEmpty());
 

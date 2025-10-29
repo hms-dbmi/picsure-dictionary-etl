@@ -122,4 +122,16 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
     """, nativeQuery = true)
     int bulkMapFacetToConceptNodes(@Param("facetId") Long facetId, @Param("conceptNodeIds") Long[] conceptNodeIds);
 
+    @Modifying
+    @Transactional
+    @Query(value = """
+    INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
+    SELECT DISTINCT :parentId, fcn.concept_node_id
+    FROM dict.facet__concept_node fcn
+    JOIN dict.facet child ON fcn.facet_id = child.facet_id
+    WHERE child.parent_id = :parentId
+    ON CONFLICT DO NOTHING;
+    """, nativeQuery = true)
+    int mapParentToUnionOfDirectChildren(@Param("parentId") Long parentId);
+
 }
