@@ -37,7 +37,7 @@ Timeout: 99999999
               "Display": "Infected",
               "Description": "Infected Facet Description",
               "Expressions": [
-                { "regex": "(?i)^(?=.*\\binf\\b)(?!.*\\bnon[\\W_]*inf\\b).*" }
+                { "regex": "(?i)^(?!.*non[\\W_]*(?:infected|inf)).*(?:infected|(?<![A-Za-z0-9])inf(?![A-Za-z0-9]))" }
               ]
             },
             {
