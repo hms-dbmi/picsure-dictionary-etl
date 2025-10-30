@@ -12,12 +12,15 @@ import java.util.regex.Pattern;
  * expression format: each entry may specify one or more of {exactly, contains, regex}.
  * Node is optional: if provided, we evaluate only that node; if omitted, we scan all nodes
  * and return true if any node satisfies the entry. All entries are ANDed together.
+ *
+ * Added support for grouped OR semantics via {@link #facetAppliesToConceptPathGrouped(List, String)}.
  */
 public final class FacetExpressionEvaluator {
 
     private FacetExpressionEvaluator() {
     }
 
+    /** Legacy: AND across all expressions */
     public static boolean facetAppliesToConceptPath(List<FacetExpressionDTO> expressions, String conceptPath) {
         if (expressions == null || expressions.isEmpty()) {
             // No expressions provided: interpret as no automatic mapping.
@@ -29,6 +32,19 @@ public final class FacetExpressionEvaluator {
             }
         }
         return true;
+    }
+
+    /** New: OR across groups, AND within each group */
+    public static boolean facetAppliesToConceptPathGrouped(List<List<FacetExpressionDTO>> groups, String conceptPath) {
+        if (groups == null || groups.isEmpty()) {
+            return false;
+        }
+        for (List<FacetExpressionDTO> group : groups) {
+            if (facetAppliesToConceptPath(group, conceptPath)) {
+                return true; // OR semantics
+            }
+        }
+        return false;
     }
 
     public static boolean evaluate(FacetExpressionDTO expr, String conceptPath) {
@@ -57,6 +73,7 @@ public final class FacetExpressionEvaluator {
         return false;
     }
 
+    /** Legacy compiled-path (AND). Kept for compatibility with existing callers. */
     public static boolean applies(List<CompiledExpr> compiled, String conceptPath) {
         if (compiled == null || compiled.isEmpty()) return false;
         for (CompiledExpr ce : compiled) {
@@ -128,7 +145,6 @@ public final class FacetExpressionEvaluator {
         }
         return ok;
     }
-
 
     private static boolean isEmpty(FacetExpressionDTO expr) {
         return (expr.exactly == null || expr.exactly.isBlank())

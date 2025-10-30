@@ -17,15 +17,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Generates facets like "09m-post index" based on concept paths where the last two nodes are
- * (Inf|Noninf) followed by a numeric month. The generated month facets are associated as
- * children of the "Recover Adult" parent facet and include the same parent expressions
- * for proper scoping. Uses FacetLoaderService.load to upsert facets and map concepts.
+ * Generates month facets under "RECOVER Adult Curated".
+ * Supports both structures:
+ *   1) ...\ (Inf|Noninf) \ <month>
+ *   2) ..._<inf|infected|noninf|noninfected>_<month>  (at end of last node)
+ *
+ * Each child facet uses OR groups:
+ *   Group 1 (node-based):    scope + { -2: "(?i)^(inf|noninf)$", -1: exactly "<m>" }
+ *   Group 2 (embedded last): scope + { -1: "(?i)_(?:non)?(?:inf|infected)_<m>$" }
  */
 @Service
 public class RecoverMonthsFacetGeneratorService {
 
     private static final Pattern INT_PATTERN = Pattern.compile("^\\d{1,3}$");
+    private static final Pattern EMBEDDED_SUFFIX = Pattern.compile("_(?:non)?(?:inf|infected)_(\\d{1,3})$", Pattern.CASE_INSENSITIVE);
 
     private final ConceptRepository conceptRepository;
     private final FacetLoaderService facetLoaderService;
@@ -33,7 +38,9 @@ public class RecoverMonthsFacetGeneratorService {
     private final FacetService facetService;
 
     public RecoverMonthsFacetGeneratorService(ConceptRepository conceptRepository,
-                                              FacetLoaderService facetLoaderService, FacetCategoryService facetCategoryService, FacetService facetService) {
+                                              FacetLoaderService facetLoaderService,
+                                              FacetCategoryService facetCategoryService,
+                                              FacetService facetService) {
         this.conceptRepository = conceptRepository;
         this.facetLoaderService = facetLoaderService;
         this.facetCategoryService = facetCategoryService;
@@ -46,7 +53,8 @@ public class RecoverMonthsFacetGeneratorService {
         Optional<FacetCategoryModel> consortiumCuratedFacets = facetCategoryService.findByName("Consortium_Curated_Facets");
         Optional<FacetModel> recoverAdultOptional = facetService.findByName("RECOVER Adult Curated");
         if (consortiumCuratedFacets.isPresent() && recoverAdultOptional.isPresent()) {
-            Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey = facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS);
+            Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey =
+                    facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS);
             if (facetMetadataByFacetIDAndKey.isPresent()) {
                 FacetCategoryModel facetCategoryModel = consortiumCuratedFacets.get();
                 FacetModel recoverAdultFacetModel = recoverAdultOptional.get();
@@ -115,7 +123,6 @@ public class RecoverMonthsFacetGeneratorService {
         return out;
     }
 
-
     private Set<Integer> discoverMonths(String pathPrefixRegex) {
         Set<Integer> months = new TreeSet<>();
         final Pattern compiledPrefix = compilePrefix(pathPrefixRegex);
@@ -127,14 +134,31 @@ public class RecoverMonthsFacetGeneratorService {
 
                 List<String> nodes = split(path);
                 int n = nodes.size();
-                if (n >= 2) {
-                    String prev = nodes.get(n - 2);
-                    String last = nodes.get(n - 1);
-                    if (prev != null && last != null && prev.matches("(?i)^(inf|noninf)$") && INT_PATTERN.matcher(last).matches()) {
+                if (n == 0) return;
+
+                String last = nodes.get(n - 1);
+                String prev = n >= 2 ? nodes.get(n - 2) : null;
+
+                // Case 1: previous node = (Inf|Noninf) and last node = integer
+                if (prev != null && last != null
+                    && prev.matches("(?i)^(inf|noninf)$")
+                    && INT_PATTERN.matcher(last).matches()) {
+                    try {
+                        months.add(Integer.parseInt(last));
+                        return;
+                    } catch (NumberFormatException ignored) {
+                        // ignore non-numeric tails
+                    }
+                }
+
+                // Case 2: last node ends with _<inf|infected|noninf|noninfected>_<digits>
+                if (last != null) {
+                    java.util.regex.Matcher m = EMBEDDED_SUFFIX.matcher(last);
+                    if (m.find()) {
                         try {
-                            months.add(Integer.parseInt(last));
-                        } catch (NumberFormatException nfe) {
-                            // Ignore non-numeric tail nodes
+                            months.add(Integer.parseInt(m.group(1)));
+                        } catch (NumberFormatException ignored) {
+                            // ignore non numeric after inf/noninf
                         }
                     }
                 }
@@ -160,30 +184,44 @@ public class RecoverMonthsFacetGeneratorService {
     ) {
         if (months == null || months.isEmpty()) return null;
 
-        // Define parent expressions
+        // Parent scope expressions
         FacetExpressionDTO p0 = new FacetExpressionDTO();
         p0.exactly = studyId;
         p0.node = 0;
+
         FacetExpressionDTO p1 = new FacetExpressionDTO();
         p1.regex = adultNodeRegex;
         p1.node = 1;
 
-        // Build child month facets with combined expressions
+        // Build child month facets with OR groups
         List<FacetDTO> children = months.stream().map(m -> {
             String name = String.format("%02dm-post index", m);
 
-            FacetExpressionDTO e1 = new FacetExpressionDTO();
-            e1.regex = "(?i)^(inf|noninf)$";
-            e1.node = -2;
-            FacetExpressionDTO e2 = new FacetExpressionDTO();
-            e2.exactly = String.valueOf(m);
-            e2.node = -1;
+            // Group 1: node-based (...\ (inf|noninf) \ m \)
+            FacetExpressionDTO n1 = new FacetExpressionDTO();
+            n1.regex = "(?i)^(inf|noninf)$";
+            n1.node = -2;
+
+            FacetExpressionDTO n2 = new FacetExpressionDTO();
+            n2.exactly = String.valueOf(m);
+            n2.node = -1;
+
+            List<FacetExpressionDTO> group1 = List.of(p0, p1, n1, n2);
+
+            // Group 2: embedded in last node (..._<inf|infected|noninf|noninfected>_<m>$)
+            FacetExpressionDTO embedded = new FacetExpressionDTO();
+            embedded.regex = "(?i)_(?:non)?(?:inf|infected)_" + m + "$";
+            embedded.node = -1;
+
+            List<FacetExpressionDTO> group2 = List.of(p0, p1, embedded);
 
             FacetDTO child = new FacetDTO();
             child.name = name;
             child.display = name;
-            child.description = "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\" + m + "\\";
-            child.expressions = List.of(p0, p1, e1, e2);
+            child.description = "RECOVER Adult concepts where the month post index is " + m + " (node-based or embedded).";
+            child.expressionGroups = List.of(group1, group2); // OR between groups
+            // also persist legacy expressions for traceability (optional)
+            child.expressions = null;
             return child;
         }).collect(Collectors.toList());
 
@@ -192,7 +230,8 @@ public class RecoverMonthsFacetGeneratorService {
         parent.name = parentName;
         parent.display = parentDisplay;
         parent.description = parentDescription;
-        parent.expressions = List.of(p0, p1);
+        parent.expressions = List.of(p0, p1); // parent scope remains AND
+        parent.expressionGroups = null;
         parent.facets = children;
 
         // Category
@@ -229,8 +268,8 @@ public class RecoverMonthsFacetGeneratorService {
         public String parentFacetDisplay;     // default: "RECOVER Adult"
         public String parentFacetDescription; // default: description
 
-        public String studyId;                // default: "phs003436"
-        public String adultNodeRegex;         // default: "(?i)RECOVER_Adult(_v\\d+)?$"
+        public String studyId;                // default: "phs003463"
+        public String adultNodeRegex;         // default: "(?i)RECOVER_Adult$"
 
         public String pathPrefixRegex;        // optional: discovery filter only
         public Boolean clearCategoryFirst;    // optional: clear whole category

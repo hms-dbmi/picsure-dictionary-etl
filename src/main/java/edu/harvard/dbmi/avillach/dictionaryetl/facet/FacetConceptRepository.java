@@ -134,4 +134,16 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
     """, nativeQuery = true)
     int mapParentToUnionOfDirectChildren(@Param("parentId") Long parentId);
 
+    /**
+     * Convenience wrapper for bulk inserts used by FacetLoaderService.
+     * Accepts a List<Long> instead of an array.
+     */
+    @Transactional
+    default int bulkMap(Long facetId, List<Long> conceptNodeIds) {
+        if (conceptNodeIds == null || conceptNodeIds.isEmpty()) return 0;
+        Long[] arr = conceptNodeIds.toArray(new Long[0]);
+        return bulkMapFacetToConceptNodes(facetId, arr);
+    }
+
+
 }

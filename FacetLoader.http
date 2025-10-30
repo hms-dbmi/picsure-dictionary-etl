@@ -45,7 +45,9 @@ Timeout: 99999999
               "Display": "Non-infected",
               "Description": "Non-infected Facet Description",
               "Expressions": [
-                { "regex": "(?i)\\bnon[\\W_]*inf" }
+                {
+                  "regex": "(?i)(?:^|[\\W_])non[\\W_]*(?:infected|inf)(?:[\\W_]|$)"
+                }
               ]
             },
             {
@@ -113,9 +115,9 @@ Timeout: 99999999
 ]
 
 ### Generate RECOVER Adult months facets (on-demand, nested under parent)
+// @connection-timeout 5 m
 POST {{host}}/api/facet-loader/recover/months/generate
 Content-Type: application/json
-Timeout: 99999999
 
 {
   "categoryName": "Consortium_Curated_Facets",

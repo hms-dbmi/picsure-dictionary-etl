@@ -29,4 +29,19 @@ public interface FacetMetadataRepository extends JpaRepository<FacetMetadataMode
     void upsert(@Param("facetId") long facetId,
                 @Param("key") String key,
                 @Param("value") String value);
+
+    /**
+     * Find a metadata value for a specific facet and key.
+     * Used by FacetLoaderService to compare expression hashes.
+     */
+    @Query(value = """
+        SELECT value
+        FROM dict.facet_meta
+        WHERE facet_id = :facetId
+          AND key = :key
+        LIMIT 1;
+        """, nativeQuery = true)
+    Optional<String> findValue(@Param("facetId") Long facetId, @Param("key") String key);
+
+
 }
