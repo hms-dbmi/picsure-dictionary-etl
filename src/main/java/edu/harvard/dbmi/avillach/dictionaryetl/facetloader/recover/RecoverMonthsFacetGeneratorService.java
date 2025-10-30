@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ public class RecoverMonthsFacetGeneratorService {
 
     private static final Pattern INT_PATTERN = Pattern.compile("^\\d{1,3}$");
     private static final Pattern EMBEDDED_SUFFIX = Pattern.compile("_(?:non)?(?:inf|infected)_(\\d{1,3})$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MINUS_3_PATTERN = Pattern.compile("(?i)^minus(\\d{1,3})$");
 
     private final ConceptRepository conceptRepository;
     private final FacetLoaderService facetLoaderService;
@@ -80,6 +82,7 @@ public class RecoverMonthsFacetGeneratorService {
                 }
 
                 // Optional clear: entire category or just the parent subtree
+                // TODO: Remove optional clear.
                 if (Boolean.TRUE.equals(req.clearCategoryFirst)) {
                     FacetClearRequest clr = new FacetClearRequest();
                     clr.facetCategories = List.of(categoryName);
@@ -139,15 +142,22 @@ public class RecoverMonthsFacetGeneratorService {
                 String last = nodes.get(n - 1);
                 String prev = n >= 2 ? nodes.get(n - 2) : null;
 
-                // Case 1: previous node = (Inf|Noninf) and last node = integer
+                // Case 1 & 2: previous node = (Inf|Noninf) and last node = integer or last node = minus3
                 if (prev != null && last != null
-                    && prev.matches("(?i)^(inf|noninf)$")
-                    && INT_PATTERN.matcher(last).matches()) {
-                    try {
-                        months.add(Integer.parseInt(last));
+                    && prev.matches("(?i)^(inf|noninf)$")) {
+                    if(INT_PATTERN.matcher(last).matches()) {
+                        try {
+                            months.add(Integer.parseInt(last));
+                            return;
+                        } catch (NumberFormatException ignored) {
+                            // ignore non-numeric tails
+                        }
+                    }
+
+                    Matcher minusMatcher = MINUS_3_PATTERN.matcher(last);
+                    if (minusMatcher.matches()) {
+                        months.add(-Integer.parseInt(minusMatcher.group(1)));
                         return;
-                    } catch (NumberFormatException ignored) {
-                        // ignore non-numeric tails
                     }
                 }
 
@@ -194,32 +204,49 @@ public class RecoverMonthsFacetGeneratorService {
         p1.node = 1;
 
         // Build child month facets with OR groups
-        List<FacetDTO> children = months.stream().map(m -> {
-            String name = String.format("%02dm-post index", m);
+        List<FacetDTO> children = months.stream().map(month -> {
+            boolean isNegative = month < 0;
+            month = Math.abs(month);
+            String name = isNegative ? String.format("%02dm-pre index", month) : String.format("%02dm-post index", month);
 
             // Group 1: node-based (...\ (inf|noninf) \ m \)
             FacetExpressionDTO n1 = new FacetExpressionDTO();
             n1.regex = "(?i)^(inf|noninf)$";
             n1.node = -2;
 
-            FacetExpressionDTO n2 = new FacetExpressionDTO();
-            n2.exactly = String.valueOf(m);
-            n2.node = -1;
+            FacetExpressionDTO positiveMonth = new FacetExpressionDTO();
+            positiveMonth.exactly = String.valueOf(month);
+            positiveMonth.node = -1;
 
-            List<FacetExpressionDTO> group1 = List.of(p0, p1, n1, n2);
+            FacetExpressionDTO negativeMonth = new FacetExpressionDTO();
+            negativeMonth.node = -1;
+            negativeMonth.regex = "(?i)^minus" + month + "$";
 
-            // Group 2: embedded in last node (..._<inf|infected|noninf|noninfected>_<m>$)
+            // embedded in the last node (..._<inf|infected|noninf|noninfected>_<m>$)
             FacetExpressionDTO embedded = new FacetExpressionDTO();
-            embedded.regex = "(?i)_(?:non)?(?:inf|infected)_" + m + "$";
+            embedded.regex = "(?i)_(?:non)?(?:inf|infected)_" + month + "$";
             embedded.node = -1;
 
-            List<FacetExpressionDTO> group2 = List.of(p0, p1, embedded);
+            // _kit_id embedded in the last node (..._<m>_kit_id$)
+            FacetExpressionDTO embeddedPreKitId = new FacetExpressionDTO();
+            embeddedPreKitId.regex = "(?i)_" + month + "_kit_id$";
+            embeddedPreKitId.node = -1;
+
+            String childDescription = isNegative
+                    ? "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\minus" + month + "\\"
+                    : "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\" + month + "\\";
 
             FacetDTO child = new FacetDTO();
             child.name = name;
             child.display = name;
-            child.description = "RECOVER Adult concepts where the month post index is " + m + " (node-based or embedded).";
-            child.expressionGroups = List.of(group1, group2); // OR between groups
+            child.description = childDescription;
+            child.expressionGroups = List.of(
+                    List.of(p0, p1, n1, positiveMonth), // positive months as the last node after an infected or noninfected node
+                    List.of(p0, p1, n1, negativeMonth), // negative months as the last node after infected or noninfected node - negatives are presented as minus<integer>
+                    List.of(p0, p1, embedded), // embedded in the variable after infected or noninfected
+                    List.of(p0, p1, embeddedPreKitId) // embedded in the variable before _kit_id
+            ); // OR between groups
+
             // also persist legacy expressions for traceability (optional)
             child.expressions = null;
             return child;
