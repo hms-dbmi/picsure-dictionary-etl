@@ -144,7 +144,7 @@ public class RecoverMonthsFacetGeneratorService {
 
                 // Case 1 & 2: previous node = (Inf|Noninf) and last node = integer or last node = minus3
                 if (prev != null && last != null
-                    && prev.matches("(?i)^(inf|noninf)$")) {
+                    && prev.matches("(?i)^(inf|infected|noninf|noninfected)$")) {
                     if(INT_PATTERN.matcher(last).matches()) {
                         try {
                             months.add(Integer.parseInt(last));
@@ -211,7 +211,7 @@ public class RecoverMonthsFacetGeneratorService {
 
             // Group 1: node-based (...\ (inf|noninf) \ m \)
             FacetExpressionDTO n1 = new FacetExpressionDTO();
-            n1.regex = "(?i)^(inf|noninf)$";
+            n1.regex = "(?i)^(inf|infected|noninf|noninfected)$";
             n1.node = -2;
 
             FacetExpressionDTO positiveMonth = new FacetExpressionDTO();
@@ -224,12 +224,12 @@ public class RecoverMonthsFacetGeneratorService {
 
             // embedded in the last node (..._<inf|infected|noninf|noninfected>_<m>$)
             FacetExpressionDTO embedded = new FacetExpressionDTO();
-            embedded.regex = "(?i)_(?:non)?(?:inf|infected)_" + month + "$";
+            embedded.regex = "(?i).+_(?:non)?(?:inf|infected)_" + month + "$";
             embedded.node = -1;
 
             // _kit_id embedded in the last node (..._<m>_kit_id$)
             FacetExpressionDTO embeddedPreKitId = new FacetExpressionDTO();
-            embeddedPreKitId.regex = "(?i)_" + month + "_kit_id$";
+            embeddedPreKitId.regex = "(?i).+_" + month + "_kit_id$";
             embeddedPreKitId.node = -1;
 
             String childDescription = isNegative
