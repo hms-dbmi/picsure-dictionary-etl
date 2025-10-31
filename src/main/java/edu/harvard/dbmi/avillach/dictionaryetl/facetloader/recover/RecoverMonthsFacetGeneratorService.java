@@ -206,7 +206,6 @@ public class RecoverMonthsFacetGeneratorService {
         // Build child month facets with OR groups
         List<FacetDTO> children = months.stream().map(month -> {
             boolean isNegative = month < 0;
-            month = Math.abs(month);
             String name = isNegative ? String.format("%02dm-pre index", month) : String.format("%02dm-post index", month);
 
             // Group 1: node-based (...\ (inf|noninf) \ m \)
@@ -220,7 +219,7 @@ public class RecoverMonthsFacetGeneratorService {
 
             FacetExpressionDTO negativeMonth = new FacetExpressionDTO();
             negativeMonth.node = -1;
-            negativeMonth.regex = "(?i)^minus" + month + "$";
+            negativeMonth.regex = "(?i)^minus" + Math.abs(month) + "$";
 
             // embedded in the last node (..._<inf|infected|noninf|noninfected>_<m>$)
             FacetExpressionDTO embedded = new FacetExpressionDTO();

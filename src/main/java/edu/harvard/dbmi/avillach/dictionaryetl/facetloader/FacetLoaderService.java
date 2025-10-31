@@ -347,7 +347,7 @@ public class FacetLoaderService {
         facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facetId)); // ensure clean state before remap
 
         long inserted = 0;
-        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamNodeIdAndPath()) {
+        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
             List<Long> batch = new ArrayList<>(1024);
             for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
                 ConceptPathRow row = it.next();
@@ -375,7 +375,7 @@ public class FacetLoaderService {
         facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facetId)); // ensure clean state before remap
 
         long inserted = 0;
-        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamNodeIdAndPath()) {
+        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
             List<Long> batch = new ArrayList<>(1024);
             for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
                 ConceptPathRow row = it.next();

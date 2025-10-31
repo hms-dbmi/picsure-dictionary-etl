@@ -36,4 +36,23 @@ public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
     @Transactional(readOnly = true)
     Stream<ConceptPathRow> streamNodeIdAndPath();
 
+    // Streams only end (leaf) concept nodes — those with no children.
+    @Query(value = """
+    SELECT cn.concept_node_id AS conceptNodeId, cn.concept_path AS conceptPath
+    FROM dict.concept_node cn
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM dict.concept_node child
+        WHERE child.parent_id = cn.concept_node_id
+    )
+    """, nativeQuery = true)
+    @QueryHints({
+            @QueryHint(name = "hibernate.jdbc.fetch_size", value = "1000"),
+            @QueryHint(name = "hibernate.query.readOnly", value = "true"),
+            @QueryHint(name = "hibernate.query.cacheable", value = "false")
+    })
+    @Transactional(readOnly = true)
+    Stream<ConceptPathRow> streamLeafNodeIdAndPath();
+
+
 }
