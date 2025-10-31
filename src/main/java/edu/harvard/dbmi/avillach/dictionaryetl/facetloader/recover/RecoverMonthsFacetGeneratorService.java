@@ -206,48 +206,48 @@ public class RecoverMonthsFacetGeneratorService {
         // Build child month facets with OR groups
         List<FacetDTO> children = months.stream().map(month -> {
             boolean isNegative = month < 0;
-            String name = isNegative ? String.format("%02dm-pre index", month) : String.format("%02dm-post index", month);
+            String name = String.format("%02dm-post index", month);
 
             // Group 1: node-based (...\ (inf|noninf) \ m \)
             FacetExpressionDTO n1 = new FacetExpressionDTO();
             n1.regex = "(?i)^(inf|infected|noninf|noninfected)$";
             n1.node = -2;
 
-            FacetExpressionDTO positiveMonth = new FacetExpressionDTO();
-            positiveMonth.exactly = String.valueOf(month);
-            positiveMonth.node = -1;
-
-            FacetExpressionDTO negativeMonth = new FacetExpressionDTO();
-            negativeMonth.node = -1;
-            negativeMonth.regex = "(?i)^minus" + Math.abs(month) + "$";
-
-            // embedded in the last node (..._<inf|infected|noninf|noninfected>_<m>$)
-            FacetExpressionDTO embedded = new FacetExpressionDTO();
-            embedded.regex = "(?i).+_(?:non)?(?:inf|infected)_" + month + "$";
-            embedded.node = -1;
-
-            // _kit_id embedded in the last node (..._<m>_kit_id$)
-            FacetExpressionDTO embeddedPreKitId = new FacetExpressionDTO();
-            embeddedPreKitId.regex = "(?i).+_" + month + "_kit_id$";
-            embeddedPreKitId.node = -1;
-
             String childDescription = isNegative
-                    ? "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\minus" + month + "\\"
+                    ? "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\minus" + Math.abs(month) + "\\"
                     : "RECOVER Adult concepts where the last two nodes are (Inf|Noninf)\\" + month + "\\";
 
             FacetDTO child = new FacetDTO();
             child.name = name;
             child.display = name;
             child.description = childDescription;
-            child.expressionGroups = List.of(
-                    List.of(p0, p1, n1, positiveMonth), // positive months as the last node after an infected or noninfected node
-                    List.of(p0, p1, n1, negativeMonth), // negative months as the last node after infected or noninfected node - negatives are presented as minus<integer>
-                    List.of(p0, p1, embedded), // embedded in the variable after infected or noninfected
-                    List.of(p0, p1, embeddedPreKitId) // embedded in the variable before _kit_id
-            ); // OR between groups
 
-            // also persist legacy expressions for traceability (optional)
-            child.expressions = null;
+            List<List<FacetExpressionDTO>> childExpressions = new ArrayList<>();
+            FacetExpressionDTO numericComparison = new FacetExpressionDTO();
+            if (isNegative) {
+                numericComparison.node = -1;
+                numericComparison.regex = "(?i)^minus" + Math.abs(month) + "$";
+                childExpressions.add(List.of(p0, p1, n1, numericComparison));
+            } else {
+                numericComparison.exactly = String.valueOf(month);
+                numericComparison.node = -1;
+
+                // embedded in the last node (..._<inf|infected|noninf|noninfected>_<m>$)
+                FacetExpressionDTO embedded = new FacetExpressionDTO();
+                embedded.regex = "(?i).+_(?:non)?(?:inf|infected)_" + month + "$";
+                embedded.node = -1;
+
+                // _kit_id embedded in the last node (..._<m>_kit_id$)
+                FacetExpressionDTO embeddedPreKitId = new FacetExpressionDTO();
+                embeddedPreKitId.regex = "(?i).+_" + month + "_kit_id$";
+                embeddedPreKitId.node = -1;
+
+                childExpressions.add(List.of(p0, p1, n1, numericComparison)); // direct numeric comparison
+                childExpressions.add(List.of(p0, p1, embedded)); // embedded in the variable after infected or noninfected
+                childExpressions.add(List.of(p0, p1, embeddedPreKitId)); // embedded in the variable before _kit_id
+            }
+
+            child.expressionGroups = childExpressions;
             return child;
         }).collect(Collectors.toList());
 
