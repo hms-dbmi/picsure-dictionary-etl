@@ -3,8 +3,10 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 import java.util.*;
 
 
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,12 @@ public class FacetController {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    private FacetLoaderService facetLoaderService;
+
+    @Autowired
+    private RecoverMonthsFacetGeneratorService generator;
 
     @GetMapping("/facet")
     public ResponseEntity<List<FacetModel>> getAllFacetModels() {
@@ -447,4 +455,23 @@ public class FacetController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    @PostMapping("/facet/load")
+    public ResponseEntity<Result> load(@RequestBody List<FacetCategoryWrapper> payload) {
+        Result result = facetLoaderService.load(payload);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PostMapping("/facet/clear")
+    public ResponseEntity<ClearResult> clear(@RequestBody FacetClearRequest request) {
+        ClearResult result = facetLoaderService.clear(request);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @PostMapping("/facet/recover/months/generate")
+    public ResponseEntity<GenerateRecoverMonthsResponse> generate(@RequestBody GenerateRecoverMonthsRequest request) {
+        GenerateRecoverMonthsResponse resp = generator.generate(request);
+        return new ResponseEntity<>(resp, HttpStatus.OK);
+    }
+
 }

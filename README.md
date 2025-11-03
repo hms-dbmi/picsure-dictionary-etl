@@ -188,10 +188,10 @@ Idempotency and updates:
 - Facet-to-concept mappings avoid duplicates using ON CONFLICT semantics in the repository/service layer.
 
 Tests you can run (Docker required for Testcontainers):
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderControllerTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderServiceTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetLoaderMappingIntegrationTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facetloader.FacetExpressionEvaluatorTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderControllerTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderServiceTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderMappingIntegrationTest test
+- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetExpressionEvaluatorTest test
 Or run all tests:
 - mvn test
 
