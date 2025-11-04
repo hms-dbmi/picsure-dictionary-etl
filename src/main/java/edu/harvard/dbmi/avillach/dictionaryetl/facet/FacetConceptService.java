@@ -5,6 +5,7 @@ import com.opencsv.CSVReaderBuilder;
 import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import jakarta.persistence.EntityManager;
@@ -33,6 +34,9 @@ public class FacetConceptService {
 
     @Autowired
     FacetRepository facetRepository;
+
+    @Autowired
+    ConceptRepository conceptRepository;
 
     @Autowired
     public FacetConceptService(FacetConceptRepository facetConceptRepository) {
@@ -86,6 +90,45 @@ public class FacetConceptService {
         return new ResponseEntity<>("Successfully updated " + updateCount + "facet/concept mappings\n", HttpStatus.OK);
     }
 
+    public List<FacetConceptModel> findAll() {
+        return facetConceptRepository.findAll();
+    }
+
+    @Transactional
+    public ResponseEntity<FacetConceptModel> addConceptFacet(String facetName, String conceptPath) {
+        try {
+            Optional<FacetModel> facet = facetRepository.findByName(facetName);
+            var concept = conceptRepository.findByConceptPath(conceptPath);
+            if (facet.isEmpty() || concept.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            Long facetId = facet.get().getFacetId();
+            Long conceptNodeId = concept.get().getConceptNodeId();
+
+            Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId, conceptNodeId);
+            if (conceptFacet.isEmpty()) {
+                FacetConceptModel newConceptFacet = facetConceptRepository.save(new FacetConceptModel(facetId, conceptNodeId));
+                // If parent facet exists, ensure parent also maps to concept
+                if (facet.get().getParentId() != null) {
+                    Optional<FacetModel> parentFacet = Optional.ofNullable(facetRepository.findByFacetId(facet.get().getParentId()));
+                    if (parentFacet.isPresent()) {
+                        Long parentFacetId = parentFacet.get().getFacetId();
+                        Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, conceptNodeId);
+                        if (parentConceptFacet.isEmpty()) {
+                            facetConceptRepository.save(new FacetConceptModel(parentFacetId, conceptNodeId));
+                        }
+                    }
+                }
+                return new ResponseEntity<>(newConceptFacet, HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>(conceptFacet.get(), HttpStatus.CREATED);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public int addColumnToFacet(FacetModel facet, List<String> conceptPaths) {
         int updateCount = 0;
         Long facetId = facet.getFacetId();
@@ -114,4 +157,34 @@ public class FacetConceptService {
         return insertQuery;
     }
 
+    public ResponseEntity<List<FacetConceptModel>> listAllResponse() {
+        try {
+            List<FacetConceptModel> all = new ArrayList<>(facetConceptRepository.findAll());
+            if (all.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(all, HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<FacetConceptModel> deleteConceptFacet(String facetName, String conceptPath) {
+        Optional<FacetModel> facet = facetRepository.findByName(facetName);
+        var concept = conceptRepository.findByConceptPath(conceptPath);
+        if (facet.isEmpty() || concept.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Long facetId = facet.get().getFacetId();
+        Long conceptNodeId = concept.get().getConceptNodeId();
+        Optional<FacetConceptModel> mapping = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId, conceptNodeId);
+        if (mapping.isPresent()) {
+            facetConceptRepository.delete(mapping.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

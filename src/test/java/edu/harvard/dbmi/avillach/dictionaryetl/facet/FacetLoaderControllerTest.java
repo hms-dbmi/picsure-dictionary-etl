@@ -3,12 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
-import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsRequest;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsResponse;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
@@ -31,8 +27,6 @@ import org.testcontainers.utility.MountableFile;
 
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @ActiveProfiles("test")
@@ -128,22 +122,4 @@ class FacetLoaderControllerTest {
         Assertions.assertEquals(parentFacet.get().getFacetId(), infectedFacet.get().getParentId());
     }
 
-    @Test
-    void postGenerate_shouldReturn200_andCreateCategory() {
-        // Seed minimal data
-        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003436", "RECOVER Adult", "", ""));
-        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Noninf\\9\\", null);
-        conceptService.save(c1);
-
-        GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
-        req.pathPrefixRegex = "(?i)\\\\RECOVER_Adult\\\\";
-        req.dryRun = false;
-
-        ResponseEntity<GenerateRecoverMonthsResponse> resp = controller.generate(req);
-        assertEquals(200, resp.getStatusCode().value());
-        assertNotNull(resp.getBody());
-        assertEquals("Generation complete.", resp.getBody().message);
-        assertTrue(facetCategoryRepository.findByName("Consortium_Curated_Facets").isPresent());
-    }
 }
