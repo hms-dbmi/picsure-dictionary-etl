@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Request wrapper used by the /api/facet-loader/load endpoint.
+ * Request wrapper used by the /api/facet/loader/load endpoint.
  * Accepts either "Facet_Category" (preferred) or "facetCategory".
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
