@@ -150,19 +150,62 @@ Example payload fragment using expressions:
   }
 }
 
+Example payload fragment using OR expression groups (OR-of-ANDs):
+{
+  "Facet_Category": {
+    "Name": "Consortium_Curated_Facets",
+    "Facets": [
+      {
+        "Name": "Recover Adult Infected or PASC",
+        "Expressions": [
+          { "exactly": "Recover_Adult", "node": 1 }
+        ],
+        "Expression_Groups": [
+          [
+            { "regex": "(?i)\\binf(ected)?\\b", "node": -3 }
+          ],
+          [
+            { "contains": "pasc", "node": -1 }
+          ]
+        ]
+      },
+      {
+        "Name": "Same using camelCase alias",
+        "expressions": [
+          { "exactly": "Recover_Adult", "node": 1 }
+        ],
+        "expressionGroups": [
+          [ { "regex": "(?i)\\binf(ected)?\\b", "node": -3 } ],
+          [ { "contains": "pasc", "node": -1 } ]
+        ]
+      }
+    ]
+  }
+}
+
 Expression evaluation rules:
 - Supported keys per expression entry: exactly, contains, regex (use one or more).
-- node is optional:
+- Two ways to define rules:
+  - Expressions (legacy): a flat array of entries combined with AND.
+  - Expression_Groups (new): an array of groups; OR across groups, AND within each group.
+- node is optional for any entry:
   - If node is provided, we evaluate only that node (zero-based; negatives allowed, e.g., -1 is last node).
   - If node is omitted, the expression scans all nodes in the concept_path and evaluates true if any node matches.
-- Semantics: all expression entries are ANDed. Within a single entry, all provided keys must match the node value.
+- Evaluation semantics:
+  - If Expression_Groups is present and non-empty: the facet matches a concept if ANY group matches; each group requires ALL of its entries to match (OR-of-ANDs).
+  - Else if only Expressions are present: ALL entries must match (AND).
+  - Within a single entry, all provided keys (exactly/contains/regex) must match the same node value.
 - Regex uses Java syntax; inline flags like (?i) are supported. Exactly/contains are literal string matches.
 - Out-of-bounds node indices or invalid regex cause that entry to evaluate to false.
-- If a facet contains no expressions, it is not automatically mapped to any concept nodes (still created in the hierarchy).
+- Inheritance to children:
+  - Child facets inherit their parents' flat Expressions and are ANDed with them.
+  - When a child defines Expression_Groups, each group is implicitly ANDed with the inherited flat Expressions.
+- If a facet contains no expressions or groups, it is not automatically mapped to any concept nodes (it is still created in the hierarchy).
 
 Alias handling in payload:
-- Facet name must be provided as Name.
-- Expressions can be provided as Expressions or Expression.
+- Facet name must be provided as Name (camelCase name is accepted as input alias).
+- Flat rules: Expressions can be provided as Expressions or expressions (aliases). Each entry uses keys exactly, contains, regex, and optional node.
+- OR groups: Expression_Groups is preferred; expressionGroups and ExpressionGroups are also accepted as aliases.
 - Node index must be provided as node.
 
 Pre-requisites for mapping:
@@ -173,7 +216,7 @@ cURL example:
   curl -X POST \
        -H "Content-Type: application/json" \
        --data-binary @payload.json \
-       http://localhost:8080/api/facet-loader/load
+       http://localhost:8080/api/facet/loader/load
 
 Sample response:
 {
@@ -236,7 +279,7 @@ cURL example (clear by category):
        --data-binary '{
          "facetCategories": ["Consortium_Curated_Facets"]
        }' \
-       http://localhost:8080/api/facet-loader/clear
+       http://localhost:8080/api/facet/loader/clear
 
 cURL example (clear by facet names):
 
@@ -245,7 +288,7 @@ cURL example (clear by facet names):
        --data-binary '{
          "facets": ["Recover Adult", "Infected"]
        }' \
-       http://localhost:8080/api/facet-loader/clear
+       http://localhost:8080/api/facet/loader/clear
 
 ## Testing requests with FacetLoader.http
 
