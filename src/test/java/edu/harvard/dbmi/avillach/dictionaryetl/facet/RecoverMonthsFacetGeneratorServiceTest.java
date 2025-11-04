@@ -5,6 +5,10 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsRequest;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsResponse;
@@ -21,6 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,6 +66,8 @@ class RecoverMonthsFacetGeneratorServiceTest {
             MountableFile.forClasspathResource("schema.sql"),
             "/docker-entrypoint-initdb.d/schema.sql"
         );
+    @Autowired
+    private FacetMetadataRepository facetMetadataRepository;
 
     @DynamicPropertySource
     static void mySQLProperties(DynamicPropertyRegistry registry) {
@@ -79,6 +86,9 @@ class RecoverMonthsFacetGeneratorServiceTest {
         // Seed dataset and concept nodes with paths containing (Inf|Noninf) followed by months
         DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003436", "RECOVER Adult", "", ""));
         DatasetModel dsOther = datasetRepository.save(new DatasetModel("phs000000", "OTHER", "", ""));
+        FacetCategoryModel consortiumFacetCat = facetCategoryRepository.save(new FacetCategoryModel("Consortium_Curated_Facets", "Consortium_Curated_Facets", null));
+        FacetModel facetRecoverAdult = facetRepository.save(new FacetModel(consortiumFacetCat.getFacetCategoryId(), "RECOVER Adult Curated", "RECOVER Adult Curated", "RECOVER Adult Curated Description", null));
+        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS, "[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]"));
 
         // Matching RECOVER adult concepts
         ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
@@ -99,7 +109,9 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
         // 1) Dry run to discover months
         GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
-        req.pathPrefixRegex = "(?i)\\\\RECOVER_Adult\\\\"; // scope to RECOVER Adult
+        req.pathPrefixRegex = "(?i)\\\\phs003436\\\\"; // scope to RECOVER Adult
+        req.adultNodeRegex = "(?i)RECOVER_Adult$";
+        req.studyId = "phs003436";
         req.dryRun = true;
 
         GenerateRecoverMonthsResponse dry = generatorService.generate(req);
@@ -111,6 +123,7 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
         // 2) Actual generation (clear none), then verify facets and mappings
         req.dryRun = false;
+        req.studyId = "phs003436";
         GenerateRecoverMonthsResponse out = generatorService.generate(req);
         assertNotNull(out.load);
         assertEquals("Generation complete.", out.message);
@@ -120,8 +133,8 @@ class RecoverMonthsFacetGeneratorServiceTest {
         assertTrue(facetRepository.findByName("12m-post index").isPresent());
 
         // Verify mappings for 09m and 12m facets
-        Long nineFacetId = facetRepository.findByName("09m-post index").map(f -> f.getFacetId()).orElseThrow();
-        Long twelveFacetId = facetRepository.findByName("12m-post index").map(f -> f.getFacetId()).orElseThrow();
+        Long nineFacetId = facetRepository.findByName("09m-post index").map(FacetModel::getFacetId).orElseThrow();
+        Long twelveFacetId = facetRepository.findByName("12m-post index").map(FacetModel::getFacetId).orElseThrow();
 
         Optional<ConceptModel> c1Opt = conceptService.findByConcept(c1.getConceptPath());
         Optional<ConceptModel> c2Opt = conceptService.findByConcept(c2.getConceptPath());
@@ -129,6 +142,9 @@ class RecoverMonthsFacetGeneratorServiceTest {
         assertTrue(c1Opt.isPresent());
         assertTrue(c2Opt.isPresent());
         assertTrue(c3Opt.isPresent());
+
+        List<FacetConceptModel> all = facetConceptRepository.findAll();
+        assertFalse(all.isEmpty());
 
         // 09m facet should map c1 and c3
         assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(nineFacetId, c1Opt.get().getConceptNodeId()).isPresent());

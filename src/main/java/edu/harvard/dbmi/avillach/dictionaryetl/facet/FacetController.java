@@ -456,19 +456,19 @@ public class FacetController {
         }
     }
 
-    @PostMapping("/facet/load")
+    @PostMapping("/facet/loader/load")
     public ResponseEntity<Result> load(@RequestBody List<FacetCategoryWrapper> payload) {
         Result result = facetLoaderService.load(payload);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PostMapping("/facet/clear")
+    @PostMapping("/facet/loader/clear")
     public ResponseEntity<ClearResult> clear(@RequestBody FacetClearRequest request) {
         ClearResult result = facetLoaderService.clear(request);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @PostMapping("/facet/recover/months/generate")
+    @PostMapping("/facet/loader/recover/months/generate")
     public ResponseEntity<GenerateRecoverMonthsResponse> generate(@RequestBody GenerateRecoverMonthsRequest request) {
         GenerateRecoverMonthsResponse resp = generator.generate(request);
         return new ResponseEntity<>(resp, HttpStatus.OK);

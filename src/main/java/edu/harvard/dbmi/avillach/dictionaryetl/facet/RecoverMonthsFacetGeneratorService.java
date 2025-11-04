@@ -66,7 +66,7 @@ public class RecoverMonthsFacetGeneratorService {
                 String adultNodeRegex = defaultStr(req.adultNodeRegex, "(?i)RECOVER_Adult$");
 
                 // Discover months present in the repository (optionally scoped for discovery only)
-                Set<Integer> months = discoverMonths(req.pathPrefixRegex);
+                Set<Integer> months = discoverMonths(req.studyId, req.pathPrefixRegex);
 
                 out.categoryName = categoryName;
                 out.parentFacetName = parentName;
@@ -112,11 +112,11 @@ public class RecoverMonthsFacetGeneratorService {
         return out;
     }
 
-    private Set<Integer> discoverMonths(String pathPrefixRegex) {
+    private Set<Integer> discoverMonths(String studyId, String pathPrefixRegex) {
         Set<Integer> months = new TreeSet<>();
         final Pattern compiledPrefix = compilePrefix(pathPrefixRegex);
 
-        try (Stream<ConceptPathRow> rows = conceptRepository.streamNodeIdAndPath()) {
+        try (Stream<ConceptPathRow> rows = conceptRepository.streamDatasetNodeIdAndPath(studyId)) {
             rows.forEach(row -> {
                 String path = row.getConceptPath();
                 if (compiledPrefix != null && (path == null || !compiledPrefix.matcher(path).find())) return;

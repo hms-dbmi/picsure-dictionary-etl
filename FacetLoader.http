@@ -3,7 +3,7 @@
 @host = http://localhost:8090
 
 ### Clear all Consortium_Curated_Facets
-POST {{host}}/api/facet-loader/clear
+POST {{host}}/api/facet/loader/clear
 Content-Type: application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/json
 }
 
 ### Load Recover facets
-POST {{host}}/api/facet-loader/load
+POST {{host}}/api/facet/loader/load
 Content-Type: application/json
 Timeout: 99999999
 
@@ -116,7 +116,7 @@ Timeout: 99999999
 
 ### Generate RECOVER Adult months facets (on-demand, nested under parent)
 // @connection-timeout 5 m
-POST {{host}}/api/facet-loader/recover/months/generate
+POST {{host}}/api/facet/loader/recover/months/generate
 Content-Type: application/json
 
 {
