@@ -24,38 +24,36 @@ import jakarta.transaction.Transactional;
 @RestController
 @RequestMapping("/api")
 public class FacetController {
-    @Autowired
-    FacetRepository facetRepository;
+
+    private final FacetRepository facetRepository;
+    private final FacetConceptRepository facetConceptRepository;
+    private final FacetConceptService facetConceptService;
+    private final FacetCategoryRepository facetCategoryRepository;
+    private final FacetService facetService;
+    private final FacetMetadataRepository facetMetadataRepository;
+    private final ConceptRepository conceptRepository;
+    private final DatasetRepository datasetRepository;
+    private final EntityManager entityManager;
+    private final FacetLoaderService facetLoaderService;
+    private final RecoverMonthsFacetGeneratorService generator;
 
     @Autowired
-    FacetConceptRepository facetConceptRepository;
-
-    @Autowired
-    FacetConceptService facetConceptService;
-
-    @Autowired
-    FacetCategoryRepository facetCategoryRepository;
-
-    @Autowired
-    FacetService facetService;
-
-    @Autowired
-    FacetMetadataRepository facetMetadataRepository;
-
-    @Autowired
-    ConceptRepository conceptRepository;
-
-    @Autowired
-    DatasetRepository datasetRepository;
-
-    @Autowired
-    EntityManager entityManager;
-
-    @Autowired
-    private FacetLoaderService facetLoaderService;
-
-    @Autowired
-    private RecoverMonthsFacetGeneratorService generator;
+    public FacetController(FacetRepository facetRepository, FacetConceptRepository facetConceptRepository, FacetConceptService facetConceptService,
+                           FacetCategoryRepository facetCategoryRepository, FacetService facetService, FacetMetadataRepository facetMetadataRepository,
+                           ConceptRepository conceptRepository, DatasetRepository datasetRepository, EntityManager entityManager, FacetLoaderService facetLoaderService,
+                           RecoverMonthsFacetGeneratorService generator) {
+        this.facetRepository = facetRepository;
+        this.facetConceptRepository = facetConceptRepository;
+        this.facetConceptService = facetConceptService;
+        this.facetCategoryRepository = facetCategoryRepository;
+        this.facetService = facetService;
+        this.facetMetadataRepository = facetMetadataRepository;
+        this.conceptRepository = conceptRepository;
+        this.datasetRepository = datasetRepository;
+        this.entityManager = entityManager;
+        this.facetLoaderService = facetLoaderService;
+        this.generator = generator;
+    }
 
     @GetMapping("/facet")
     public ResponseEntity<List<FacetModel>> getAllFacetModels() {
