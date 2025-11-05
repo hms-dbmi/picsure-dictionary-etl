@@ -65,15 +65,6 @@ public class FacetService {
         this.datasetFacetRefreshService = datasetFacetRefreshService;
     }
 
-    // Secondary constructor for unit tests that only mock a subset of dependencies
-    public FacetService(FacetRepository facetRepository,
-                        FacetCategoryService facetCategoryService,
-                        FacetConceptService facetConceptService,
-                        FacetMetadataRepository facetMetadataRepository) {
-        this(facetRepository, facetCategoryService, facetConceptService, facetMetadataRepository,
-                null, null, null, null);
-    }
-
     public FacetModel save(FacetModel facetModel) {
         return this.facetRepository.save(facetModel);
     }
