@@ -17,13 +17,19 @@ import java.util.stream.Stream;
 
 /**
  * Generates month facets under "RECOVER Adult Curated".
- * Supports both structures:
- *   1) ...\ (Inf|Noninf) \ <month>
- *   2) ..._<inf|infected|noninf|noninfected>_<month>  (at end of last node)
+ * Supported source structures in concept paths:
+ *   1) Node-based final two nodes: ...\ (Inf|Infected|Noninf|Noninfected) \ <m>
+ *      - Pre-index months are expressed as "minus<m>" in the last node (e.g., minus3).
+ *   2) Embedded in the last node: ..._<inf|infected|noninf|noninfected>_<m>
+ *   3) Embedded before kit id:    ..._<m>_kit_id
  *
- * Each child facet uses OR groups:
- *   Group 1 (node-based):    scope + { -2: "(?i)^(inf|noninf)$", -1: exactly "<m>" }
- *   Group 2 (embedded last): scope + { -1: "(?i)_(?:non)?(?:inf|infected)_<m>$" }
+ * Expression groups (OR) created for each month facet:
+ *   For m > 0:
+ *     - Group A (node-based):    scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: exactly "<m>" }
+ *     - Group B (embedded last): scope + { -1: "(?i).+_(?:non)?(?:inf|infected)_<m>$" }
+ *     - Group C (pre-kit_id):    scope + { -1: "(?i).+_<m>_kit_id$" }
+ *   For m < 0:
+ *     - Group A- (node-based):   scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: "(?i)^minus<abs(m)>$" }
  */
 @Service
 public class RecoverMonthsFacetGeneratorService {
@@ -121,7 +127,7 @@ public class RecoverMonthsFacetGeneratorService {
                 String path = row.getConceptPath();
                 if (compiledPrefix != null && (path == null || !compiledPrefix.matcher(path).find())) return;
 
-                List<String> nodes = split(path);
+                List<String> nodes = FacetExpressionEvaluator.splitConceptPath(path);
                 int n = nodes.size();
                 if (n == 0) return;
 
@@ -256,14 +262,6 @@ public class RecoverMonthsFacetGeneratorService {
         FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
         wrapper.facetCategory = cat;
         return wrapper;
-    }
-
-    private static List<String> split(String conceptPath) {
-        List<String> out = new ArrayList<>();
-        if (conceptPath == null) return out;
-        String[] parts = conceptPath.split("\\\\"); // split on backslash
-        for (String p : parts) if (p != null && !p.isEmpty()) out.add(p);
-        return out;
     }
 
     private static String defaultStr(String val, String def) {
