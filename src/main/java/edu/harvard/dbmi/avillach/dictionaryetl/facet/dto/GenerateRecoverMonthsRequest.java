@@ -5,5 +5,5 @@ public class GenerateRecoverMonthsRequest {
     public String studyId;
     public String adultNodeRegex;
     public String pathPrefixRegex;
-    public Boolean dryRun;
+    public boolean dryRun;
 }
