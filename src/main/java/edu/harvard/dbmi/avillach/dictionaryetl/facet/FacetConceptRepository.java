@@ -38,17 +38,6 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
             INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
             SELECT :facetID, cn.concept_node_id
             FROM dict.concept_node cn
-            WHERE cn.dataset_id = :datasetId
-            ON CONFLICT DO NOTHING;
-            """, nativeQuery = true)
-    void mapConceptDatasetIdToFacet(@Param("facetID") Long facetID, @Param("datasetId") Long datasetId);
-
-    @Modifying
-    @Transactional
-    @Query(value = """
-            INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
-            SELECT :facetID, cn.concept_node_id
-            FROM dict.concept_node cn
             WHERE cn.display = :display
             ON CONFLICT DO NOTHING;
             """, nativeQuery = true)
@@ -61,7 +50,7 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
                 SELECT facet_id FROM dict.facet WHERE facet.facet_category_id = :facetCategoryId
             );
             """, nativeQuery = true)
-    void deleteAllForCategory(@Param("facetCategoryId") Long facetCategoryId);
+    int deleteAllForCategory(@Param("facetCategoryId") Long facetCategoryId);
 
     @Modifying
     @Transactional
@@ -69,13 +58,6 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
             DELETE FROM dict.facet__concept_node WHERE facet_id IN (:facetIds)
             """, nativeQuery = true)
     int deleteAllForFacetIds(@Param("facetIds") List<Long> facetIds);
-
-    @Query(value = """
-            SELECT COUNT(*) FROM dict.facet__concept_node WHERE facet_id IN (
-                SELECT facet_id FROM dict.facet WHERE facet_category_id = :facetCategoryId
-            )
-            """, nativeQuery = true)
-    long countAllForCategory(@Param("facetCategoryId") Long facetCategoryId);
 
     @Query(value = """
             SELECT COUNT(*) FROM dict.facet__concept_node WHERE facet_id IN (:facetIds)
@@ -134,6 +116,5 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
         Long[] arr = conceptNodeIds.toArray(new Long[0]);
         return bulkMapFacetToConceptNodes(facetId, arr);
     }
-
 
 }
