@@ -6,6 +6,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,31 +19,36 @@ import java.util.stream.Stream;
 /**
  * Generates month facets under "RECOVER Adult Curated".
  * Supported source structures in concept paths:
- *   1) Node-based final two nodes: ...\ (Inf|Infected|Noninf|Noninfected) \ <m>
- *      - Pre-index months are expressed as "minus<m>" in the last node (e.g., minus3).
- *   2) Embedded in the last node: ..._<inf|infected|noninf|noninfected>_<m>
- *   3) Embedded before kit id:    ..._<m>_kit_id
- *
+ * 1) Node-based final two nodes: ...\ (Inf|Infected|Noninf|Noninfected) \ <m>
+ * - Pre-index months are expressed as "minus<m>" in the last node (e.g., minus3).
+ * 2) Embedded in the last node: ..._<inf|infected|noninf|noninfected>_<m>
+ * 3) Embedded before kit id:    ..._<m>_kit_id
+ * <p>
  * Expression groups (OR) created for each month facet:
- *   For m > 0:
- *     - Group A (node-based):    scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: exactly "<m>" }
- *     - Group B (embedded last): scope + { -1: "(?i).+_(?:non)?(?:inf|infected)_<m>$" }
- *     - Group C (pre-kit_id):    scope + { -1: "(?i).+_<m>_kit_id$" }
- *   For m < 0:
- *     - Group A- (node-based):   scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: "(?i)^minus<abs(m)>$" }
+ * For m > 0:
+ * - Group A (node-based):    scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: exactly "<m>" }
+ * - Group B (embedded last): scope + { -1: "(?i).+_(?:non)?(?:inf|infected)_<m>$" }
+ * - Group C (pre-kit_id):    scope + { -1: "(?i).+_<m>_kit_id$" }
+ * For m < 0:
+ * - Group A- (node-based):   scope + { -2: "(?i)^(inf|infected|noninf|noninfected)$", -1: "(?i)^minus<abs(m)>$" }
  */
 @Service
 public class RecoverMonthsFacetGeneratorService {
 
+    private static final String RECOVER_ADULT_STUDY_ID = "phs003463";
+    private static final String CONSORTIUM_CURATED_FACET_CATEGORY_NAME = "Consortium_Curated_Facets";
+    private static final String RECOVER_ADULT_CURATED_FACE_NAME = "RECOVER Adult Curated";
     private static final Pattern INT_PATTERN = Pattern.compile("^\\d{1,3}$");
     private static final Pattern EMBEDDED_SUFFIX = Pattern.compile("_(?:non)?(?:inf|infected)_(\\d{1,3})$", Pattern.CASE_INSENSITIVE);
     private static final Pattern MINUS_3_PATTERN = Pattern.compile("(?i)^minus(\\d{1,3})$");
+    private static final Pattern RECOVER_ADULT_PATTERN = Pattern.compile("(?i)RECOVER_Adult$");
 
     private final ConceptRepository conceptRepository;
     private final FacetLoaderService facetLoaderService;
     private final FacetCategoryService facetCategoryService;
     private final FacetService facetService;
 
+    @Autowired
     public RecoverMonthsFacetGeneratorService(ConceptRepository conceptRepository,
                                               FacetLoaderService facetLoaderService,
                                               FacetCategoryService facetCategoryService,
@@ -56,30 +62,24 @@ public class RecoverMonthsFacetGeneratorService {
     @Transactional
     public GenerateRecoverMonthsResponse generate(GenerateRecoverMonthsRequest req) {
         GenerateRecoverMonthsResponse out = new GenerateRecoverMonthsResponse();
-        Optional<FacetCategoryModel> consortiumCuratedFacets = facetCategoryService.findByName("Consortium_Curated_Facets");
-        Optional<FacetModel> recoverAdultOptional = facetService.findByName("RECOVER Adult Curated");
+        Optional<FacetCategoryModel> consortiumCuratedFacets = facetCategoryService.findByName(CONSORTIUM_CURATED_FACET_CATEGORY_NAME);
+        Optional<FacetModel> recoverAdultOptional = facetService.findByName(RECOVER_ADULT_CURATED_FACE_NAME);
         if (consortiumCuratedFacets.isPresent() && recoverAdultOptional.isPresent()) {
             Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey =
-                    facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS);
+                    facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS);
             if (facetMetadataByFacetIDAndKey.isPresent()) {
                 FacetCategoryModel facetCategoryModel = consortiumCuratedFacets.get();
                 FacetModel recoverAdultFacetModel = recoverAdultOptional.get();
                 String categoryName = facetCategoryModel.getName();
                 String parentName = recoverAdultFacetModel.getName();
-
-                // RECOVER Adult scoping expressions (copied into children)
-                String studyId = defaultStr(req.studyId, "phs003463");
-                String adultNodeRegex = defaultStr(req.adultNodeRegex, "(?i)RECOVER_Adult$");
-
-                // Discover months present in the repository (optionally scoped for discovery only)
-                Set<Integer> months = discoverMonths(req.studyId, req.pathPrefixRegex);
+                Set<Integer> months = discoverMonths();
 
                 out.categoryName = categoryName;
                 out.parentFacetName = parentName;
                 out.discoveredMonths = months.stream().map(Object::toString)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
 
-                if (Boolean.TRUE.equals(req.dryRun)) {
+                if (req.dryRun) {
                     out.message = months.isEmpty() ? "No months discovered; nothing to generate." :
                             "Dry run: would generate parent facet and month facets under it.";
                     return out;
@@ -88,7 +88,7 @@ public class RecoverMonthsFacetGeneratorService {
                 FacetCategoryWrapper wrapper = buildWrapper(
                         categoryName, facetCategoryModel.getDisplay(), facetCategoryModel.getDescription(),
                         parentName, recoverAdultFacetModel.getDisplay(), recoverAdultFacetModel.getDescription(),
-                        studyId, adultNodeRegex, months
+                        months
                 );
 
                 if (wrapper == null || wrapper.facetCategory == null || wrapper.facetCategory.facets == null || wrapper.facetCategory.facets.isEmpty()) {
@@ -118,81 +118,66 @@ public class RecoverMonthsFacetGeneratorService {
         return out;
     }
 
-    private Set<Integer> discoverMonths(String studyId, String pathPrefixRegex) {
+    private Set<Integer> discoverMonths() {
         Set<Integer> months = new TreeSet<>();
-        final Pattern compiledPrefix = compilePrefix(pathPrefixRegex);
+        Stream<ConceptPathRow> rows = conceptRepository.streamDatasetNodeIdAndPath(RECOVER_ADULT_STUDY_ID);
+        rows.forEach(row -> {
+            String path = row.getConceptPath();
+            if (RECOVER_ADULT_PATTERN.matcher(path).find()) {
+                return;
+            }
 
-        try (Stream<ConceptPathRow> rows = conceptRepository.streamDatasetNodeIdAndPath(studyId)) {
-            rows.forEach(row -> {
-                String path = row.getConceptPath();
-                if (compiledPrefix != null && (path == null || !compiledPrefix.matcher(path).find())) return;
+            List<String> nodes = FacetExpressionEvaluator.splitConceptPath(path);
+            int n = nodes.size();
+            String last = nodes.get(n - 1);
+            String prev = n >= 2 ? nodes.get(n - 2) : null;
 
-                List<String> nodes = FacetExpressionEvaluator.splitConceptPath(path);
-                int n = nodes.size();
-                if (n == 0) return;
-
-                String last = nodes.get(n - 1);
-                String prev = n >= 2 ? nodes.get(n - 2) : null;
-
-                // Case 1 & 2: previous node = (Inf|Noninf) and last node = integer or last node = minus3
-                if (prev != null && last != null
-                    && prev.matches("(?i)^(inf|infected|noninf|noninfected)$")) {
-                    if(INT_PATTERN.matcher(last).matches()) {
-                        try {
-                            months.add(Integer.parseInt(last));
-                            return;
-                        } catch (NumberFormatException ignored) {
-                            // ignore non-numeric tails
-                        }
-                    }
-
-                    Matcher minusMatcher = MINUS_3_PATTERN.matcher(last);
-                    if (minusMatcher.matches()) {
-                        months.add(-Integer.parseInt(minusMatcher.group(1)));
-                        return;
-                    }
+            // Case 1 & 2: previous node = (Inf|Noninf) and last node = integer or last node = minus3
+            if (prev != null && last != null && prev.matches("(?i)^(inf|infected|noninf|noninfected)$")) {
+                if (INT_PATTERN.matcher(last).matches()) {
+                    months.add(Integer.parseInt(last));
+                    return;
                 }
 
-                // Case 2: last node ends with _<inf|infected|noninf|noninfected>_<digits>
-                if (last != null) {
-                    java.util.regex.Matcher m = EMBEDDED_SUFFIX.matcher(last);
-                    if (m.find()) {
-                        try {
-                            months.add(Integer.parseInt(m.group(1)));
-                        } catch (NumberFormatException ignored) {
-                            // ignore non numeric after inf/noninf
-                        }
+                Matcher minusMatcher = MINUS_3_PATTERN.matcher(last);
+                if (minusMatcher.matches()) {
+                    months.add(-Integer.parseInt(minusMatcher.group(1)));
+                    return;
+                }
+            }
+
+            // Case 2: last node ends with _<inf|infected|noninf|noninfected>_<digits>
+            if (last != null) {
+                java.util.regex.Matcher m = EMBEDDED_SUFFIX.matcher(last);
+                if (m.find()) {
+                    try {
+                        months.add(Integer.parseInt(m.group(1)));
+                    } catch (NumberFormatException ignored) {
+                        // ignore non numeric after inf/noninf
                     }
                 }
-            });
-        }
+            }
+        });
+
         return months;
-    }
-
-    private static Pattern compilePrefix(String pathPrefixRegex) {
-        if (pathPrefixRegex == null || pathPrefixRegex.isBlank()) return null;
-        try {
-            return Pattern.compile(pathPrefixRegex, Pattern.CASE_INSENSITIVE);
-        } catch (Exception e) {
-            // Invalid regex provided; ignore and match all
-            return null;
-        }
     }
 
     private FacetCategoryWrapper buildWrapper(
             String categoryName, String categoryDisplay, String categoryDescription,
             String parentName, String parentDisplay, String parentDescription,
-            String studyId, String adultNodeRegex, Set<Integer> months
+            Set<Integer> months
     ) {
-        if (months == null || months.isEmpty()) return null;
+        if (months.isEmpty()) {
+            return null;
+        }
 
         // Parent scope expressions
         FacetExpressionDTO p0 = new FacetExpressionDTO();
-        p0.exactly = studyId;
+        p0.exactly = RECOVER_ADULT_STUDY_ID;
         p0.node = 0;
 
         FacetExpressionDTO p1 = new FacetExpressionDTO();
-        p1.regex = adultNodeRegex;
+        p1.regex = RECOVER_ADULT_PATTERN.toString();
         p1.node = 1;
 
         // Build child month facets with OR groups
@@ -243,16 +228,13 @@ public class RecoverMonthsFacetGeneratorService {
             return child;
         }).collect(Collectors.toList());
 
-        // Parent facet
         FacetDTO parent = new FacetDTO();
         parent.name = parentName;
         parent.display = parentDisplay;
         parent.description = parentDescription;
-        parent.expressions = List.of(p0, p1); // parent scope remains AND
-        parent.expressionGroups = null;
+        parent.expressionGroups = List.of(List.of(p0, p1));
         parent.facets = children;
 
-        // Category
         FacetCategoryDTO cat = new FacetCategoryDTO();
         cat.name = categoryName;
         cat.display = categoryDisplay;
@@ -262,10 +244,6 @@ public class RecoverMonthsFacetGeneratorService {
         FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
         wrapper.facetCategory = cat;
         return wrapper;
-    }
-
-    private static String defaultStr(String val, String def) {
-        return (val == null || val.isBlank()) ? def : val;
     }
 
 }
