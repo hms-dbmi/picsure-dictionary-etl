@@ -8,12 +8,16 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Loads facet categories and facets, persists metadata, and maps concepts.
@@ -21,6 +25,8 @@ import java.util.*;
  */
 @Service
 public class FacetLoaderService {
+
+    private final Logger logger = LoggerFactory.getLogger(FacetLoaderService.class);
 
     private final edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository facetCategoryRepository;
     private final FacetRepository facetRepository;
@@ -62,8 +68,6 @@ public class FacetLoaderService {
         long facetsDeleted = 0;
         long mappingsDeleted = 0;
 
-        if (request == null) return new ClearResult(0,0,0);
-
         // 1) Clear by category names
         if (request.facetCategories != null) {
             for (String catName : request.facetCategories) {
@@ -87,6 +91,8 @@ public class FacetLoaderService {
                 facetsDeleted += facetCount;
                 mappingsDeleted += mappingCount;
             }
+        } else {
+            logger.warn("clear() - Facet Category not found in request.");
         }
 
         // 2) Clear by facet names (including their descendants)
@@ -94,41 +100,34 @@ public class FacetLoaderService {
             for (String facetName : request.facets) {
                 if (facetName == null || facetName.isBlank()) continue;
                 Optional<FacetModel> optFacet = facetRepository.findByName(facetName);
-                if (optFacet.isEmpty()) continue;
+                if (optFacet.isEmpty()) {
+                    logger.warn("clear() - unable to find facet with name: {}", facetName);
+                    continue;
+                }
                 FacetModel root = optFacet.get();
 
                 List<Long> ids = collectFacetSubtreeIds(root.getFacetId());
                 if (ids.isEmpty()) continue;
 
-                long mappingCount = facetConceptRepository.countAllForFacetIds(ids);
-
-                // delete mappings then facets
-                facetConceptRepository.deleteAllForFacetIds(ids);
-                facetRepository.deleteByIds(ids);
-
-                facetsDeleted += ids.size();
-                mappingsDeleted += mappingCount;
+                mappingsDeleted += facetConceptRepository.deleteAllForFacetIds(ids);
+                facetsDeleted += facetRepository.deleteByIds(ids);
             }
+        } else {
+            logger.warn("clear() - Not facets found in request");
         }
 
         return new ClearResult(categoriesDeleted, facetsDeleted, mappingsDeleted);
     }
 
     private List<Long> collectFacetSubtreeIds(Long rootId) {
-        java.util.ArrayList<Long> ids = new java.util.ArrayList<>();
-        java.util.ArrayDeque<Long> q = new java.util.ArrayDeque<>();
+        ArrayList<Long> ids = new ArrayList<>();
+        ArrayDeque<Long> q = new ArrayDeque<>();
         q.add(rootId);
         while (!q.isEmpty()) {
             Long id = q.removeFirst();
             ids.add(id);
             List<FacetModel> children = facetRepository.findAllByParentId(id);
-            if (children != null) {
-                for (FacetModel c : children) {
-                    if (c != null && c.getFacetId() != null) {
-                        q.addLast(c.getFacetId());
-                    }
-                }
-            }
+            q.addAll(children.stream().map(FacetModel::getFacetId).toList());
         }
         return ids;
     }
@@ -145,34 +144,40 @@ public class FacetLoaderService {
         if (payload == null) return new Result(0, 0, 0, 0, List.of(), List.of(), List.of());
 
         for (FacetCategoryWrapper wrapper : payload) {
-            if (wrapper == null || wrapper.facetCategory == null) continue;
-            FacetCategoryDTO dto = wrapper.facetCategory;
-
-            if (dto.name == null || dto.name.isBlank()) {
-                // Skip invalid category entries
+            if (wrapper == null || wrapper.facetCategory == null) {
+                logger.warn("load() - Skipping null or incomplete facet category wrapper in payload");
+                continue;
+            }
+            FacetCategoryDTO facetCategory = wrapper.facetCategory;
+            if (facetCategory.name == null || facetCategory.name.isBlank()) {
+                logger.warn("load() - Skipping no name found for facet category: {}", facetCategory);
                 continue;
             }
 
-            Optional<FacetCategoryModel> optCat = facetCategoryRepository.findByName(dto.name);
+            Optional<FacetCategoryModel> optCat = facetCategoryRepository.findByName(facetCategory.name);
             FacetCategoryModel category;
             if (optCat.isPresent()) {
                 category = optCat.get();
-                // Update display/description if supplied
-                if (dto.display != null) category.setDisplay(dto.display);
-                if (dto.description != null) category.setDescription(dto.description);
+                if (facetCategory.display != null) {
+                    category.setDisplay(facetCategory.display);
+                }
+                if (facetCategory.description != null) {
+                    category.setDescription(facetCategory.description);
+                }
+
                 facetCategoryRepository.save(category);
                 categoriesUpdated++;
             } else {
-                category = new FacetCategoryModel(dto.name, defaultStr(dto.display, dto.name), defaultStr(dto.description, ""));
+                category = new FacetCategoryModel(facetCategory.name, defaultStr(facetCategory.display, facetCategory.name), defaultStr(facetCategory.description, ""));
                 facetCategoryRepository.save(category);
                 categoriesCreated++;
                 accum.createdCategoryNames().add(category.getName());
             }
 
             // Recursively process facets
-            if (dto.facets != null) {
-                for (FacetDTO f : dto.facets) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, null, null);
+            if (facetCategory.facets != null) {
+                for (FacetDTO f : facetCategory.facets) {
+                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, null);
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
                 }
@@ -191,8 +196,7 @@ public class FacetLoaderService {
             LoadAccum accum,
             List<FacetNameNested> createdCollector,
             boolean facetCleared,
-            List<FacetExpressionDTO> inheritedFlat,
-            List<List<FacetExpressionDTO>> inheritedGroups
+            List<FacetExpressionDTO> inheritedFlat
     ) {
         if (facetDTO == null) return new Counts(0, 0);
         String name = facetDTO.name;
@@ -233,14 +237,19 @@ public class FacetLoaderService {
 
         // Effective flat = inheritedFlat + ownFlat
         List<FacetExpressionDTO> effectiveFlat = new ArrayList<>();
-        if (inheritedFlat != null && !inheritedFlat.isEmpty()) effectiveFlat.addAll(inheritedFlat);
-        if (!ownFlat.isEmpty()) effectiveFlat.addAll(ownFlat);
+        if (inheritedFlat != null && !inheritedFlat.isEmpty()) {
+            effectiveFlat.addAll(inheritedFlat);
+        }
+
+        if (!ownFlat.isEmpty()) {
+            effectiveFlat.addAll(ownFlat);
+        }
 
         // Effective groups:
         // - If ownGroups present: for each group, prepend inherited scope (flat) to form an AND-group
         // - Else if no ownGroups: if effectiveFlat not empty, treat it as a single group for traceability
         List<List<FacetExpressionDTO>> effectiveGroups = new ArrayList<>();
-        if (ownGroups != null && !ownGroups.isEmpty()) {
+        if (ownGroups != null) {
             for (List<FacetExpressionDTO> g : ownGroups) {
                 List<FacetExpressionDTO> merged = new ArrayList<>();
                 if (inheritedFlat != null && !inheritedFlat.isEmpty()) merged.addAll(inheritedFlat);
@@ -271,7 +280,7 @@ public class FacetLoaderService {
             String prevEffectiveHash = getFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS_HASH);
             boolean effectiveChanged = (prevEffectiveHash == null) || !prevEffectiveHash.equals(effectiveHash);
             if (effectiveChanged) {
-                facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
                 facetCleared = true;
             }
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS, effectiveJson);
@@ -283,14 +292,14 @@ public class FacetLoaderService {
             String prevEffectiveGroupsHash = getFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH);
             boolean effectiveGroupsChanged = (prevEffectiveGroupsHash == null) || !prevEffectiveGroupsHash.equals(effectiveGroupsHash);
             if (effectiveGroupsChanged) {
-                facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
                 facetCleared = true;
             }
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS, effectiveGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH, effectiveGroupsHash);
         } catch (Exception e) {
             if (!facetCleared) {
-                facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
                 facetCleared = true;
             }
         }
@@ -299,7 +308,7 @@ public class FacetLoaderService {
         boolean hasChildren = facetDTO.facets != null && !facetDTO.facets.isEmpty();
         if (!hasChildren) {
             // Leaf facet: map using EFFECTIVE GROUPS if present, else EFFECTIVE flat expressions
-            if (effectiveGroups != null && !effectiveGroups.isEmpty()) {
+            if (!effectiveGroups.isEmpty()) {
                 mapped = mapFacetToConceptsGrouped(facet.getFacetId(), effectiveGroups);
             } else {
                 mapped = mapFacetToConcepts(facet.getFacetId(), effectiveFlat);
@@ -317,8 +326,7 @@ public class FacetLoaderService {
                         accum,
                         nextCollector,
                         facetCleared,
-                        effectiveFlat,
-                        effectiveGroups // pass down groups as scope as well for completeness (not used directly)
+                        effectiveFlat
                 );
                 created += c.created();
                 updated += c.updated();
@@ -326,7 +334,7 @@ public class FacetLoaderService {
 
             // Parent should only have the union of its children’s mapped concepts.
             // Always clear existing parent mappings before rebuilding from children
-            facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facet.getFacetId()));
+            facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
 
             // Insert union of direct children’s concept mappings into the parent
             mapped = facetConceptRepository.mapParentToUnionOfDirectChildren(facet.getFacetId());
@@ -336,15 +344,17 @@ public class FacetLoaderService {
         return new Counts(created, updated);
     }
 
-    /** Legacy mapping by flat AND list. Implementation assumed to exist previously. */
+    /**
+     * Legacy mapping by flat AND list. Implementation assumed to exist previously.
+     */
     private long mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> effective) {
         // Existing implementation assumed; if not present, implement a simple version here.
         // For safety, implement a streaming mapper identical in semantics to legacy evaluator.
-
-        facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facetId)); // ensure clean state before remap
+        // Ensure a clean state before remap
+        facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
 
         long inserted = 0;
-        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
+        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
             List<Long> batch = new ArrayList<>(1024);
             for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
                 ConceptPathRow row = it.next();
@@ -363,16 +373,18 @@ public class FacetLoaderService {
         return inserted;
     }
 
-    /** New mapping for OR-of-AND groups. */
+    /**
+     * New mapping for OR-of-AND groups.
+     */
     private long mapFacetToConceptsGrouped(Long facetId, List<List<FacetExpressionDTO>> groups) {
         // Strategy:
         // - Clear existing
         // - For each concept, accept if ANY group matches (OR)
         // - Bulk insert mappings
-        facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facetId)); // ensure clean state before remap
+        facetConceptRepository.deleteAllForFacetIds(List.of(facetId)); // ensure clean state before remap
 
         long inserted = 0;
-        try (java.util.stream.Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
+        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
             List<Long> batch = new ArrayList<>(1024);
             for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
                 ConceptPathRow row = it.next();
@@ -390,20 +402,24 @@ public class FacetLoaderService {
         }
 
         // Return authoritative count in DB to avoid double-count concerns
-        return facetConceptRepository.countAllForFacetIds(java.util.List.of(facetId));
+        return facetConceptRepository.countAllForFacetIds(List.of(facetId));
     }
 
     private static String defaultStr(String val, String def) {
-        return (val == null || val.isBlank()) ? def : val;
+        return StringUtils.defaultIfBlank(val, def);
     }
 
     private String canonicalizeExpressions(List<FacetExpressionDTO> expressions) throws JsonProcessingException {
-        if (expressions == null) return "[]";
+        if (expressions == null) {
+            expressions = List.of();
+        }
         return objectMapper.writeValueAsString(expressions);
     }
 
     private String canonicalizeExpressionGroups(List<List<FacetExpressionDTO>> groups) throws JsonProcessingException {
-        if (groups == null) return "[]";
+        if (groups == null) {
+            groups = List.of();
+        }
         return objectMapper.writeValueAsString(groups);
     }
 
