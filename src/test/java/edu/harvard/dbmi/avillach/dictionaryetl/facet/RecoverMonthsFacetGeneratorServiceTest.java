@@ -120,7 +120,6 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
         // 2) Actual generation (clear none), then verify facets and mappings
         req.dryRun = false;
-        req.studyId = "phs003463";
         GenerateRecoverMonthsResponse out = generatorService.generate(req);
         assertNotNull(out.load);
         assertEquals("Generation complete.", out.message);
