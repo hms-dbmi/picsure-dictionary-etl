@@ -11,7 +11,7 @@ class FacetExpressionEvaluatorTest {
 
     @Test
     void regex_shouldMatchSpecificNode_caseInsensitive() {
-        String path = "\\phs003436\\Recover_Adult\\biostats_derived\\visits\\";
+        String path = "\\phs003463\\Recover_Adult\\biostats_derived\\visits\\";
         FacetExpressionDTO expr = new FacetExpressionDTO();
         expr.regex = "(?i)Recover_Adult$"; // should match 2nd node (index 1)
         expr.node = 1;

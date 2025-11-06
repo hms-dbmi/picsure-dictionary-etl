@@ -72,17 +72,17 @@ class RecoverMonthsFacetGeneratorServiceNestedTest {
     @Test
     void generate_shouldNestUnderParent_andScopeMappingsToRecoverAdult() {
         // Seed datasets
-        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003436", "RECOVER Adult", "", ""));
+        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003463", "RECOVER Adult", "", ""));
         DatasetModel dsPeds = datasetRepository.save(new DatasetModel("phs003431", "RECOVER Pediatrics", "", ""));
         FacetCategoryModel consortiumFacetCat = categoryRepository.save(new FacetCategoryModel("Consortium_Curated_Facets", "Consortium_Curated_Facets", null));
         FacetModel facetRecoverAdult = facetRepository.save(new FacetModel(consortiumFacetCat.getFacetCategoryId(), "RECOVER Adult Curated", "RECOVER Adult Curated", "RECOVER Adult Curated Description", null));
-        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS, "[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]"));
+        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS, "[[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]]"));
 
         // Seed concepts: two RECOVER Adult with months; one Pediatrics with similar tail (should NOT match)
-        ConceptModel a9 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Inf\\9\\", null);
-        ConceptModel a12 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\visits\\Noninf\\12\\", null);
+        ConceptModel a9 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
+                "\\phs003463\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Inf\\9\\", null);
+        ConceptModel a12 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
+                "\\phs003463\\RECOVER_Adult\\visits\\Noninf\\12\\", null);
         ConceptModel p12 = new ConceptModel(dsPeds.getDatasetId(), "phs003431", "phs003431", "",
                 "\\phs003431\\RECOVER_Pediatrics\\visits\\Inf\\12\\", null);
         conceptService.save(a9);
@@ -91,10 +91,6 @@ class RecoverMonthsFacetGeneratorServiceNestedTest {
 
         // Generate (clear category first to ensure clean state)
         GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
-        req.categoryName = "Consortium_Curated_Facets";
-        req.pathPrefixRegex = "(?i)\\\\phs003436\\\\"; // scope to RECOVER Adult
-        req.adultNodeRegex = "(?i)RECOVER_Adult$";
-        req.studyId = "phs003436";
         GenerateRecoverMonthsResponse resp = service.generate(req);
         assertEquals("Generation complete.", resp.message);
 

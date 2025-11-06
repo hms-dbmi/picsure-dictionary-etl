@@ -84,19 +84,19 @@ class RecoverMonthsFacetGeneratorServiceTest {
     @Test
     void generate_shouldDiscoverMonths_andLoadFacetsAndMappings() {
         // Seed dataset and concept nodes with paths containing (Inf|Noninf) followed by months
-        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003436", "RECOVER Adult", "", ""));
+        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003463", "RECOVER Adult", "", ""));
         DatasetModel dsOther = datasetRepository.save(new DatasetModel("phs000000", "OTHER", "", ""));
         FacetCategoryModel consortiumFacetCat = facetCategoryRepository.save(new FacetCategoryModel("Consortium_Curated_Facets", "Consortium_Curated_Facets", null));
         FacetModel facetRecoverAdult = facetRepository.save(new FacetModel(consortiumFacetCat.getFacetCategoryId(), "RECOVER Adult Curated", "RECOVER Adult Curated", "RECOVER Adult Curated Description", null));
-        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSIONS, "[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]"));
+        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS, "[[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]]"));
 
         // Matching RECOVER adult concepts
-        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Noninf\\9\\", null);
-        ConceptModel c2 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\flder_tier2\\chest_ct\\Qualitative Read\\chestct_reticular\\Inf\\12\\", null);
-        ConceptModel c3 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "",
-                "\\phs003436\\RECOVER_Adult\\flder_tier2\\echocardiogram_with_strain\\Echocardiogram\\rttestrain_aregurg\\Inf\\9\\", null);
+        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
+                "\\phs003463\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Noninf\\9\\", null);
+        ConceptModel c2 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
+                "\\phs003463\\RECOVER_Adult\\flder_tier2\\chest_ct\\Qualitative Read\\chestct_reticular\\Inf\\12\\", null);
+        ConceptModel c3 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
+                "\\phs003463\\RECOVER_Adult\\flder_tier2\\echocardiogram_with_strain\\Echocardiogram\\rttestrain_aregurg\\Inf\\9\\", null);
 
         // Non-matching concept (no Inf/Noninf before last)
         ConceptModel cNo = new ConceptModel(dsOther.getDatasetId(), "phs000000", "phs000000", "",
@@ -109,9 +109,6 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
         // 1) Dry run to discover months
         GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
-        req.pathPrefixRegex = "(?i)\\\\phs003436\\\\"; // scope to RECOVER Adult
-        req.adultNodeRegex = "(?i)RECOVER_Adult$";
-        req.studyId = "phs003436";
         req.dryRun = true;
 
         GenerateRecoverMonthsResponse dry = generatorService.generate(req);
@@ -123,7 +120,7 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
         // 2) Actual generation (clear none), then verify facets and mappings
         req.dryRun = false;
-        req.studyId = "phs003436";
+        req.studyId = "phs003463";
         GenerateRecoverMonthsResponse out = generatorService.generate(req);
         assertNotNull(out.load);
         assertEquals("Generation complete.", out.message);

@@ -36,11 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FacetLoaderFacetMetadataIntegrationTest {
 
-    private static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
-    private static final String KEY_EFFECTIVE_EXPRESSIONS_HASH = "facet_loader.effective_expressions_sha256hex";
-    private static final String KEY_OWN_EXPRESSIONS = "facet_loader.expressions";
-    private static final String KEY_OWN_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
-
     @Autowired
     private DatabaseCleanupUtility databaseCleanupUtility;
 
@@ -96,21 +91,21 @@ class FacetLoaderFacetMetadataIntegrationTest {
         child.name = "Child";
         child.display = "Child";
         child.description = "Child facet";
-        child.expressions = new ArrayList<>();
+        child.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expC2 = new FacetExpressionDTO();
         expC2.exactly = "C";
         expC2.node = 2;
-        child.expressions.add(expC2);
+        child.expressionGroups.add(List.of(expC2));
 
         FacetDTO parent = new FacetDTO();
         parent.name = "Parent";
         parent.display = "Parent";
         parent.description = "Parent facet";
-        parent.expressions = new ArrayList<>();
+        parent.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expB1 = new FacetExpressionDTO();
         expB1.exactly = "B";
         expB1.node = 1;
-        parent.expressions.add(expB1);
+        parent.expressionGroups.add(List.of(expB1));
         parent.facets = List.of(child);
 
         FacetCategoryDTO cat = new FacetCategoryDTO();
@@ -121,11 +116,8 @@ class FacetLoaderFacetMetadataIntegrationTest {
 
         FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
         wrapper.facetCategory = cat;
-
-        // Load
         service.load(List.of(wrapper));
 
-        // Resolve facets
         Optional<FacetModel> parentOpt = facetRepository.findByName("Parent");
         Optional<FacetModel> childOpt = facetRepository.findByName("Child");
         assertTrue(parentOpt.isPresent());
@@ -138,15 +130,15 @@ class FacetLoaderFacetMetadataIntegrationTest {
         List<FacetMetadataModel> parentMeta = facetMetadataRepository.findByFacetId(parentId);
         List<FacetMetadataModel> childMeta = facetMetadataRepository.findByFacetId(childId);
 
-        assertTrue(parentMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS.equals(m.getKey())));
-        assertTrue(parentMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS_HASH.equals(m.getKey())));
-        assertTrue(parentMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey())));
-        assertTrue(parentMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS_HASH.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS_HASH.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS.equals(m.getKey())));
+        assertTrue(parentMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS_HASH.equals(m.getKey())));
 
-        assertTrue(childMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS.equals(m.getKey())));
-        assertTrue(childMeta.stream().anyMatch(m -> KEY_OWN_EXPRESSIONS_HASH.equals(m.getKey())));
-        assertTrue(childMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey())));
-        assertTrue(childMeta.stream().anyMatch(m -> KEY_EFFECTIVE_EXPRESSIONS_HASH.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS.equals(m.getKey())));
+        assertTrue(childMeta.stream().anyMatch(m -> FacetLoaderService.KEY_FACET_EXPRESSION_GROUPS_HASH.equals(m.getKey())));
 
         // Child should map because it inherits Parent(B@1) and has C@2
         assertTrue(facetConceptRepository.countForFacet(childId) >= 1);
@@ -156,11 +148,11 @@ class FacetLoaderFacetMetadataIntegrationTest {
         parentV2.name = "Parent";
         parentV2.display = "Parent";
         parentV2.description = "Parent facet";
-        parentV2.expressions = new ArrayList<>();
+        parentV2.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expZ1 = new FacetExpressionDTO();
         expZ1.exactly = "Z";
         expZ1.node = 1;
-        parentV2.expressions.add(expZ1);
+        parentV2.expressionGroups.add(List.of(expZ1));
         parentV2.facets = List.of(child); // child unchanged
 
         FacetCategoryDTO catV2 = new FacetCategoryDTO();
@@ -171,7 +163,6 @@ class FacetLoaderFacetMetadataIntegrationTest {
 
         FacetCategoryWrapper wrapV2 = new FacetCategoryWrapper();
         wrapV2.facetCategory = catV2;
-
         service.load(List.of(wrapV2));
 
         // Child should have zero mappings now due to parent's constraint
@@ -180,7 +171,7 @@ class FacetLoaderFacetMetadataIntegrationTest {
         // Child effective metadata should have updated hash/value reflecting new parent
         List<FacetMetadataModel> childMetaAfter = facetMetadataRepository.findByFacetId(childId);
         String effectiveJsonAfter = childMetaAfter.stream()
-                .filter(m -> KEY_EFFECTIVE_EXPRESSIONS.equals(m.getKey()))
+                .filter(m -> FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS.equals(m.getKey()))
                 .map(FacetMetadataModel::getValue)
                 .findFirst()
                 .orElse(null);

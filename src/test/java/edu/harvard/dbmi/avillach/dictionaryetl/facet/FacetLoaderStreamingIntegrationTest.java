@@ -102,7 +102,7 @@ class FacetLoaderStreamingIntegrationTest {
         facet.name = "All Group";
         facet.display = "All Group";
         facet.description = "All nodes where second segment is Group";
-        facet.expressions = List.of(expr);
+        facet.expressionGroups = List.of(List.of(expr));
 
         FacetCategoryDTO cat = new FacetCategoryDTO();
         cat.name = "Streaming_Test_Category";

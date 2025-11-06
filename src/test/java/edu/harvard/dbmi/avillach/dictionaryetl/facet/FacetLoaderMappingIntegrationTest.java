@@ -79,10 +79,10 @@ class FacetLoaderMappingIntegrationTest {
     @Test
     void expressions_shouldMapFacetsToMatchingConcepts() {
         // Seed dataset and concept nodes
-        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003436", "RECOVER Adult", "", ""));
+        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003463", "RECOVER Adult", "", ""));
         DatasetModel dsPeds = datasetRepository.save(new DatasetModel("phs003461", "RECOVER Peds", "", ""));
 
-        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003436", "phs003436", "", "\\phs003436\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\", null);
+        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "", "\\phs003463\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\", null);
         ConceptModel c2 = new ConceptModel(dsPeds.getDatasetId(), "phs003461", "phs003461", "", "\\phs003461\\RECOVER_Caregiver\\biospecimens\\pc_tassoreplacewhy\\", null);
         ConceptModel c3 = new ConceptModel(dsPeds.getDatasetId(), "phs003461", "phs003461", "", "\\phs003461\\RECOVER_Pediatrics\\pdclassmts2\\asq\\asqsec_persoc_14\\asq14_persoc_score\\", null);
         conceptService.save(c1);
@@ -94,21 +94,21 @@ class FacetLoaderMappingIntegrationTest {
         infected.name = "Infected";
         infected.display = "Infected";
         infected.description = "Infected Facet Description";
-        infected.expressions = new ArrayList<>();
+        infected.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expInf = new FacetExpressionDTO();
         expInf.regex = "(?i)\\binf(ected)?\\b";
         expInf.node = -3; // third from the end
-        infected.expressions.add(expInf);
+        infected.expressionGroups.add(List.of(expInf));
 
         FacetDTO parent = new FacetDTO();
         parent.name = "Recover Adult";
         parent.display = "RECOVER Adult";
         parent.description = "Recover adult parent facet.";
-        parent.expressions = new ArrayList<>();
+        parent.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expParent = new FacetExpressionDTO();
         expParent.exactly = "Recover_Adult";
         expParent.node = 1; // 2nd node
-        parent.expressions.add(expParent);
+        parent.expressionGroups.add(List.of(expParent));
         parent.facets = List.of(infected);
 
         FacetCategoryDTO catDto = new FacetCategoryDTO();
@@ -132,7 +132,7 @@ class FacetLoaderMappingIntegrationTest {
         Long infFacetId = infFacetOpt.get().getFacetId();
 
         // Fetch concepts again for ids
-        Optional<ConceptModel> c1Opt = conceptService.findByConcept("\\phs003436\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\");
+        Optional<ConceptModel> c1Opt = conceptService.findByConcept("\\phs003463\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\");
         Optional<ConceptModel> c2Opt = conceptService.findByConcept("\\phs003461\\RECOVER_Caregiver\\biospecimens\\pc_tassoreplacewhy\\");
         Optional<ConceptModel> c3Opt = conceptService.findByConcept("\\phs003461\\RECOVER_Pediatrics\\pdclassmts2\\asq\\asqsec_persoc_14\\asq14_persoc_score\\");
         assertTrue(c1Opt.isPresent());

@@ -92,17 +92,17 @@ class FacetLoaderClearIntegrationTest {
         FacetDTO child = new FacetDTO();
         child.name = "Child";
         child.display = "Child";
-        child.expressions = new ArrayList<>();
-        child.expressions.add(expA0);
+        child.expressionGroups = new ArrayList<>();
+        child.expressionGroups.add(List.of(expA0));
 
         FacetDTO parent = new FacetDTO();
         parent.name = "Parent";
         parent.display = "Parent";
-        parent.expressions = new ArrayList<>();
+        parent.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expB1 = new FacetExpressionDTO();
         expB1.exactly = "B";
         expB1.node = 1;
-        parent.expressions.add(expB1);
+        parent.expressionGroups.add(List.of(expB1));
         parent.facets = List.of(child);
 
         FacetCategoryDTO cat1 = new FacetCategoryDTO();
@@ -122,17 +122,17 @@ class FacetLoaderClearIntegrationTest {
         FacetDTO leaf = new FacetDTO();
         leaf.name = "Leaf";
         leaf.display = "Leaf";
-        leaf.expressions = new ArrayList<>();
-        leaf.expressions.add(expA0b);
+        leaf.expressionGroups = new ArrayList<>();
+        leaf.expressionGroups.add(List.of(expA0b));
 
         FacetDTO root = new FacetDTO();
         root.name = "Root";
         root.display = "Root";
-        root.expressions = new ArrayList<>();
+        root.expressionGroups = new ArrayList<>();
         FacetExpressionDTO expC2 = new FacetExpressionDTO();
         expC2.exactly = "C";
         expC2.node = 2;
-        root.expressions.add(expC2);
+        root.expressionGroups.add(List.of(expC2));
         root.facets = List.of(leaf);
 
         FacetCategoryDTO cat2 = new FacetCategoryDTO();
