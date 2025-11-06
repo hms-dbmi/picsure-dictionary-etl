@@ -23,4 +23,14 @@ public class FacetCategoryDTO {
 
     @JsonProperty("Facets") @JsonAlias("facets")
     public List<FacetDTO> facets;
+
+    @Override
+    public String toString() {
+        return "FacetCategoryDTO{" +
+               "name='" + name + '\'' +
+               ", display='" + display + '\'' +
+               ", description='" + description + '\'' +
+               ", facets=" + facets +
+               '}';
+    }
 }
