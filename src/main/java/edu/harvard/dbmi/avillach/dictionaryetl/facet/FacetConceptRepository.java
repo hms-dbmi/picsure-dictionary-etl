@@ -21,17 +21,6 @@ public interface FacetConceptRepository extends JpaRepository<FacetConceptModel,
 
     Optional<FacetConceptModel> findByFacetIdAndConceptNodeId(Long facetId, Long conceptNodeId);
 
-    boolean existsByFacetIdAndConceptNodeId(Long facetId, Long conceptNodeId);
-
-    @Modifying
-    @Transactional
-    @Query(value = """
-                INSERT INTO dict.facet__concept_node (facet_id, concept_node_id)
-                VALUES (:facet_id, :concept_node_id)
-            """, nativeQuery = true
-    )
-    void mapFacetToConceptNode(@Param("facet_id") Long facetID, @Param("concept_node_id") Long conceptNodeID);
-
     @Modifying
     @Transactional
     @Query(value = """
