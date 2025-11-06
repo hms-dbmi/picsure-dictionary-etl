@@ -64,57 +64,53 @@ public class RecoverMonthsFacetGeneratorService {
         GenerateRecoverMonthsResponse out = new GenerateRecoverMonthsResponse();
         Optional<FacetCategoryModel> consortiumCuratedFacets = facetCategoryService.findByName(CONSORTIUM_CURATED_FACET_CATEGORY_NAME);
         Optional<FacetModel> recoverAdultOptional = facetService.findByName(RECOVER_ADULT_CURATED_FACE_NAME);
-        if (consortiumCuratedFacets.isPresent() && recoverAdultOptional.isPresent()) {
-            Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey =
-                    facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS);
-            if (facetMetadataByFacetIDAndKey.isPresent()) {
-                FacetCategoryModel facetCategoryModel = consortiumCuratedFacets.get();
-                FacetModel recoverAdultFacetModel = recoverAdultOptional.get();
-                String categoryName = facetCategoryModel.getName();
-                String parentName = recoverAdultFacetModel.getName();
-                Set<Integer> months = discoverMonths();
 
-                out.categoryName = categoryName;
-                out.parentFacetName = parentName;
-                out.discoveredMonths = months.stream().map(Object::toString)
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-
-                if (req.dryRun) {
-                    out.message = months.isEmpty() ? "No months discovered; nothing to generate." :
-                            "Dry run: would generate parent facet and month facets under it.";
-                    return out;
-                }
-
-                FacetCategoryWrapper wrapper = buildWrapper(
-                        categoryName, facetCategoryModel.getDisplay(), facetCategoryModel.getDescription(),
-                        parentName, recoverAdultFacetModel.getDisplay(), recoverAdultFacetModel.getDescription(),
-                        months
-                );
-
-                if (wrapper == null || wrapper.facetCategory == null || wrapper.facetCategory.facets == null || wrapper.facetCategory.facets.isEmpty()) {
-                    out.message = "No months discovered; nothing to load.";
-                    return out;
-                }
-
-                out.load = facetLoaderService.load(List.of(wrapper));
-                out.message = "Generation complete.";
-            } else {
-                out.message = "Recover adult facet metadata is missing.";
-            }
-
-        } else {
-            boolean consortiumFacetMissing = consortiumCuratedFacets.isEmpty();
-            boolean recoverAdultFacetMissing = recoverAdultOptional.isEmpty();
-
-            if (consortiumFacetMissing && recoverAdultFacetMissing) {
-                out.message = "Consortium Curated facet and Recover adult facet is missing.";
-            } else if (consortiumFacetMissing) {
-                out.message = "Consortium Curated facets is missing.";
-            } else {
-                out.message = "Recover Adult facet is missing.";
-            }
+        if (consortiumCuratedFacets.isEmpty()) {
+            out.message = "Consortium Curated facets is missing.";
+            return out;
         }
 
+        if (recoverAdultOptional.isEmpty()) {
+            out.message = "Recover Adult facet is missing.";
+            return out;
+        }
+
+        Optional<FacetMetadataModel> facetMetadataByFacetIDAndKey = facetService.findFacetMetadataByFacetIDAndKey(recoverAdultOptional.get().getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS);
+        if (facetMetadataByFacetIDAndKey.isEmpty()) {
+            out.message = "Recover adult facet metadata is missing.";
+            return out;
+        }
+
+        FacetCategoryModel facetCategoryModel = consortiumCuratedFacets.get();
+        FacetModel recoverAdultFacetModel = recoverAdultOptional.get();
+        String categoryName = facetCategoryModel.getName();
+        String parentName = recoverAdultFacetModel.getName();
+        Set<Integer> months = discoverMonths();
+
+        out.categoryName = categoryName;
+        out.parentFacetName = parentName;
+        out.discoveredMonths = months.stream().map(Object::toString)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (req.dryRun) {
+            out.message = months.isEmpty() ? "No months discovered; nothing to generate." :
+                    "Dry run: would generate parent facet and month facets under it.";
+            return out;
+        }
+
+        FacetCategoryWrapper wrapper = buildWrapper(
+                categoryName, facetCategoryModel.getDisplay(), facetCategoryModel.getDescription(),
+                parentName, recoverAdultFacetModel.getDisplay(), recoverAdultFacetModel.getDescription(),
+                months
+        );
+
+        if (wrapper == null || wrapper.facetCategory == null || wrapper.facetCategory.facets == null || wrapper.facetCategory.facets.isEmpty()) {
+            out.message = "No months discovered; nothing to load.";
+            return out;
+        }
+
+        out.load = facetLoaderService.load(List.of(wrapper));
+        out.message = "Generation complete.";
         return out;
     }
 
