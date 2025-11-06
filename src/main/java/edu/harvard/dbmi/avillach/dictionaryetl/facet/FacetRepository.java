@@ -21,16 +21,6 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
 
     List<FacetModel> findAllByParentId(Long parentId);
 
-    long countByFacetCategoryId(Long facetCategoryId);
-
-    @Modifying
-    @Transactional
-    @Query(value = """
-                delete from dict.facet where facet_id not in
-                    (select distinct facet_id from dict.facet__concept_node) and facet_category_id = :facetCategoryId
-            """, nativeQuery = true)
-    void deleteUnusedFacetsFromCategory(@Param("facetCategoryId") Long facetCategoryId);
-
     @Query(value = "select f.name from FacetModel f order by f.name")
     List<String> getAllFacetNames();
 
@@ -58,7 +48,7 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM dict.facet WHERE facet_category_id = :catId", nativeQuery = true)
-    void deleteAllForCategory(@Param("catId") Long catId);
+    int deleteAllForCategory(@Param("catId") Long catId);
 
     @Modifying
     @Transactional
