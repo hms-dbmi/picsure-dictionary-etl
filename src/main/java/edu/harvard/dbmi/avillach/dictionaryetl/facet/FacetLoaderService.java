@@ -11,6 +11,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryReposi
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,19 +38,14 @@ public class FacetLoaderService {
     private final FacetMetadataRepository facetMetadataRepository;
     private final ObjectMapper objectMapper;
 
-    public static final String KEY_FACET_EXPRESSIONS = "facet_loader.expressions";
-    private static final String KEY_FACET_EXPRESSIONS_HASH = "facet_loader.expressions_sha256hex";
-
-    public static final String KEY_EFFECTIVE_EXPRESSIONS = "facet_loader.effective_expressions";
-    private static final String KEY_EFFECTIVE_EXPRESSIONS_HASH = "facet_loader.effective_expressions_sha256hex";
-
     // New: grouped metadata keys
     public static final String KEY_FACET_EXPRESSION_GROUPS = "facet_loader.expression_groups";
-    private static final String KEY_FACET_EXPRESSION_GROUPS_HASH = "facet_loader.expression_groups_sha256hex";
+    protected static final String KEY_FACET_EXPRESSION_GROUPS_HASH = "facet_loader.expression_groups_sha256hex";
 
     public static final String KEY_EFFECTIVE_EXPRESSION_GROUPS = "facet_loader.effective_expression_groups";
-    private static final String KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH = "facet_loader.effective_expression_groups_sha256hex";
+    protected static final String KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH = "facet_loader.effective_expression_groups_sha256hex";
 
+    @Autowired
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,
                               ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository,
                               FacetMetadataRepository facetMetadataRepository,
@@ -73,23 +69,22 @@ public class FacetLoaderService {
             for (String catName : request.facetCategories) {
                 if (catName == null || catName.isBlank()) continue;
                 Optional<FacetCategoryModel> opt = facetCategoryRepository.findByName(catName);
-                if (opt.isEmpty()) continue;
+                if (opt.isEmpty()) {
+                    logger.warn("clear() - Did not find facet category for facet category name: {}", catName);
+                    continue;
+                }
                 FacetCategoryModel cat = opt.get();
 
-                // count before delete
-                long facetCount = facetRepository.countByFacetCategoryId(cat.getFacetCategoryId());
-                long mappingCount = facetConceptRepository.countAllForCategory(cat.getFacetCategoryId());
-
                 // delete mappings and facets for category
-                facetConceptRepository.deleteAllForCategory(cat.getFacetCategoryId());
-                facetRepository.deleteAllForCategory(cat.getFacetCategoryId());
+                int mappingsDeletedForCat = facetConceptRepository.deleteAllForCategory(cat.getFacetCategoryId());
+                int facetsDeletedForCat = facetRepository.deleteAllForCategory(cat.getFacetCategoryId());
 
                 // delete category
                 facetCategoryRepository.deleteById(cat.getFacetCategoryId());
 
                 categoriesDeleted += 1;
-                facetsDeleted += facetCount;
-                mappingsDeleted += mappingCount;
+                facetsDeleted += facetsDeletedForCat;
+                mappingsDeleted += mappingsDeletedForCat;
             }
         } else {
             logger.warn("clear() - Facet Category not found in request.");
@@ -104,10 +99,13 @@ public class FacetLoaderService {
                     logger.warn("clear() - unable to find facet with name: {}", facetName);
                     continue;
                 }
-                FacetModel root = optFacet.get();
 
+                FacetModel root = optFacet.get();
                 List<Long> ids = collectFacetSubtreeIds(root.getFacetId());
-                if (ids.isEmpty()) continue;
+                if (ids.isEmpty()) {
+                    logger.info("");
+                    continue;
+                }
 
                 mappingsDeleted += facetConceptRepository.deleteAllForFacetIds(ids);
                 facetsDeleted += facetRepository.deleteByIds(ids);
@@ -149,7 +147,7 @@ public class FacetLoaderService {
                 continue;
             }
             FacetCategoryDTO facetCategory = wrapper.facetCategory;
-            if (facetCategory.name == null || facetCategory.name.isBlank()) {
+            if (StringUtils.isBlank(facetCategory.name)) {
                 logger.warn("load() - Skipping no name found for facet category: {}", facetCategory);
                 continue;
             }
@@ -158,17 +156,22 @@ public class FacetLoaderService {
             FacetCategoryModel category;
             if (optCat.isPresent()) {
                 category = optCat.get();
-                if (facetCategory.display != null) {
+                if (StringUtils.isNotBlank(facetCategory.display)) {
                     category.setDisplay(facetCategory.display);
                 }
-                if (facetCategory.description != null) {
+                if (StringUtils.isNotBlank(facetCategory.description)) {
                     category.setDescription(facetCategory.description);
                 }
 
                 facetCategoryRepository.save(category);
                 categoriesUpdated++;
             } else {
-                category = new FacetCategoryModel(facetCategory.name, defaultStr(facetCategory.display, facetCategory.name), defaultStr(facetCategory.description, ""));
+                category = new FacetCategoryModel(
+                        facetCategory.name,
+                        StringUtils.defaultIfBlank(facetCategory.display, facetCategory.name),
+                        StringUtils.defaultIfBlank(facetCategory.description, "")
+                );
+
                 facetCategoryRepository.save(category);
                 categoriesCreated++;
                 accum.createdCategoryNames().add(category.getName());
@@ -177,7 +180,7 @@ public class FacetLoaderService {
             // Recursively process facets
             if (facetCategory.facets != null) {
                 for (FacetDTO f : facetCategory.facets) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, null);
+                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, List.of());
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
                 }
@@ -196,13 +199,19 @@ public class FacetLoaderService {
             LoadAccum accum,
             List<FacetNameNested> createdCollector,
             boolean facetCleared,
-            List<FacetExpressionDTO> inheritedFlat
+            List<List<FacetExpressionDTO>> inheritedGroups
     ) {
-        if (facetDTO == null) return new Counts(0, 0);
+        if (facetDTO == null) {
+            return new Counts(0, 0);
+        }
+
         String name = facetDTO.name;
-        if (name == null || name.isBlank()) return new Counts(0, 0);
-        String display = defaultStr(facetDTO.display, name);
-        String description = defaultStr(facetDTO.description, "");
+        if (StringUtils.isBlank(name)) {
+            logger.warn("upsertFacetRecursive - Facet name must not be blank. Facet: {}", facetDTO);
+            return new Counts(0, 0);
+        }
+        String display = StringUtils.defaultIfBlank(facetDTO.display, name);
+        String description = StringUtils.defaultIfBlank(facetDTO.description, "");
 
         Optional<FacetModel> optFacet = facetRepository.findByName(name);
         FacetModel facet;
@@ -226,70 +235,31 @@ public class FacetLoaderService {
             createdCollector.add(createdNode);
         }
 
-        // Compute effective expressions (AND) and effective groups (OR-of-ANDs)
-        List<FacetExpressionDTO> ownFlat = (facetDTO.expressions != null && !facetDTO.expressions.isEmpty())
-                ? new ArrayList<>(facetDTO.expressions)
-                : List.of();
+        List<List<FacetExpressionDTO>> parentGroups = inheritedGroups.isEmpty() ? List.of(List.of()) : inheritedGroups;
 
-        List<List<FacetExpressionDTO>> ownGroups = (facetDTO.expressionGroups != null && !facetDTO.expressionGroups.isEmpty())
+        List<List<FacetExpressionDTO>> ownGroups = facetDTO.expressionGroups != null
                 ? facetDTO.expressionGroups
-                : null;
+                : List.of(List.of());
 
-        // Effective flat = inheritedFlat + ownFlat
-        List<FacetExpressionDTO> effectiveFlat = new ArrayList<>();
-        if (inheritedFlat != null && !inheritedFlat.isEmpty()) {
-            effectiveFlat.addAll(inheritedFlat);
-        }
-
-        if (!ownFlat.isEmpty()) {
-            effectiveFlat.addAll(ownFlat);
-        }
-
-        // Effective groups:
-        // - If ownGroups present: for each group, prepend inherited scope (flat) to form an AND-group
-        // - Else if no ownGroups: if effectiveFlat not empty, treat it as a single group for traceability
         List<List<FacetExpressionDTO>> effectiveGroups = new ArrayList<>();
-        if (ownGroups != null) {
-            for (List<FacetExpressionDTO> g : ownGroups) {
-                List<FacetExpressionDTO> merged = new ArrayList<>();
-                if (inheritedFlat != null && !inheritedFlat.isEmpty()) merged.addAll(inheritedFlat);
-                if (g != null && !g.isEmpty()) merged.addAll(g);
+        for (List<FacetExpressionDTO> pg : parentGroups) {
+            for (List<FacetExpressionDTO> og : ownGroups) {
+                List<FacetExpressionDTO> merged = new ArrayList<>(pg);
+                merged.addAll(og);
                 effectiveGroups.add(merged);
             }
-        } else if (!effectiveFlat.isEmpty()) {
-            // Legacy behavior as one group
-            effectiveGroups.add(effectiveFlat);
         }
 
         try {
-            // Persist own flat and hash
-            String ownJson = canonicalizeExpressions(ownFlat);
-            String ownHash = sha256Hex(ownJson);
-            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS, ownJson);
-            upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSIONS_HASH, ownHash);
-
-            // Persist own groups and hash
             String ownGroupsJson = canonicalizeExpressionGroups(facetDTO.expressionGroups);
             String ownGroupsHash = sha256Hex(ownGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS, ownGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS_HASH, ownGroupsHash);
 
-            // Persist effective flat and hash (backward compatibility)
-            String effectiveJson = canonicalizeExpressions(effectiveFlat);
-            String effectiveHash = sha256Hex(effectiveJson);
-            String prevEffectiveHash = getFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS_HASH);
-            boolean effectiveChanged = (prevEffectiveHash == null) || !prevEffectiveHash.equals(effectiveHash);
-            if (effectiveChanged) {
-                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
-                facetCleared = true;
-            }
-            upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS, effectiveJson);
-            upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSIONS_HASH, effectiveHash);
-
             // Persist effective groups and hash; clear if changed
             String effectiveGroupsJson = canonicalizeExpressionGroups(effectiveGroups);
             String effectiveGroupsHash = sha256Hex(effectiveGroupsJson);
-            String prevEffectiveGroupsHash = getFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH);
+            String prevEffectiveGroupsHash = getFacetMeta(facet.getFacetId());
             boolean effectiveGroupsChanged = (prevEffectiveGroupsHash == null) || !prevEffectiveGroupsHash.equals(effectiveGroupsHash);
             if (effectiveGroupsChanged) {
                 facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
@@ -297,22 +267,14 @@ public class FacetLoaderService {
             }
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS, effectiveGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH, effectiveGroupsHash);
-        } catch (Exception e) {
-            if (!facetCleared) {
-                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
-                facetCleared = true;
-            }
+        } catch (JsonProcessingException ex) {
+            logger.warn("upsertFacetRecursive - unable to map JSON expression - {}", ex.getMessage());
         }
 
         long mapped;
         boolean hasChildren = facetDTO.facets != null && !facetDTO.facets.isEmpty();
         if (!hasChildren) {
-            // Leaf facet: map using EFFECTIVE GROUPS if present, else EFFECTIVE flat expressions
-            if (!effectiveGroups.isEmpty()) {
-                mapped = mapFacetToConceptsGrouped(facet.getFacetId(), effectiveGroups);
-            } else {
-                mapped = mapFacetToConcepts(facet.getFacetId(), effectiveFlat);
-            }
+            mapped = mapFacetToConceptsGrouped(facet.getFacetId(), effectiveGroups);
         } else {
             // Has children: process children first so they are fully mapped
             for (FacetDTO child : facetDTO.facets) {
@@ -326,7 +288,7 @@ public class FacetLoaderService {
                         accum,
                         nextCollector,
                         facetCleared,
-                        effectiveFlat
+                        effectiveGroups
                 );
                 created += c.created();
                 updated += c.updated();
@@ -345,35 +307,6 @@ public class FacetLoaderService {
     }
 
     /**
-     * Legacy mapping by flat AND list. Implementation assumed to exist previously.
-     */
-    private long mapFacetToConcepts(Long facetId, List<FacetExpressionDTO> effective) {
-        // Existing implementation assumed; if not present, implement a simple version here.
-        // For safety, implement a streaming mapper identical in semantics to legacy evaluator.
-        // Ensure a clean state before remap
-        facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
-
-        long inserted = 0;
-        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
-            List<Long> batch = new ArrayList<>(1024);
-            for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
-                ConceptPathRow row = it.next();
-                if (FacetExpressionEvaluator.facetAppliesToConceptPath(effective, row.getConceptPath())) {
-                    batch.add(row.getConceptNodeId());
-                    if (batch.size() >= 1000) {
-                        inserted += facetConceptRepository.bulkMap(facetId, batch);
-                        batch.clear();
-                    }
-                }
-            }
-            if (!batch.isEmpty()) {
-                inserted += facetConceptRepository.bulkMap(facetId, batch);
-            }
-        }
-        return inserted;
-    }
-
-    /**
      * New mapping for OR-of-AND groups.
      */
     private long mapFacetToConceptsGrouped(Long facetId, List<List<FacetExpressionDTO>> groups) {
@@ -381,39 +314,27 @@ public class FacetLoaderService {
         // - Clear existing
         // - For each concept, accept if ANY group matches (OR)
         // - Bulk insert mappings
-        facetConceptRepository.deleteAllForFacetIds(List.of(facetId)); // ensure clean state before remap
 
-        long inserted = 0;
-        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
-            List<Long> batch = new ArrayList<>(1024);
-            for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
-                ConceptPathRow row = it.next();
-                if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(groups, row.getConceptPath())) {
-                    batch.add(row.getConceptNodeId());
-                    if (batch.size() >= 1000) {
-                        inserted += facetConceptRepository.bulkMap(facetId, batch);
-                        batch.clear();
-                    }
+        // ensure a clean state before remap
+        facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
+        Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath();
+        List<Long> batch = new ArrayList<>(1024);
+        for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
+            ConceptPathRow row = it.next();
+            if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(groups, row.getConceptPath())) {
+                batch.add(row.getConceptNodeId());
+                if (batch.size() >= 1000) {
+                    facetConceptRepository.bulkMap(facetId, batch);
+                    batch.clear();
                 }
             }
-            if (!batch.isEmpty()) {
-                inserted += facetConceptRepository.bulkMap(facetId, batch);
-            }
+        }
+        if (!batch.isEmpty()) {
+            facetConceptRepository.bulkMap(facetId, batch);
         }
 
         // Return authoritative count in DB to avoid double-count concerns
         return facetConceptRepository.countAllForFacetIds(List.of(facetId));
-    }
-
-    private static String defaultStr(String val, String def) {
-        return StringUtils.defaultIfBlank(val, def);
-    }
-
-    private String canonicalizeExpressions(List<FacetExpressionDTO> expressions) throws JsonProcessingException {
-        if (expressions == null) {
-            expressions = List.of();
-        }
-        return objectMapper.writeValueAsString(expressions);
     }
 
     private String canonicalizeExpressionGroups(List<List<FacetExpressionDTO>> groups) throws JsonProcessingException {
@@ -427,8 +348,8 @@ public class FacetLoaderService {
         facetMetadataRepository.upsert(facetId, key, value);
     }
 
-    private String getFacetMeta(Long facetId, String key) {
-        return facetMetadataRepository.findValue(facetId, key).orElse(null);
+    private String getFacetMeta(Long facetId) {
+        return facetMetadataRepository.findValue(facetId, FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH).orElse(null);
     }
 
     private static String sha256Hex(String s) {
@@ -436,7 +357,10 @@ public class FacetLoaderService {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] dig = md.digest(s.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(2 * dig.length);
-            for (byte b : dig) sb.append(String.format("%02x", b));
+            for (byte b : dig) {
+                sb.append(String.format("%02x", b));
+            }
+
             return sb.toString();
         } catch (Exception e) {
             return "";
