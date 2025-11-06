@@ -167,7 +167,7 @@ public class FacetService {
         Optional<FacetModel> facetData = facetRepository.findByName(name);
         if (facetData.isPresent()) {
             Long facetId = facetData.get().getFacetId();
-            facetConceptRepository.deleteAllForFacetIds(java.util.List.of(facetId));
+            facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
             facetRepository.delete(facetData.get());
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {

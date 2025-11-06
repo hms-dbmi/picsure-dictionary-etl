@@ -28,7 +28,7 @@ public class FacetLoaderService {
 
     private final Logger logger = LoggerFactory.getLogger(FacetLoaderService.class);
 
-    private final edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository facetCategoryRepository;
+    private final FacetCategoryRepository facetCategoryRepository;
     private final FacetRepository facetRepository;
     private final ConceptRepository conceptRepository;
     private final FacetConceptRepository facetConceptRepository;
