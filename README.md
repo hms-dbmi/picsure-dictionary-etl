@@ -127,29 +127,6 @@ Example with expressions (maps facets to concept nodes by concept_path):
   - 6: pasc_cc_2024
 - Negative indices are allowed (e.g., -1 is last node, -2 second to last, etc.).
 
-Example payload fragment using expressions:
-{
-  "Facet_Category": {
-    "Name": "Consortium_Curated_Facets",
-    "Facets": [
-      {
-        "Name": "Recover Adult",
-        "Expressions": [
-          { "exactly": "Recover_Adult", "node": 1 }
-        ],
-        "Facets": [
-          {
-            "Name": "Infected",
-            "Expressions": [
-              { "regex": "(?i)\\\binf(ected)?\\\b", "node": -3 }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-}
-
 Example payload fragment using OR expression groups (OR-of-ANDs):
 {
   "Facet_Category": {
@@ -157,9 +134,6 @@ Example payload fragment using OR expression groups (OR-of-ANDs):
     "Facets": [
       {
         "Name": "Recover Adult Infected or PASC",
-        "Expressions": [
-          { "exactly": "Recover_Adult", "node": 1 }
-        ],
         "Expression_Groups": [
           [
             { "regex": "(?i)\\binf(ected)?\\b", "node": -3 }
@@ -171,9 +145,6 @@ Example payload fragment using OR expression groups (OR-of-ANDs):
       },
       {
         "Name": "Same using camelCase alias",
-        "expressions": [
-          { "exactly": "Recover_Adult", "node": 1 }
-        ],
         "expressionGroups": [
           [ { "regex": "(?i)\\binf(ected)?\\b", "node": -3 } ],
           [ { "contains": "pasc", "node": -1 } ]
