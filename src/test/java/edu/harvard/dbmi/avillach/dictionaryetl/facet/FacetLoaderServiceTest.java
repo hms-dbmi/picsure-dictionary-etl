@@ -68,27 +68,31 @@ class FacetLoaderServiceTest {
 
     @Test
     void load_shouldCreateCategoryAndFacets_andBeIdempotent() {
-        // Build payload programmatically
-        FacetDTO infected = new FacetDTO();
-        infected.name = "Infected";
-        infected.display = "Infected";
-        infected.description = "Infected Facet Description";
+        // Build payload programmatically (records)
+        FacetDTO infected = new FacetDTO(
+                "Infected",
+                "Infected",
+                "Infected Facet Description",
+                null,
+                null
+        );
 
-        FacetDTO parent = new FacetDTO();
-        parent.name = "Recover Adult";
-        parent.display = "RECOVER Adult";
-        parent.description = "Recover adult parent facet.";
-        parent.facets = new ArrayList<>();
-        parent.facets.add(infected);
+        FacetDTO parent = new FacetDTO(
+                "Recover Adult",
+                "RECOVER Adult",
+                "Recover adult parent facet.",
+                null,
+                List.of(infected)
+        );
 
-        FacetCategoryDTO catDto = new FacetCategoryDTO();
-        catDto.name = "Consortium_Curated_Facets";
-        catDto.display = "Consortium Curated Facets";
-        catDto.description = "Consortium Curated Facets Description";
-        catDto.facets = List.of(parent);
+        FacetCategoryDTO catDto = new FacetCategoryDTO(
+                "Consortium_Curated_Facets",
+                "Consortium Curated Facets",
+                "Consortium Curated Facets Description",
+                List.of(parent)
+        );
 
-        FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
-        wrapper.facetCategory = catDto;
+        FacetCategoryWrapper wrapper = new FacetCategoryWrapper(catDto);
 
         // First load
         Result result1 = service.load(List.of(wrapper));

@@ -94,24 +94,24 @@ class FacetLoaderStreamingIntegrationTest {
         concepts.forEach(conceptService::save);
 
         // Build a facet payload that matches all of the above paths: node 1 (second node) equals "Group"
-        FacetExpressionDTO expr = new FacetExpressionDTO();
-        expr.exactly = "Group";
-        expr.node = 1;
+        FacetExpressionDTO expr = new FacetExpressionDTO("Group", null, null, 1);
 
-        FacetDTO facet = new FacetDTO();
-        facet.name = "All Group";
-        facet.display = "All Group";
-        facet.description = "All nodes where second segment is Group";
-        facet.expressionGroups = List.of(List.of(expr));
+        FacetDTO facet = new FacetDTO(
+                "All Group",
+                "All Group",
+                "All nodes where second segment is Group",
+                List.of(List.of(expr)),
+                null
+        );
 
-        FacetCategoryDTO cat = new FacetCategoryDTO();
-        cat.name = "Streaming_Test_Category";
-        cat.display = "Streaming Test Category";
-        cat.description = "Category for streaming test";
-        cat.facets = List.of(facet);
+        FacetCategoryDTO cat = new FacetCategoryDTO(
+                "Streaming_Test_Category",
+                "Streaming Test Category",
+                "Category for streaming test",
+                List.of(facet)
+        );
 
-        FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
-        wrapper.facetCategory = cat;
+        FacetCategoryWrapper wrapper = new FacetCategoryWrapper(cat);
 
         // Act: run the loader which calls mapFacetToConcepts and streams over all concept rows
         service.load(List.of(wrapper));

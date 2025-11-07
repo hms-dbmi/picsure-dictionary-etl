@@ -142,34 +142,34 @@ public class FacetLoaderService {
         if (payload == null) return new Result(0, 0, 0, 0, List.of(), List.of(), List.of());
 
         for (FacetCategoryWrapper wrapper : payload) {
-            if (wrapper == null || wrapper.facetCategory == null) {
+            if (wrapper == null || wrapper.facetCategory() == null) {
                 logger.warn("load() - Skipping null or incomplete facet category wrapper in payload");
                 continue;
             }
-            FacetCategoryDTO facetCategory = wrapper.facetCategory;
-            if (StringUtils.isBlank(facetCategory.name)) {
+            FacetCategoryDTO facetCategory = wrapper.facetCategory();
+            if (StringUtils.isBlank(facetCategory.name())) {
                 logger.warn("load() - Skipping no name found for facet category: {}", facetCategory);
                 continue;
             }
 
-            Optional<FacetCategoryModel> optCat = facetCategoryRepository.findByName(facetCategory.name);
+            Optional<FacetCategoryModel> optCat = facetCategoryRepository.findByName(facetCategory.name());
             FacetCategoryModel category;
             if (optCat.isPresent()) {
                 category = optCat.get();
-                if (StringUtils.isNotBlank(facetCategory.display)) {
-                    category.setDisplay(facetCategory.display);
+                if (StringUtils.isNotBlank(facetCategory.display())) {
+                    category.setDisplay(facetCategory.display());
                 }
-                if (StringUtils.isNotBlank(facetCategory.description)) {
-                    category.setDescription(facetCategory.description);
+                if (StringUtils.isNotBlank(facetCategory.description())) {
+                    category.setDescription(facetCategory.description());
                 }
 
                 facetCategoryRepository.save(category);
                 categoriesUpdated++;
             } else {
                 category = new FacetCategoryModel(
-                        facetCategory.name,
-                        StringUtils.defaultIfBlank(facetCategory.display, facetCategory.name),
-                        StringUtils.defaultIfBlank(facetCategory.description, "")
+                        facetCategory.name(),
+                        StringUtils.defaultIfBlank(facetCategory.display(), facetCategory.name()),
+                        StringUtils.defaultIfBlank(facetCategory.description(), "")
                 );
 
                 facetCategoryRepository.save(category);
@@ -178,8 +178,8 @@ public class FacetLoaderService {
             }
 
             // Recursively process facets
-            if (facetCategory.facets != null) {
-                for (FacetDTO f : facetCategory.facets) {
+            if (facetCategory.facets() != null) {
+                for (FacetDTO f : facetCategory.facets()) {
                     Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, List.of());
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
@@ -205,13 +205,13 @@ public class FacetLoaderService {
             return new Counts(0, 0);
         }
 
-        String name = facetDTO.name;
+        String name = facetDTO.name();
         if (StringUtils.isBlank(name)) {
             logger.warn("upsertFacetRecursive - Facet name must not be blank. Facet: {}", facetDTO);
             return new Counts(0, 0);
         }
-        String display = StringUtils.defaultIfBlank(facetDTO.display, name);
-        String description = StringUtils.defaultIfBlank(facetDTO.description, "");
+        String display = StringUtils.defaultIfBlank(facetDTO.display(), name);
+        String description = StringUtils.defaultIfBlank(facetDTO.description(), "");
 
         Optional<FacetModel> optFacet = facetRepository.findByName(name);
         FacetModel facet;
@@ -237,8 +237,8 @@ public class FacetLoaderService {
 
         List<List<FacetExpressionDTO>> parentGroups = inheritedGroups.isEmpty() ? List.of(List.of()) : inheritedGroups;
 
-        List<List<FacetExpressionDTO>> ownGroups = facetDTO.expressionGroups != null
-                ? facetDTO.expressionGroups
+        List<List<FacetExpressionDTO>> ownGroups = facetDTO.expressionGroups() != null
+                ? facetDTO.expressionGroups()
                 : List.of(List.of());
 
         List<List<FacetExpressionDTO>> effectiveGroups = new ArrayList<>();
@@ -251,7 +251,7 @@ public class FacetLoaderService {
         }
 
         try {
-            String ownGroupsJson = canonicalizeExpressionGroups(facetDTO.expressionGroups);
+            String ownGroupsJson = canonicalizeExpressionGroups(facetDTO.expressionGroups());
             String ownGroupsHash = sha256Hex(ownGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS, ownGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS_HASH, ownGroupsHash);
@@ -272,12 +272,12 @@ public class FacetLoaderService {
         }
 
         long mapped;
-        boolean hasChildren = facetDTO.facets != null && !facetDTO.facets.isEmpty();
+        boolean hasChildren = facetDTO.facets() != null && !facetDTO.facets().isEmpty();
         if (!hasChildren) {
             mapped = mapFacetToConceptsGrouped(facet.getFacetId(), effectiveGroups);
         } else {
             // Has children: process children first so they are fully mapped
-            for (FacetDTO child : facetDTO.facets) {
+            for (FacetDTO child : facetDTO.facets()) {
                 // If the current facet was created, nest children under it; otherwise, keep at the current level
                 List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
                 Counts c = upsertFacetRecursive(

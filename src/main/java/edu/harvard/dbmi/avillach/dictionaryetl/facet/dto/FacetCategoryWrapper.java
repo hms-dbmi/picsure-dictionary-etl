@@ -11,9 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FacetCategoryWrapper {
-
-    @JsonProperty("Facet_Category")
-    @JsonAlias({ "facetCategory", "FacetCategory" })
-    public FacetCategoryDTO facetCategory;
+public record FacetCategoryWrapper(
+        @JsonProperty("Facet_Category")
+        @JsonAlias({ "facetCategory", "FacetCategory" })
+        FacetCategoryDTO facetCategory
+) {
 }

@@ -12,6 +12,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsRequest;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsResponse;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsSuccessResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,17 +113,21 @@ class RecoverMonthsFacetGeneratorServiceTest {
         req.dryRun = true;
 
         GenerateRecoverMonthsResponse dry = generatorService.generate(req);
-        assertEquals("Consortium_Curated_Facets", dry.categoryName);
-        assertTrue(dry.discoveredMonths.contains("9"));
-        assertTrue(dry.discoveredMonths.contains("12"));
-        assertEquals(2, dry.discoveredMonths.size());
-        assertNull(dry.load);
+        assertTrue(dry instanceof GenerateRecoverMonthsSuccessResponse);
+        GenerateRecoverMonthsSuccessResponse dryOk = (GenerateRecoverMonthsSuccessResponse) dry;
+        assertEquals("Consortium_Curated_Facets", dryOk.categoryName());
+        assertTrue(dryOk.discoveredMonths().contains("9"));
+        assertTrue(dryOk.discoveredMonths().contains("12"));
+        assertEquals(2, dryOk.discoveredMonths().size());
+        assertNull(dryOk.load());
 
         // 2) Actual generation (clear none), then verify facets and mappings
         req.dryRun = false;
         GenerateRecoverMonthsResponse out = generatorService.generate(req);
-        assertNotNull(out.load);
-        assertEquals("Generation complete.", out.message);
+        assertTrue(out instanceof GenerateRecoverMonthsSuccessResponse);
+        GenerateRecoverMonthsSuccessResponse outOk = (GenerateRecoverMonthsSuccessResponse) out;
+        assertNotNull(outOk.load());
+        assertEquals("Generation complete.", outOk.message());
 
         // Facets should exist
         assertTrue(facetRepository.findByName("09m-post index").isPresent());

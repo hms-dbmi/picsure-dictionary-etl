@@ -87,35 +87,32 @@ class FacetLoaderFacetMetadataIntegrationTest {
         conceptService.save(c);
 
         // Build payload: parent requires B at node1; child requires C at node2
-        FacetDTO child = new FacetDTO();
-        child.name = "Child";
-        child.display = "Child";
-        child.description = "Child facet";
-        child.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expC2 = new FacetExpressionDTO();
-        expC2.exactly = "C";
-        expC2.node = 2;
-        child.expressionGroups.add(List.of(expC2));
+        FacetExpressionDTO expC2 = new FacetExpressionDTO("C", null, null, 2);
+        FacetDTO child = new FacetDTO(
+                "Child",
+                "Child",
+                "Child facet",
+                new ArrayList<>(List.of(List.of(expC2))),
+                null
+        );
 
-        FacetDTO parent = new FacetDTO();
-        parent.name = "Parent";
-        parent.display = "Parent";
-        parent.description = "Parent facet";
-        parent.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expB1 = new FacetExpressionDTO();
-        expB1.exactly = "B";
-        expB1.node = 1;
-        parent.expressionGroups.add(List.of(expB1));
-        parent.facets = List.of(child);
+        FacetExpressionDTO expB1 = new FacetExpressionDTO("B", null, null, 1);
+        FacetDTO parent = new FacetDTO(
+                "Parent",
+                "Parent",
+                "Parent facet",
+                new ArrayList<>(List.of(List.of(expB1))),
+                List.of(child)
+        );
 
-        FacetCategoryDTO cat = new FacetCategoryDTO();
-        cat.name = "Cat";
-        cat.display = "Cat";
-        cat.description = "Cat desc";
-        cat.facets = List.of(parent);
+        FacetCategoryDTO cat = new FacetCategoryDTO(
+                "Cat",
+                "Cat",
+                "Cat desc",
+                List.of(parent)
+        );
 
-        FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
-        wrapper.facetCategory = cat;
+        FacetCategoryWrapper wrapper = new FacetCategoryWrapper(cat);
         service.load(List.of(wrapper));
 
         Optional<FacetModel> parentOpt = facetRepository.findByName("Parent");
@@ -144,25 +141,23 @@ class FacetLoaderFacetMetadataIntegrationTest {
         assertTrue(facetConceptRepository.countForFacet(childId) >= 1);
 
         // Now change only the parent to require non-matching value at node1; child should de-map
-        FacetDTO parentV2 = new FacetDTO();
-        parentV2.name = "Parent";
-        parentV2.display = "Parent";
-        parentV2.description = "Parent facet";
-        parentV2.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expZ1 = new FacetExpressionDTO();
-        expZ1.exactly = "Z";
-        expZ1.node = 1;
-        parentV2.expressionGroups.add(List.of(expZ1));
-        parentV2.facets = List.of(child); // child unchanged
+        FacetExpressionDTO expZ1 = new FacetExpressionDTO("Z", null, null, 1);
+        FacetDTO parentV2 = new FacetDTO(
+                "Parent",
+                "Parent",
+                "Parent facet",
+                new ArrayList<>(List.of(List.of(expZ1))),
+                List.of(child)
+        );
 
-        FacetCategoryDTO catV2 = new FacetCategoryDTO();
-        catV2.name = "Cat";
-        catV2.display = "Cat";
-        catV2.description = "Cat desc";
-        catV2.facets = List.of(parentV2);
+        FacetCategoryDTO catV2 = new FacetCategoryDTO(
+                "Cat",
+                "Cat",
+                "Cat desc",
+                List.of(parentV2)
+        );
 
-        FacetCategoryWrapper wrapV2 = new FacetCategoryWrapper();
-        wrapV2.facetCategory = catV2;
+        FacetCategoryWrapper wrapV2 = new FacetCategoryWrapper(catV2);
         service.load(List.of(wrapV2));
 
         // Child should have zero mappings now due to parent's constraint

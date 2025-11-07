@@ -89,36 +89,33 @@ class FacetLoaderMappingIntegrationTest {
         conceptService.save(c2);
         conceptService.save(c3);
 
-        // Build payload with expressions
-        FacetDTO infected = new FacetDTO();
-        infected.name = "Infected";
-        infected.display = "Infected";
-        infected.description = "Infected Facet Description";
-        infected.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expInf = new FacetExpressionDTO();
-        expInf.regex = "(?i)\\binf(ected)?\\b";
-        expInf.node = -3; // third from the end
-        infected.expressionGroups.add(List.of(expInf));
+        // Build payload with expressions (records)
+        FacetExpressionDTO expInf = new FacetExpressionDTO(null, null, "(?i)\\binf(ected)?\\b", -3);
+        FacetDTO infected = new FacetDTO(
+                "Infected",
+                "Infected",
+                "Infected Facet Description",
+                new ArrayList<>(List.of(List.of(expInf))),
+                null
+        );
 
-        FacetDTO parent = new FacetDTO();
-        parent.name = "Recover Adult";
-        parent.display = "RECOVER Adult";
-        parent.description = "Recover adult parent facet.";
-        parent.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expParent = new FacetExpressionDTO();
-        expParent.exactly = "Recover_Adult";
-        expParent.node = 1; // 2nd node
-        parent.expressionGroups.add(List.of(expParent));
-        parent.facets = List.of(infected);
+        FacetExpressionDTO expParent = new FacetExpressionDTO("Recover_Adult", null, null, 1);
+        FacetDTO parent = new FacetDTO(
+                "Recover Adult",
+                "RECOVER Adult",
+                "Recover adult parent facet.",
+                new ArrayList<>(List.of(List.of(expParent))),
+                List.of(infected)
+        );
 
-        FacetCategoryDTO catDto = new FacetCategoryDTO();
-        catDto.name = "Consortium_Curated_Facets";
-        catDto.display = "Consortium Curated Facets";
-        catDto.description = "Consortium Curated Facets Description";
-        catDto.facets = List.of(parent);
+        FacetCategoryDTO catDto = new FacetCategoryDTO(
+                "Consortium_Curated_Facets",
+                "Consortium Curated Facets",
+                "Consortium Curated Facets Description",
+                List.of(parent)
+        );
 
-        FacetCategoryWrapper wrapper = new FacetCategoryWrapper();
-        wrapper.facetCategory = catDto;
+        FacetCategoryWrapper wrapper = new FacetCategoryWrapper(catDto);
 
         service.load(List.of(wrapper));
 

@@ -92,7 +92,9 @@ class RecoverMonthsFacetGeneratorServiceNestedTest {
         // Generate (clear category first to ensure clean state)
         GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
         GenerateRecoverMonthsResponse resp = service.generate(req);
-        assertEquals("Generation complete.", resp.message);
+        assertTrue(resp instanceof edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsSuccessResponse);
+        edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsSuccessResponse ok = (edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.GenerateRecoverMonthsSuccessResponse) resp;
+        assertEquals("Generation complete.", ok.message());
 
         // Parent facet exists in category
         Optional<FacetModel> parentOpt = facetRepository.findByName("RECOVER Adult Curated");

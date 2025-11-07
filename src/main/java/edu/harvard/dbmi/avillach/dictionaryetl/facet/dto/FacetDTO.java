@@ -16,30 +16,16 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FacetDTO {
-
-    @JsonProperty("Name") @JsonAlias("name")
-    public String name;
-
-    @JsonProperty("Display") @JsonAlias("display")
-    public String display;
-
-    @JsonProperty("Description") @JsonAlias("description")
-    public String description;
-
-    /** Legacy flat expressions (AND). */
-    @JsonProperty("Expressions") @JsonAlias("expressions")
-    public List<FacetExpressionDTO> expressions;
-
-    /**
-     * New grouped expressions.
-     * Outer list OR, inner list AND.
-     */
-    @JsonProperty("Expression_Groups")
-    @JsonAlias({ "expressionGroups", "ExpressionGroups" })
-    public List<List<FacetExpressionDTO>> expressionGroups;
-
-    /** Nested children. */
-    @JsonProperty("Facets") @JsonAlias("facets")
-    public List<FacetDTO> facets;
+public record FacetDTO(
+        @JsonProperty("Name") @JsonAlias("name") String name,
+        @JsonProperty("Display") @JsonAlias("display") String display,
+        @JsonProperty("Description") @JsonAlias("description") String description,
+        /**
+         * New grouped expressions.
+         * Outer list OR, inner list AND.
+         */
+        @JsonProperty("Expression_Groups") @JsonAlias({ "expressionGroups", "ExpressionGroups" }) List<List<FacetExpressionDTO>> expressionGroups,
+        /** Nested children. */
+        @JsonProperty("Facets") @JsonAlias("facets") List<FacetDTO> facets
+) {
 }

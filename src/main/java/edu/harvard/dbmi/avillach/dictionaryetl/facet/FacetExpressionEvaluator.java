@@ -56,8 +56,8 @@ public final class FacetExpressionEvaluator {
         }
 
         // If node index provided, evaluate only that node
-        if (expr.node != null) {
-            String nodeVal = getNodeAt(nodes, expr.node);
+        if (expr.node() != null) {
+            String nodeVal = getNodeAt(nodes, expr.node());
             if (nodeVal == null) {
                 return false;
             }
@@ -75,20 +75,20 @@ public final class FacetExpressionEvaluator {
     }
 
     private static boolean matchesNode(FacetExpressionDTO expr, String nodeVal) {
-        if (StringUtils.isNotBlank(expr.exactly)) {
-            return nodeVal.equals(expr.exactly);
+        if (StringUtils.isNotBlank(expr.exactly())) {
+            return nodeVal.equals(expr.exactly());
         }
 
-        if (StringUtils.isNotBlank(expr.contains)) {
-            return nodeVal.contains(expr.contains);
+        if (StringUtils.isNotBlank(expr.contains())) {
+            return nodeVal.contains(expr.contains());
         }
 
-        if (StringUtils.isNotBlank(expr.regex)) {
+        if (StringUtils.isNotBlank(expr.regex())) {
             try {
-                Pattern p = Pattern.compile(expr.regex);
+                Pattern p = Pattern.compile(expr.regex());
                 return p.matcher(nodeVal).find();
             } catch (Exception e) {
-                logger.error("matchesNode() - Expression {} - regex could not be compiled: {}", expr, expr.regex);
+                logger.error("matchesNode() - Expression {} - regex could not be compiled: {}", expr, expr.regex());
                 return false;
             }
         }
@@ -97,9 +97,9 @@ public final class FacetExpressionEvaluator {
     }
 
     private static boolean isEmpty(FacetExpressionDTO expr) {
-        return (StringUtils.isBlank(expr.exactly))
-               && (StringUtils.isBlank(expr.contains))
-               && (StringUtils.isBlank(expr.regex));
+        return (StringUtils.isBlank(expr.exactly()))
+               && (StringUtils.isBlank(expr.contains()))
+               && (StringUtils.isBlank(expr.regex()));
     }
 
     private static String getNodeAt(List<String> nodes, int nodePosition) {

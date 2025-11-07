@@ -85,64 +85,62 @@ class FacetLoaderClearIntegrationTest {
         conceptService.save(concept);
 
         // Category 1: ToClear, with Parent and Child facets, both map to the concept
-        FacetExpressionDTO expA0 = new FacetExpressionDTO();
-        expA0.exactly = "A";
-        expA0.node = 0;
+        FacetExpressionDTO expA0 = new FacetExpressionDTO("A", null, null, 0);
 
-        FacetDTO child = new FacetDTO();
-        child.name = "Child";
-        child.display = "Child";
-        child.expressionGroups = new ArrayList<>();
-        child.expressionGroups.add(List.of(expA0));
+        FacetDTO child = new FacetDTO(
+                "Child",
+                "Child",
+                null,
+                new ArrayList<>(List.of(List.of(expA0))),
+                null
+        );
 
-        FacetDTO parent = new FacetDTO();
-        parent.name = "Parent";
-        parent.display = "Parent";
-        parent.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expB1 = new FacetExpressionDTO();
-        expB1.exactly = "B";
-        expB1.node = 1;
-        parent.expressionGroups.add(List.of(expB1));
-        parent.facets = List.of(child);
+        FacetExpressionDTO expB1 = new FacetExpressionDTO("B", null, null, 1);
+        FacetDTO parent = new FacetDTO(
+                "Parent",
+                "Parent",
+                null,
+                new ArrayList<>(List.of(List.of(expB1))),
+                List.of(child)
+        );
 
-        FacetCategoryDTO cat1 = new FacetCategoryDTO();
-        cat1.name = "ToClear";
-        cat1.display = "ToClear";
-        cat1.description = "Category to clear";
-        cat1.facets = List.of(parent);
+        FacetCategoryDTO cat1 = new FacetCategoryDTO(
+                "ToClear",
+                "ToClear",
+                "Category to clear",
+                List.of(parent)
+        );
 
-        FacetCategoryWrapper wrap1 = new FacetCategoryWrapper();
-        wrap1.facetCategory = cat1;
+        FacetCategoryWrapper wrap1 = new FacetCategoryWrapper(cat1);
 
         // Category 2: KeepCat, with Root->Leaf; will clear by facet name (Root)
-        FacetExpressionDTO expA0b = new FacetExpressionDTO();
-        expA0b.exactly = "A";
-        expA0b.node = 0;
+        FacetExpressionDTO expA0b = new FacetExpressionDTO("A", null, null, 0);
 
-        FacetDTO leaf = new FacetDTO();
-        leaf.name = "Leaf";
-        leaf.display = "Leaf";
-        leaf.expressionGroups = new ArrayList<>();
-        leaf.expressionGroups.add(List.of(expA0b));
+        FacetDTO leaf = new FacetDTO(
+                "Leaf",
+                "Leaf",
+                null,
+                new ArrayList<>(List.of(List.of(expA0b))),
+                null
+        );
 
-        FacetDTO root = new FacetDTO();
-        root.name = "Root";
-        root.display = "Root";
-        root.expressionGroups = new ArrayList<>();
-        FacetExpressionDTO expC2 = new FacetExpressionDTO();
-        expC2.exactly = "C";
-        expC2.node = 2;
-        root.expressionGroups.add(List.of(expC2));
-        root.facets = List.of(leaf);
+        FacetExpressionDTO expC2 = new FacetExpressionDTO("C", null, null, 2);
+        FacetDTO root = new FacetDTO(
+                "Root",
+                "Root",
+                null,
+                new ArrayList<>(List.of(List.of(expC2))),
+                List.of(leaf)
+        );
 
-        FacetCategoryDTO cat2 = new FacetCategoryDTO();
-        cat2.name = "KeepCat";
-        cat2.display = "KeepCat";
-        cat2.description = "Category to keep";
-        cat2.facets = List.of(root);
+        FacetCategoryDTO cat2 = new FacetCategoryDTO(
+                "KeepCat",
+                "KeepCat",
+                "Category to keep",
+                List.of(root)
+        );
 
-        FacetCategoryWrapper wrap2 = new FacetCategoryWrapper();
-        wrap2.facetCategory = cat2;
+        FacetCategoryWrapper wrap2 = new FacetCategoryWrapper(cat2);
 
         service.load(List.of(wrap1, wrap2));
 

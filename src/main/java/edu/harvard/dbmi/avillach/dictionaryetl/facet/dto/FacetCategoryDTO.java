@@ -10,27 +10,10 @@ import java.util.List;
 /** Top-level category container for facets. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FacetCategoryDTO {
-
-    @JsonProperty("Name") @JsonAlias("name")
-    public String name;
-
-    @JsonProperty("Display") @JsonAlias("display")
-    public String display;
-
-    @JsonProperty("Description") @JsonAlias("description")
-    public String description;
-
-    @JsonProperty("Facets") @JsonAlias("facets")
-    public List<FacetDTO> facets;
-
-    @Override
-    public String toString() {
-        return "FacetCategoryDTO{" +
-               "name='" + name + '\'' +
-               ", display='" + display + '\'' +
-               ", description='" + description + '\'' +
-               ", facets=" + facets +
-               '}';
-    }
+public record FacetCategoryDTO(
+        @JsonProperty("Name") @JsonAlias("name") String name,
+        @JsonProperty("Display") @JsonAlias("display") String display,
+        @JsonProperty("Description") @JsonAlias("description") String description,
+        @JsonProperty("Facets") @JsonAlias("facets") List<FacetDTO> facets
+) {
 }
