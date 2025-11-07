@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.0</version>
+		<version>3.5.7</version>
 		<relativePath/>
 	</parent>
 	<groupId>edu.harvard.dbmi.avillach</groupId>
@@ -14,8 +14,8 @@
 	<name>dictionaryetl</name>
 	<description>ETL API for Data Dictionary</description>
 	<properties>
-		<java.version>21</java.version>
-        <spotless.version>2.41.1</spotless.version>
+		<java.version>24</java.version>
+        <spotless.version>2.43.0</spotless.version>
 		<datasource-proxy.version>1.4.1</datasource-proxy.version>
 	</properties>
 	<url/>
@@ -126,7 +126,7 @@
             				<configuration>
             					<java>
             						<eclipse>
-            							<version>4.26</version>
+            							<version>4.33</version>
             							<file>code-formatting/eclipse-formatter.xml</file>
             						</eclipse>
             						<toggleOffOn />
