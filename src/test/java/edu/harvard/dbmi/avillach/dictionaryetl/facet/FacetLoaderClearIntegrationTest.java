@@ -155,8 +155,10 @@ class FacetLoaderClearIntegrationTest {
         assertTrue(leafFacet.isPresent());
 
         // perform clear by category name
-        FacetClearRequest clearReq = new FacetClearRequest();
-        clearReq.facetCategories = List.of("ToClear");
+        FacetClearRequest clearReq = new FacetClearRequest(
+                List.of("ToClear"),
+                null
+        );
         ClearResult clearRes = service.clear(clearReq);
         assertEquals(1, clearRes.categoriesDeleted());
         assertEquals(2, clearRes.facetsDeleted()); // Parent + Child
@@ -173,8 +175,10 @@ class FacetLoaderClearIntegrationTest {
         assertTrue(facetRepository.findByName("Leaf").isPresent());
 
         // perform clear by facet name (should remove root and leaf under KeepCat, but keep category)
-        FacetClearRequest clearReq2 = new FacetClearRequest();
-        clearReq2.facets = List.of("Root");
+        FacetClearRequest clearReq2 = new FacetClearRequest(
+                null,
+                List.of("Root")
+        );
         ClearResult clearRes2 = service.clear(clearReq2);
         assertEquals(0, clearRes2.categoriesDeleted());
         assertEquals(2, clearRes2.facetsDeleted()); // Root + Leaf

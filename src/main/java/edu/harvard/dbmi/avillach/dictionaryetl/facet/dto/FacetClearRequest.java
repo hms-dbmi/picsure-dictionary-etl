@@ -14,11 +14,5 @@ import java.util.List;
  * }
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class FacetClearRequest {
-
-    @JsonProperty("Facet_Categories")
-    public List<String> facetCategories;
-
-    @JsonProperty("Facets")
-    public List<String> facets;
-}
+public record FacetClearRequest(@JsonProperty("Facet_Categories") List<String> facetCategories,
+                               @JsonProperty("Facets") List<String> facets) {}

@@ -65,8 +65,8 @@ public class FacetLoaderService {
         long mappingsDeleted = 0;
 
         // 1) Clear by category names
-        if (request.facetCategories != null) {
-            for (String catName : request.facetCategories) {
+        if (request.facetCategories() != null) {
+            for (String catName : request.facetCategories()) {
                 if (catName == null || catName.isBlank()) continue;
                 Optional<FacetCategoryModel> opt = facetCategoryRepository.findByName(catName);
                 if (opt.isEmpty()) {
@@ -91,8 +91,8 @@ public class FacetLoaderService {
         }
 
         // 2) Clear by facet names (including their descendants)
-        if (request.facets != null) {
-            for (String facetName : request.facets) {
+        if (request.facets() != null) {
+            for (String facetName : request.facets()) {
                 if (facetName == null || facetName.isBlank()) continue;
                 Optional<FacetModel> optFacet = facetRepository.findByName(facetName);
                 if (optFacet.isEmpty()) {
