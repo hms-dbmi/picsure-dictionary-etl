@@ -75,11 +75,8 @@ public class FacetLoaderService {
                 }
                 FacetCategoryModel cat = opt.get();
 
-                // delete mappings and facets for category
                 int mappingsDeletedForCat = facetConceptRepository.deleteAllForCategory(cat.getFacetCategoryId());
                 int facetsDeletedForCat = facetRepository.deleteAllForCategory(cat.getFacetCategoryId());
-
-                // delete category
                 facetCategoryRepository.deleteById(cat.getFacetCategoryId());
 
                 categoriesDeleted += 1;
@@ -211,8 +208,8 @@ public class FacetLoaderService {
         // Clear mappings for facets whose effective expression groups changed/new
         facetConceptRepository.deleteAllForFacetIds(new ArrayList<>(toClear));
 
-        // Single pass over concepts to map leaf facets that need refresh
-        singlePassMapLeaves(leafFacets, toClear);
+        // Single pass over concepts to map leaf facets
+        singlePassMapLeaves(leafFacets);
 
         // Rebuild parent facets bottom-up from their direct children
         rebuildParentsBottomUp(childrenByParent, depthByFacet);
@@ -356,12 +353,8 @@ public class FacetLoaderService {
     }
 
 
-    private void singlePassMapLeaves(List<LeafFacetSpec> leafFacets, Set<Long> toClear) {
+    private void singlePassMapLeaves(List<LeafFacetSpec> leafFacets) {
         if (leafFacets.isEmpty()) {
-            return;
-        }
-
-        if (toClear.isEmpty()) {
             return;
         }
 
@@ -369,25 +362,20 @@ public class FacetLoaderService {
         Map<Long, List<Long>> buffers = new HashMap<>();
         final int BATCH = 1000;
 
-        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
-            Iterator<ConceptPathRow> it = rows.iterator();
-            while (it.hasNext()) {
-                ConceptPathRow row = it.next();
-                long conceptId = row.getConceptNodeId();
-                String path = row.getConceptPath();
+        Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath();
+        Iterator<ConceptPathRow> it = rows.iterator();
+        while (it.hasNext()) {
+            ConceptPathRow row = it.next();
+            long conceptId = row.getConceptNodeId();
+            String path = row.getConceptPath();
 
-                for (LeafFacetSpec lf : leafFacets) {
-                    if (!toClear.contains(lf.facetId())) {
-                        continue; // skip unchanged leaves
-                    }
-
-                    if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(lf.groups(), path)) {
-                        List<Long> buf = buffers.computeIfAbsent(lf.facetId(), k -> new ArrayList<>(BATCH));
-                        buf.add(conceptId);
-                        if (buf.size() >= BATCH) {
-                            facetConceptRepository.bulkMap(lf.facetId(), buf);
-                            buf.clear();
-                        }
+            for (LeafFacetSpec lf : leafFacets) {
+                if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(lf.groups(), path)) {
+                    List<Long> buf = buffers.computeIfAbsent(lf.facetId(), k -> new ArrayList<>(BATCH));
+                    buf.add(conceptId);
+                    if (buf.size() >= BATCH) {
+                        facetConceptRepository.bulkMap(lf.facetId(), buf);
+                        buf.clear();
                     }
                 }
             }
