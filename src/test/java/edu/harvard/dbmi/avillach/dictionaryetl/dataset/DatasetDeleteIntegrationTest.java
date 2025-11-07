@@ -2,7 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.consent.ConsentRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;

@@ -5,6 +5,13 @@ import com.opencsv.CSVReaderBuilder;
 import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetFacetRefreshService;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.ConceptToFacetDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import jakarta.persistence.EntityManager;
@@ -31,16 +38,31 @@ public class FacetService {
     private final FacetCategoryService facetCategoryService;
     private final FacetConceptService facetConceptService;
     private final FacetMetadataRepository facetMetadataRepository;
+    private final FacetConceptRepository facetConceptRepository;
+    private final DatasetRepository datasetRepository;
+    private final ConceptRepository conceptRepository;
+    private final DatasetFacetRefreshService datasetFacetRefreshService;
 
     @PersistenceContext
             private EntityManager entityManager;
 
     @Autowired
-    public FacetService(FacetRepository facetRepository, FacetCategoryService facetCategoryService, FacetConceptService facetConceptService, FacetMetadataRepository facetMetadataRepository) {
+    public FacetService(FacetRepository facetRepository,
+                        FacetCategoryService facetCategoryService,
+                        FacetConceptService facetConceptService,
+                        FacetMetadataRepository facetMetadataRepository,
+                        FacetConceptRepository facetConceptRepository,
+                        DatasetRepository datasetRepository,
+                        ConceptRepository conceptRepository,
+                        DatasetFacetRefreshService datasetFacetRefreshService) {
         this.facetRepository = facetRepository;
         this.facetCategoryService = facetCategoryService;
         this.facetConceptService = facetConceptService;
         this.facetMetadataRepository = facetMetadataRepository;
+        this.facetConceptRepository = facetConceptRepository;
+        this.datasetRepository = datasetRepository;
+        this.conceptRepository = conceptRepository;
+        this.datasetFacetRefreshService = datasetFacetRefreshService;
     }
 
     public FacetModel save(FacetModel facetModel) {
@@ -88,12 +110,190 @@ public class FacetService {
         return this.facetRepository.findAll();
     }
 
+    public ResponseEntity<List<FacetModel>> listAllResponse() {
+        try {
+            List<FacetModel> all = new ArrayList<>(facetRepository.findAll());
+            if (all.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(all, HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public Optional<FacetModel> findByID(Long parentId) {
         return this.facetRepository.findById(parentId);
     }
 
     public Optional<FacetMetadataModel> findFacetMetadataByFacetIDAndKey(Long facetId, String key) {
         return this.facetMetadataRepository.findByFacetIdAndKey(facetId, key);
+    }
+
+    // Controller-delegated methods moved from FacetController to service layer
+    public ResponseEntity<FacetModel> updateFacet(String categoryName, String name, String display, String desc, String parentName) {
+        Optional<edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel> facetCategoryModel = facetCategoryService.findByName(categoryName);
+        Long categoryId;
+        if (facetCategoryModel.isPresent()) {
+            categoryId = facetCategoryModel.get().getFacetCategoryId();
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Optional<FacetModel> parentModel = facetRepository.findByName(parentName);
+        Long parentId = parentModel.map(FacetModel::getFacetId).orElse(null);
+        Optional<FacetModel> facetData = facetRepository.findByName(name);
+
+        if (facetData.isPresent()) {
+            FacetModel existingFacet = facetData.get();
+            existingFacet.setFacetCategoryId(categoryId);
+            existingFacet.setName(name);
+            existingFacet.setDisplay(display);
+            existingFacet.setDescription(desc);
+            existingFacet.setParentId(parentId);
+            return new ResponseEntity<>(facetRepository.save(existingFacet), HttpStatus.OK);
+        } else {
+            try {
+                FacetModel newFacet = facetRepository.save(new FacetModel(categoryId, name, display, desc, parentId));
+                return new ResponseEntity<>(newFacet, HttpStatus.CREATED);
+            } catch (Exception e) {
+                System.out.println(e.getLocalizedMessage());
+                return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
+    public ResponseEntity<FacetModel> deleteFacetByName(String name) {
+        Optional<FacetModel> facetData = facetRepository.findByName(name);
+        if (facetData.isPresent()) {
+            Long facetId = facetData.get().getFacetId();
+            facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
+            facetRepository.delete(facetData.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<String> refreshBDCFacets() {
+        // Delegate dataset-related refresh
+        datasetFacetRefreshService.refreshDatasetFacet();
+        // Ensure continuous/categorical facets and mappings
+        createDefaultFacets();
+        // Create/update data_source category and genomic facet, and map SAMPLE_ID concepts
+        edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel dataSourceCategoryModel =
+                facetCategoryService.findByName("data_source").orElse(
+                        facetCategoryService.save(new edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel(
+                                "data_source", "Data Type", "Associated metadata source"))
+                );
+        Long dataSourceFacetCategoryId = dataSourceCategoryModel.getFacetCategoryId();
+        FacetModel genomicSourceFacet = facetRepository.findByName("data_source_genomic").orElse(
+                save(new FacetModel(dataSourceFacetCategoryId, "data_source_genomic", "Genomic", "Associated with genomic data", null))
+        );
+        Long genomicSourceFacetId = genomicSourceFacet.getFacetId();
+        facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");
+        return new ResponseEntity<>("Successfully updated default facets\n", HttpStatus.OK);
+    }
+
+    @Transactional
+    public ResponseEntity<String> refreshDataTypeFacet() {
+        try {
+            createDefaultFacets();
+            return new ResponseEntity<>("Successfully updated continuous and categorical data type facets\n", HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<FacetConceptModel> addFacetToFullDataset(String facetName, String datasetRef) {
+        try {
+            Optional<FacetModel> facet = facetRepository.findByName(facetName);
+            var dataset = datasetRepository.findByRef(datasetRef);
+            if (dataset.isEmpty() || facet.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            Long datasetID = dataset.get().getDatasetId();
+            Long facetId = facet.get().getFacetId();
+            List<edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel> concepts = conceptRepository.findByDatasetId(datasetID);
+            for (edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel concept : concepts) {
+                Long conceptNodeId = concept.getConceptNodeId();
+                Optional<FacetConceptModel> conceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(facetId, conceptNodeId);
+                if (conceptFacet.isEmpty()) {
+                    facetConceptRepository.save(new FacetConceptModel(facetId, conceptNodeId));
+                    if (facet.get().getParentId() != null) {
+                        Optional<FacetModel> parentFacet = Optional.ofNullable(facetRepository.findByFacetId(facet.get().getParentId()));
+                        if (parentFacet.isPresent()) {
+                            Long parentFacetId = parentFacet.get().getFacetId();
+                            Optional<FacetConceptModel> parentConceptFacet = facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, conceptNodeId);
+                            if (parentConceptFacet.isEmpty()) {
+                                facetConceptRepository.save(new FacetConceptModel(parentFacetId, conceptNodeId));
+                            }
+                        }
+                    }
+                }
+            }
+            return new ResponseEntity<>(null, HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity<List<FacetMetadataModel>> getAllFacetMetadataModels(Optional<String> name) {
+        try {
+            List<FacetMetadataModel> facetMetadataModels = new ArrayList<>();
+            if (name.isEmpty()) {
+                facetMetadataModels.addAll(facetMetadataRepository.findAll());
+            } else {
+                Long facetId = facetRepository.findByName(name.get()).get().getFacetId();
+                facetMetadataModels.addAll(facetMetadataRepository.findByFacetId(facetId));
+            }
+            if (facetMetadataModels.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(facetMetadataModels, HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<FacetMetadataModel> updateFacetMetadata(String name, String key, String values) {
+        Optional<FacetModel> facet = facetRepository.findByName(name);
+        if (facet.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Long facetId = facet.get().getFacetId();
+        Optional<FacetMetadataModel> facetMetadataData = facetMetadataRepository.findByFacetIdAndKey(facetId, key);
+        try {
+            if (facetMetadataData.isPresent()) {
+                FacetMetadataModel existing = facetMetadataData.get();
+                existing.setValue(values);
+                return new ResponseEntity<>(facetMetadataRepository.save(existing), HttpStatus.OK);
+            } else {
+                FacetMetadataModel newFacetMetadata = facetMetadataRepository.save(new FacetMetadataModel(facetId, key, values));
+                return new ResponseEntity<>(newFacetMetadata, HttpStatus.CREATED);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<FacetMetadataModel> deleteFacetMetadata(String name, String key) {
+        Long facetId = facetRepository.findByName(name).get().getFacetId();
+        Optional<FacetMetadataModel> facetMetadataData = facetMetadataRepository.findByFacetIdAndKey(facetId, key);
+        if (facetMetadataData.isPresent()) {
+            facetMetadataRepository.delete(facetMetadataData.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     public List<ConceptToFacetDTO> findFacetToConceptRelationshipsByDatasetID(Long datasetID) {
