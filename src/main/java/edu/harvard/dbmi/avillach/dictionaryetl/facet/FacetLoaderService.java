@@ -141,6 +141,14 @@ public class FacetLoaderService {
 
         if (payload == null) return new Result(0, 0, 0, 0, List.of(), List.of(), List.of());
 
+        // Collectors for single-pass mapping and parent rebuild across ALL categories
+        List<LeafFacetSpec> leafFacets = new ArrayList<>();
+        Map<Long, List<Long>> childrenByParent = new HashMap<>();
+        Map<Long, Integer> depthByFacet = new HashMap<>();
+        Set<Long> toClear = new HashSet<>();
+        Map<Long, String> nameById = new HashMap<>();
+        Map<Long, String> categoryById = new HashMap<>();
+
         for (FacetCategoryWrapper wrapper : payload) {
             if (wrapper == null || wrapper.facetCategory() == null) {
                 logger.warn("load() - Skipping null or incomplete facet category wrapper in payload");
@@ -177,28 +185,64 @@ public class FacetLoaderService {
                 accum.createdCategoryNames().add(category.getName());
             }
 
-            // Recursively process facets
+            // Recursively process facets (collect only; single-pass mapping later)
             if (facetCategory.facets() != null) {
                 for (FacetDTO f : facetCategory.facets()) {
-                    Counts c = upsertFacetRecursive(category.getFacetCategoryId(), null, f, category.getName(), accum, accum.createdFacetNames(), false, List.of());
+                    Counts c = upsertFacetRecursiveCollect(
+                            category.getFacetCategoryId(),
+                            null,
+                            f,
+                            category.getName(),
+                            accum.createdFacetNames(),
+                            leafFacets,
+                            childrenByParent,
+                            depthByFacet,
+                            toClear,
+                            nameById,
+                            categoryById,
+                            List.of()
+                    );
                     facetsCreated += c.created();
                     facetsUpdated += c.updated();
                 }
             }
         }
 
+        // Clear mappings for facets whose effective expression groups changed/new
+        facetConceptRepository.deleteAllForFacetIds(new ArrayList<>(toClear));
+
+        // Single pass over concepts to map leaf facets that need refresh
+        singlePassMapLeaves(leafFacets, toClear);
+
+        // Rebuild parent facets bottom-up from their direct children
+        rebuildParentsBottomUp(childrenByParent, depthByFacet);
+
+        // Populate mapping breakdown counts for all facets
+        for (Map.Entry<Long, String> e : nameById.entrySet()) {
+            Long facetId = e.getKey();
+            long mappedCount = facetConceptRepository.countForFacet(facetId);
+            String facetName = e.getValue();
+            String categoryName = categoryById.get(facetId);
+            accum.facetMappings().add(new FacetMappingBreakdown(categoryName, facetName, mappedCount));
+        }
+
         return new Result(categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated,
                 List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
     }
 
-    private Counts upsertFacetRecursive(
+    // Collect-only recursion: upsert facets and metadata; gather leaves/structure for single-pass mapping
+    private Counts upsertFacetRecursiveCollect(
             Long categoryId,
             Long parentId,
             FacetDTO facetDTO,
             String categoryName,
-            LoadAccum accum,
             List<FacetNameNested> createdCollector,
-            boolean facetCleared,
+            List<LeafFacetSpec> leafFacets,
+            Map<Long, List<Long>> childrenByParent,
+            Map<Long, Integer> depthByFacet,
+            Set<Long> toClear,
+            Map<Long, String> nameById,
+            Map<Long, String> categoryById,
             List<List<FacetExpressionDTO>> inheritedGroups
     ) {
         if (facetDTO == null) {
@@ -256,14 +300,13 @@ public class FacetLoaderService {
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS, ownGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_FACET_EXPRESSION_GROUPS_HASH, ownGroupsHash);
 
-            // Persist effective groups and hash; clear if changed
+            // Persist effective groups and hash; collect for clear if changed
             String effectiveGroupsJson = canonicalizeExpressionGroups(effectiveGroups);
             String effectiveGroupsHash = sha256Hex(effectiveGroupsJson);
             String prevEffectiveGroupsHash = getFacetMeta(facet.getFacetId());
             boolean effectiveGroupsChanged = (prevEffectiveGroupsHash == null) || !prevEffectiveGroupsHash.equals(effectiveGroupsHash);
             if (effectiveGroupsChanged) {
-                facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
-                facetCleared = true;
+                toClear.add(facet.getFacetId());
             }
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS, effectiveGroupsJson);
             upsertFacetMeta(facet.getFacetId(), KEY_EFFECTIVE_EXPRESSION_GROUPS_HASH, effectiveGroupsHash);
@@ -271,70 +314,104 @@ public class FacetLoaderService {
             logger.warn("upsertFacetRecursive - unable to map JSON expression - {}", ex.getMessage());
         }
 
-        long mapped;
+        // names and category for reporting later
+        nameById.put(facet.getFacetId(), name);
+        categoryById.put(facet.getFacetId(), categoryName);
+
+        // depth and tree structure
+        int parentDepth = depthByFacet.getOrDefault(parentId, -1);
+        depthByFacet.put(facet.getFacetId(), parentDepth + 1);
+        if (parentId != null) {
+            childrenByParent.computeIfAbsent(parentId, k -> new ArrayList<>()).add(facet.getFacetId());
+        }
+
         boolean hasChildren = facetDTO.facets() != null && !facetDTO.facets().isEmpty();
         if (!hasChildren) {
-            mapped = mapFacetToConceptsGrouped(facet.getFacetId(), effectiveGroups);
+            // Collect leaf facet for single-pass mapping
+            leafFacets.add(new LeafFacetSpec(facet.getFacetId(), effectiveGroups));
         } else {
-            // Has children: process children first so they are fully mapped
+            // Recurse into children
             for (FacetDTO child : facetDTO.facets()) {
-                // If the current facet was created, nest children under it; otherwise, keep at the current level
                 List<FacetNameNested> nextCollector = (createdNode != null) ? createdNode.facets : createdCollector;
-                Counts c = upsertFacetRecursive(
+                Counts c = upsertFacetRecursiveCollect(
                         categoryId,
                         facet.getFacetId(),
                         child,
                         categoryName,
-                        accum,
                         nextCollector,
-                        facetCleared,
+                        leafFacets,
+                        childrenByParent,
+                        depthByFacet,
+                        toClear,
+                        nameById,
+                        categoryById,
                         effectiveGroups
                 );
                 created += c.created();
                 updated += c.updated();
             }
-
-            // Parent should only have the union of its children’s mapped concepts.
-            // Always clear existing parent mappings before rebuilding from children
-            facetConceptRepository.deleteAllForFacetIds(List.of(facet.getFacetId()));
-
-            // Insert union of direct children’s concept mappings into the parent
-            mapped = facetConceptRepository.mapParentToUnionOfDirectChildren(facet.getFacetId());
         }
 
-        accum.facetMappings().add(new FacetMappingBreakdown(categoryName, name, mapped));
         return new Counts(created, updated);
     }
 
-    /**
-     * New mapping for OR-of-AND groups.
-     */
-    private long mapFacetToConceptsGrouped(Long facetId, List<List<FacetExpressionDTO>> groups) {
-        // Strategy:
-        // - Clear existing
-        // - For each concept, accept if ANY group matches (OR)
-        // - Bulk insert mappings
 
-        // ensure a clean state before remap
-        facetConceptRepository.deleteAllForFacetIds(List.of(facetId));
-        Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath();
-        List<Long> batch = new ArrayList<>(1024);
-        for (Iterator<ConceptPathRow> it = rows.iterator(); it.hasNext(); ) {
-            ConceptPathRow row = it.next();
-            if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(groups, row.getConceptPath())) {
-                batch.add(row.getConceptNodeId());
-                if (batch.size() >= 1000) {
-                    facetConceptRepository.bulkMap(facetId, batch);
-                    batch.clear();
+    private void singlePassMapLeaves(List<LeafFacetSpec> leafFacets, Set<Long> toClear) {
+        if (leafFacets.isEmpty()) {
+            return;
+        }
+
+        if (toClear.isEmpty()) {
+            return;
+        }
+
+        // Prepare buffers per facet
+        Map<Long, List<Long>> buffers = new HashMap<>();
+        final int BATCH = 1000;
+
+        try (Stream<ConceptPathRow> rows = conceptRepository.streamLeafNodeIdAndPath()) {
+            Iterator<ConceptPathRow> it = rows.iterator();
+            while (it.hasNext()) {
+                ConceptPathRow row = it.next();
+                long conceptId = row.getConceptNodeId();
+                String path = row.getConceptPath();
+
+                for (LeafFacetSpec lf : leafFacets) {
+                    if (!toClear.contains(lf.facetId())) {
+                        continue; // skip unchanged leaves
+                    }
+
+                    if (FacetExpressionEvaluator.facetAppliesToConceptPathGrouped(lf.groups(), path)) {
+                        List<Long> buf = buffers.computeIfAbsent(lf.facetId(), k -> new ArrayList<>(BATCH));
+                        buf.add(conceptId);
+                        if (buf.size() >= BATCH) {
+                            facetConceptRepository.bulkMap(lf.facetId(), buf);
+                            buf.clear();
+                        }
+                    }
                 }
             }
         }
-        if (!batch.isEmpty()) {
-            facetConceptRepository.bulkMap(facetId, batch);
+
+        for (Map.Entry<Long, List<Long>> e : buffers.entrySet()) {
+            if (!e.getValue().isEmpty()) {
+                facetConceptRepository.bulkMap(e.getKey(), e.getValue());
+            }
+        }
+    }
+
+    private void rebuildParentsBottomUp(Map<Long, List<Long>> childrenByParent, Map<Long, Integer> depthByFacet) {
+        if (childrenByParent.isEmpty()) {
+            return;
         }
 
-        // Return authoritative count in DB to avoid double-count concerns
-        return facetConceptRepository.countAllForFacetIds(List.of(facetId));
+        List<Long> parents = new ArrayList<>(childrenByParent.keySet());
+        parents.sort(Comparator.comparingInt(id -> depthByFacet.getOrDefault(id, 0)));
+        Collections.reverse(parents); // deepest first
+        for (Long parentId : parents) {
+            facetConceptRepository.deleteAllForFacetIds(List.of(parentId));
+            facetConceptRepository.mapParentToUnionOfDirectChildren(parentId);
+        }
     }
 
     private String canonicalizeExpressionGroups(List<List<FacetExpressionDTO>> groups) throws JsonProcessingException {
