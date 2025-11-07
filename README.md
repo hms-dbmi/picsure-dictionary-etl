@@ -86,7 +86,7 @@ What it does:
 - Evaluates expressions to map facets to concept nodes (rows in dict.concept_node) and writes relationships into dict.facet__concept_node.
 
 API endpoint:
-- POST /api/facet-loader/load
+- POST /api/facet/loader/load
 - Request body is a JSON array of objects each containing a Facet_Category.
 - Returns a JSON object with counts: categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated.
 
@@ -157,27 +157,24 @@ Example payload fragment using OR expression groups (OR-of-ANDs):
 Expression evaluation rules:
 - Supported keys per expression entry: exactly, contains, regex (use one or more).
 - Two ways to define rules:
-  - Expressions (legacy): a flat array of entries combined with AND.
   - Expression_Groups (new): an array of groups; OR across groups, AND within each group.
 - node is optional for any entry:
   - If node is provided, we evaluate only that node (zero-based; negatives allowed, e.g., -1 is last node).
   - If node is omitted, the expression scans all nodes in the concept_path and evaluates true if any node matches.
 - Evaluation semantics:
   - If Expression_Groups is present and non-empty: the facet matches a concept if ANY group matches; each group requires ALL of its entries to match (OR-of-ANDs).
-  - Else if only Expressions are present: ALL entries must match (AND).
   - Within a single entry, all provided keys (exactly/contains/regex) must match the same node value.
 - Regex uses Java syntax; inline flags like (?i) are supported. Exactly/contains are literal string matches.
 - Out-of-bounds node indices or invalid regex cause that entry to evaluate to false.
 - Inheritance to children:
-  - Child facets inherit their parents' flat Expressions and are ANDed with them.
-  - When a child defines Expression_Groups, each group is implicitly ANDed with the inherited flat Expressions.
-- If a facet contains no expressions or groups, it is not automatically mapped to any concept nodes (it is still created in the hierarchy).
+  - Child facets inherit their parents' effective groups. Effective groups are formed as a cross-product: each parent group is AND-combined with each child group.
+  - If a parent has groups and a child defines no groups, the child inherits the parent groups as-is. If neither parent nor child has groups, no automatic mapping occurs.
+- If a facet contains no groups at any level (no Expression_Groups on it or any ancestor), it is not automatically mapped to any concept nodes (it is still created in the hierarchy).
 
 Alias handling in payload:
-- Facet name must be provided as Name (camelCase name is accepted as input alias).
-- Flat rules: Expressions can be provided as Expressions or expressions (aliases). Each entry uses keys exactly, contains, regex, and optional node.
-- OR groups: Expression_Groups is preferred; expressionGroups and ExpressionGroups are also accepted as aliases.
-- Node index must be provided as node.
+- Facet fields support camelCase aliases: Name/name, Display/display, Description/description.
+- For grouped rules, Expression_Groups is preferred; expressionGroups and ExpressionGroups are also accepted as aliases.
+- Each expression entry supports keys: exactly, contains, regex, and optional node.
 
 Pre-requisites for mapping:
 - dict.concept_node should already be populated (e.g., via the Dictionary Loader) so that concept_path values exist to evaluate.
@@ -217,12 +214,12 @@ Troubleshooting:
 
 Use this endpoint to remove facet categories and/or specific facets (including all their descendants) by name. The service will also remove facet-to-concept mappings first to preserve referential integrity.
 
-- Endpoint: POST /api/facet-loader/clear
+- Endpoint: POST /api/facet/loader/clear
 - Request body (JSON):
 
   {
-    "facetCategories": ["CategoryName1", "CategoryName2"],
-    "facets": ["FacetNameA", "FacetNameB"]
+    "Facet_Categories": ["CategoryName1", "CategoryName2"],
+    "Facets": ["FacetNameA", "FacetNameB"]
   }
 
 - Both properties are optional. Provide one or both:
@@ -248,7 +245,7 @@ cURL example (clear by category):
   curl -X POST \
        -H "Content-Type: application/json" \
        --data-binary '{
-         "facetCategories": ["Consortium_Curated_Facets"]
+         "Facet_Categories": ["Consortium_Curated_Facets"]
        }' \
        http://localhost:8080/api/facet/loader/clear
 
