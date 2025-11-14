@@ -1,0 +1,149 @@
+package edu.harvard.dbmi.avillach.dictionaryetl.facet;
+
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryWrapper;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetDTO;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetExpressionDTO;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.MountableFile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@Testcontainers
+@ActiveProfiles("test")
+@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class FacetLoaderMappingIntegrationTest {
+
+    @Autowired
+    private DatabaseCleanupUtility databaseCleanupUtility;
+
+    @Autowired
+    private FacetLoaderService service;
+
+    @Autowired
+    private DatasetRepository datasetRepository;
+
+    @Autowired
+    private ConceptService conceptService;
+
+    @Autowired
+    private FacetRepository facetRepository;
+
+    @Autowired
+    private FacetConceptRepository facetConceptRepository;
+
+    @Container
+    static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
+        .withDatabaseName("testdb")
+        .withUsername("testuser")
+        .withPassword("testpass")
+        .withCopyFileToContainer(
+            MountableFile.forClasspathResource("schema.sql"),
+            "/docker-entrypoint-initdb.d/schema.sql"
+        );
+
+    @DynamicPropertySource
+    static void mySQLProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", databaseContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", databaseContainer::getUsername);
+        registry.add("spring.datasource.password", databaseContainer::getPassword);
+    }
+
+    @BeforeEach
+    void cleanDatabase() {
+        this.databaseCleanupUtility.truncateTablesAllTables();
+    }
+
+    @Test
+    void expressions_shouldMapFacetsToMatchingConcepts() {
+        // Seed dataset and concept nodes
+        DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003463", "RECOVER Adult", "", ""));
+        DatasetModel dsPeds = datasetRepository.save(new DatasetModel("phs003461", "RECOVER Peds", "", ""));
+
+        ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "", "\\phs003463\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\", null);
+        ConceptModel c2 = new ConceptModel(dsPeds.getDatasetId(), "phs003461", "phs003461", "", "\\phs003461\\RECOVER_Caregiver\\biospecimens\\pc_tassoreplacewhy\\", null);
+        ConceptModel c3 = new ConceptModel(dsPeds.getDatasetId(), "phs003461", "phs003461", "", "\\phs003461\\RECOVER_Pediatrics\\pdclassmts2\\asq\\asqsec_persoc_14\\asq14_persoc_score\\", null);
+        conceptService.save(c1);
+        conceptService.save(c2);
+        conceptService.save(c3);
+
+        // Build payload with expressions (records)
+        FacetExpressionDTO expInf = new FacetExpressionDTO(null, null, "(?i)\\binf(ected)?\\b", -3);
+        FacetDTO infected = new FacetDTO(
+                "Infected",
+                "Infected",
+                "Infected Facet Description",
+                new ArrayList<>(List.of(List.of(expInf))),
+                null
+        );
+
+        FacetExpressionDTO expParent = new FacetExpressionDTO("Recover_Adult", null, null, 1);
+        FacetDTO parent = new FacetDTO(
+                "Recover Adult",
+                "RECOVER Adult",
+                "Recover adult parent facet.",
+                new ArrayList<>(List.of(List.of(expParent))),
+                List.of(infected)
+        );
+
+        FacetCategoryDTO catDto = new FacetCategoryDTO(
+                "Consortium_Curated_Facets",
+                "Consortium Curated Facets",
+                "Consortium Curated Facets Description",
+                List.of(parent)
+        );
+
+        FacetCategoryWrapper wrapper = new FacetCategoryWrapper(catDto);
+
+        service.load(List.of(wrapper));
+
+        // Assert facets created
+        Optional<FacetModel> parentFacetOpt = facetRepository.findByName("Recover Adult");
+        Optional<FacetModel> infFacetOpt = facetRepository.findByName("Infected");
+        assertTrue(parentFacetOpt.isPresent());
+        assertTrue(infFacetOpt.isPresent());
+
+        Long parentFacetId = parentFacetOpt.get().getFacetId();
+        Long infFacetId = infFacetOpt.get().getFacetId();
+
+        // Fetch concepts again for ids
+        Optional<ConceptModel> c1Opt = conceptService.findByConcept("\\phs003463\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\");
+        Optional<ConceptModel> c2Opt = conceptService.findByConcept("\\phs003461\\RECOVER_Caregiver\\biospecimens\\pc_tassoreplacewhy\\");
+        Optional<ConceptModel> c3Opt = conceptService.findByConcept("\\phs003461\\RECOVER_Pediatrics\\pdclassmts2\\asq\\asqsec_persoc_14\\asq14_persoc_score\\");
+        assertTrue(c1Opt.isPresent());
+        assertTrue(c2Opt.isPresent());
+        assertTrue(c3Opt.isPresent());
+
+        // Parent facet should not include concepts outside its children
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, c2Opt.get().getConceptNodeId()).isEmpty());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(parentFacetId, c3Opt.get().getConceptNodeId()).isEmpty());
+
+        // Infected facet should map to c1 only
+        Optional<FacetConceptModel> mInf = facetConceptRepository.findByFacetIdAndConceptNodeId(infFacetId, c1Opt.get().getConceptNodeId());
+        assertTrue(mInf.isPresent());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(infFacetId, c2Opt.get().getConceptNodeId()).isEmpty());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(infFacetId, c3Opt.get().getConceptNodeId()).isEmpty());
+    }
+}

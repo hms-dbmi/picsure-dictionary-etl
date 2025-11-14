@@ -3,6 +3,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import org.junit.jupiter.api.Assertions;

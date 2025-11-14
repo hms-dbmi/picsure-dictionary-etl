@@ -35,7 +35,7 @@ create table concept_node
             references dataset on delete cascade,
     name              varchar                                         not null,
     display           varchar                                        not null,
-    concept_type      varchar(32)    default 'Interior'::character varying not null,
+    concept_type      varchar(32)    default 'categorical'::character varying not null,
     concept_path      varchar(10000) default 'INVALID'::character varying  not null,
     parent_id         integer
         constraint fk_parent

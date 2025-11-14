@@ -1,28 +1,20 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.consent;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -59,9 +51,10 @@ public class ConsentController {
     }
 
     @PutMapping("/consent")
-    public ResponseEntity<ConsentModel> updateConsent(@RequestParam String datasetRef, @RequestParam String consentCode,
-            @RequestParam String description, @RequestParam String authz, @RequestParam Long participantCount,
-            @RequestParam Long variableCount, @RequestParam Long sampleCount) {
+    public ResponseEntity<ConsentModel> updateConsent(
+        @RequestParam String datasetRef, @RequestParam String consentCode, @RequestParam String description, @RequestParam String authz,
+        @RequestParam Long participantCount, @RequestParam Long variableCount, @RequestParam Long sampleCount
+    ) {
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
 
@@ -79,10 +72,8 @@ public class ConsentController {
         } else {
             // add new consent when consent not present in data
             try {
-                ConsentModel newConsent = consentRepository
-                        .save(new ConsentModel(datasetId, consentCode,
-                                description, authz, participantCount,
-                                variableCount, sampleCount));
+                ConsentModel newConsent = consentRepository.save(
+                    new ConsentModel(datasetId, consentCode, description, authz, participantCount, variableCount, sampleCount));
                 return new ResponseEntity<>(newConsent, HttpStatus.CREATED);
             } catch (Exception e) {
                 System.out.println(e.getLocalizedMessage());
@@ -104,28 +95,25 @@ public class ConsentController {
         }
         List<String[]> consents;
         Map<String, Integer> headerMap;
-        try (CSVReader reader = new CSVReader(new StringReader(input))) {
+        RFC4180Parser csvParser = new RFC4180Parser();
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
             String[] header = reader.readNext();
             headerMap = service.buildCsvInputsHeaderMap(header);
-            String[] coreConsentHeaders = { "datasetRef", "consentCode", "description", "participantCount",
-                    "variableCount",
-                    "sampleCount", "authz" };
+            String[] coreConsentHeaders =
+                {"datasetRef", "consentCode", "description", "participantCount", "variableCount", "sampleCount", "authz"};
             if (!headerMap.keySet().containsAll(Arrays.asList(coreConsentHeaders))) {
-                return new ResponseEntity<>(
-                        "Headers in Consent ingest file incorrect for " + datasetRef,
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Headers in Consent ingest file incorrect for " + datasetRef, HttpStatus.BAD_REQUEST);
             }
             consents = reader.readAll();
             consents.remove(header);
         } catch (IOException | CsvException e) {
             return new ResponseEntity<>(
-                    "Error reading consent ingestion csv for " + datasetRef + ". Error: \n" + Arrays.toString(e.getStackTrace()),
-                    HttpStatus.BAD_REQUEST);
+                "Error reading consent ingestion csv for " + datasetRef + ". Error: \n" + Arrays.toString(e.getStackTrace()),
+                HttpStatus.BAD_REQUEST
+            );
         }
         if (consents.isEmpty()) {
-            return new ResponseEntity<>(
-                    "No csv records found in input file.",
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("No csv records found in input file.", HttpStatus.BAD_REQUEST);
         }
 
         int consentUpdateCount = 0;
@@ -154,8 +142,7 @@ public class ConsentController {
                 sampleCount = Long.parseLong("-1");
             }
             String authz = consent[headerMap.get("authz")];
-            Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode,
-                    datasetId);
+            Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
             ConsentModel consentModel;
             if (consentData.isPresent()) {
                 // update already existing consent
@@ -169,25 +156,22 @@ public class ConsentController {
                 consentModel.setSampleCount(sampleCount);
             } else {
                 // add new consent when consent not present in data
-                consentModel = new ConsentModel(datasetId, consentCode,
-                        description, authz, participantCount,
-                        variableCount, sampleCount);
+                consentModel = new ConsentModel(datasetId, consentCode, description, authz, participantCount, variableCount, sampleCount);
 
             }
             consentRepository.save(consentModel);
             consentUpdateCount++;
         }
 
-        return new ResponseEntity<>(
-                "Successfully created/updated " + consentUpdateCount + " consents for " + datasetRef, HttpStatus.OK);
+        return new ResponseEntity<>("Successfully created/updated " + consentUpdateCount + " consents for " + datasetRef, HttpStatus.OK);
 
     }
 
     @PutMapping("/consent/counts")
-    public ResponseEntity<ConsentModel> updateConsentCounts(@RequestParam String datasetRef,
-            @RequestParam String consentCode,
-            @RequestParam Optional<Long> participantCount, @RequestParam Optional<Long> variableCount,
-            @RequestParam Optional<Long> sampleCount) {
+    public ResponseEntity<ConsentModel> updateConsentCounts(
+        @RequestParam String datasetRef, @RequestParam String consentCode, @RequestParam Optional<Long> participantCount,
+        @RequestParam Optional<Long> variableCount, @RequestParam Optional<Long> sampleCount
+    ) {
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);
 
@@ -205,8 +189,7 @@ public class ConsentController {
     }
 
     @DeleteMapping("/consent")
-    public ResponseEntity<ConsentModel> deleteConsent(@RequestParam String consentCode,
-            @RequestParam String datasetRef) {
+    public ResponseEntity<ConsentModel> deleteConsent(@RequestParam String consentCode, @RequestParam String datasetRef) {
 
         Long datasetId = datasetRepository.findByRef(datasetRef).get().getDatasetId();
         Optional<ConsentModel> consentData = consentRepository.findByConsentCodeAndDatasetId(consentCode, datasetId);

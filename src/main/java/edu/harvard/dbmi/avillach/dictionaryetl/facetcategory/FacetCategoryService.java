@@ -1,6 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facetcategory;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.RFC4180Parser;
 import com.opencsv.exceptions.CsvException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import jakarta.persistence.EntityManager;
@@ -86,7 +88,8 @@ public class FacetCategoryService {
             List<String[]> facetCategories;
             Map<String, Integer> headerMap;
             List<String> metaColumnNames;
-            try (CSVReader reader = new CSVReader(new StringReader(input))) {
+            RFC4180Parser csvParser = new RFC4180Parser();
+            try (CSVReader reader = new CSVReaderBuilder(new StringReader(input)).withCSVParser(csvParser).build()) {
                 String[] header = reader.readNext();
                 headerMap = CSVUtility.buildCsvInputsHeaderMap(header);
                 String[] coreCategoryHeaders = {"name(unique)", "display name", "description"};

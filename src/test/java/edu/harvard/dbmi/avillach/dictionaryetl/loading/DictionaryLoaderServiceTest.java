@@ -450,7 +450,7 @@ public class DictionaryLoaderServiceTest {
         Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(laboratory.isPresent());
         assertEquals("laboratory", laboratory.get().getName());
-        assertEquals(laboratory.get().getConceptType(), ConceptTypes.INTERIOR.getConceptType());
+        assertEquals(laboratory.get().getConceptType(), ConceptTypes.CATEGORICAL.getConceptType());
 
         Optional<ConceptModel> acrylamideGHB =
                 this.conceptService.findByConcept("\\laboratory\\acrylamide\\Acrylamide (pmoL per G Hb)\\");
@@ -461,7 +461,7 @@ public class DictionaryLoaderServiceTest {
         Optional<ConceptModel> acrylamide = this.conceptService.findByConcept("\\laboratory\\acrylamide\\");
         assertTrue(acrylamide.isPresent());
         assertEquals("acrylamide", acrylamide.get().getName());
-        assertEquals(acrylamide.get().getConceptType(), ConceptTypes.INTERIOR.getConceptType());
+        assertEquals(acrylamide.get().getConceptType(), ConceptTypes.CATEGORICAL.getConceptType());
     }
 
 }

@@ -1,4 +1,4 @@
-FROM maven:3-amazoncorretto-21 AS build
+FROM maven:3.9.11-amazoncorretto-24 AS build
 
 COPY pom.xml .
 
@@ -8,7 +8,7 @@ COPY src src
 
 RUN mvn -B package -DskipTests
 
-FROM amazoncorretto:21.0.1-alpine3.18
+FROM amazoncorretto:24.0.2-alpine3.22
 
 COPY --from=build target/dictionaryetl-*.jar /dictionaryetl.jar
 

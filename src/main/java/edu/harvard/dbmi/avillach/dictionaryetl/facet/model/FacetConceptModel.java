@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.facet;
+package edu.harvard.dbmi.avillach.dictionaryetl.facet.model;
 
 import jakarta.persistence.*;
 

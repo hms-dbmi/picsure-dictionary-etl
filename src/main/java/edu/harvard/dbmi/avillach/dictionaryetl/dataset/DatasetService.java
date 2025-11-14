@@ -47,4 +47,9 @@ public class DatasetService {
     public List<DataSetRefDto> getDatasetRefsSorted(String[] datasetRefs) {
         return this.datasetRepository.getDatasetRefsSorted(datasetRefs);
     }
+
+    public int deleteByRef(String datasetRef) {
+        return this.datasetRepository.deleteByRef(datasetRef);
+    }
+
 }

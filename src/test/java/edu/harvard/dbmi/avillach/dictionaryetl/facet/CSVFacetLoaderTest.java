@@ -4,6 +4,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
@@ -83,9 +84,9 @@ public class CSVFacetLoaderTest {
                 """;
         String facetConceptCSV = """
                 child1,child2
-                \\\\ref\\\\concept1\\\\,\\\\ref\\\\concept2\\\\
-                \\\\ref\\\\concept2\\\\,\\\\ref\\\\concept3\\\\
-                \\\\ref\\\\concept3\\\\,
+                \\ref\\concept1\\,\\ref\\concept2\\
+                \\ref\\concept2\\,\\ref\\concept3\\
+                \\ref\\concept3\\,
                 """;
 
         DatasetModel dataset = new DatasetModel("ref", "", "", "");
