@@ -201,7 +201,7 @@ public class FacetService {
     @Transactional
     public ResponseEntity<String> refreshBDCFacets() {
         // Delegate dataset-related refresh
-        datasetFacetRefreshService.refreshDatasetFacet();
+        datasetFacetRefreshService.refreshDatasetFacet(true);
         // Ensure continuous/categorical facets and mappings
         createOrUpdateDefaultFacets();
 

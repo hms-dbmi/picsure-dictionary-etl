@@ -56,11 +56,21 @@ public interface FacetRepository extends JpaRepository<FacetModel, Long> {
     @Transactional
     @Query(value = """
             INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
-            SELECT DISTINCT :catId, REF, COALESCE(ABBREVIATION, REF), FULL_NAME
+            SELECT DISTINCT :catId, REF, REF, FULL_NAME
             FROM dict.dataset
             ON CONFLICT (name, facet_category_id) DO NOTHING
             """, nativeQuery = true)
     void createFacetForEachDatasetForCategory(@Param("catId") Long catId);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+            INSERT INTO dict.facet (FACET_CATEGORY_ID, NAME, DISPLAY, DESCRIPTION)
+            SELECT DISTINCT :catId, REF, CONCAT(ABBREVIATION, ' (', REF, ')'), FULL_NAME
+            FROM dict.dataset
+            ON CONFLICT (name, facet_category_id) DO NOTHING
+            """, nativeQuery = true)
+    void bdcCreateFacetForEachDatasetForCategory(@Param("catId") Long catId);
 
     @Modifying
     @Transactional

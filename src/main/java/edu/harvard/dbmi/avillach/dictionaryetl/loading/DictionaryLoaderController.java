@@ -63,7 +63,7 @@ public class DictionaryLoaderController {
                 if (includeDefaultFacets) {
                     this.facetService.createOrUpdateDefaultFacets();
                 }
-                datasetFacetRefreshService.refreshDatasetFacet();
+                datasetFacetRefreshService.refreshDatasetFacet(false);
             } finally {
                 reentrantLock.unlock();
             }
