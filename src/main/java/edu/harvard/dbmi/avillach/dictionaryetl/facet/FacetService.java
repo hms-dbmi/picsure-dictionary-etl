@@ -13,11 +13,14 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 @Service
 public class FacetService {
 
+    private final static Logger log = LoggerFactory.getLogger(FacetService.class);
+
     private final FacetRepository facetRepository;
     private final FacetCategoryService facetCategoryService;
     private final FacetConceptService facetConceptService;
@@ -42,9 +47,10 @@ public class FacetService {
     private final DatasetRepository datasetRepository;
     private final ConceptRepository conceptRepository;
     private final DatasetFacetRefreshService datasetFacetRefreshService;
+    private final FacetCategoryRepository facetCategoryRepository;
 
     @PersistenceContext
-            private EntityManager entityManager;
+    private EntityManager entityManager;
 
     @Autowired
     public FacetService(FacetRepository facetRepository,
@@ -54,7 +60,9 @@ public class FacetService {
                         FacetConceptRepository facetConceptRepository,
                         DatasetRepository datasetRepository,
                         ConceptRepository conceptRepository,
-                        DatasetFacetRefreshService datasetFacetRefreshService) {
+                        DatasetFacetRefreshService datasetFacetRefreshService,
+                        FacetCategoryRepository facetCategoryRepository,
+                        EntityManager entityManager) {
         this.facetRepository = facetRepository;
         this.facetCategoryService = facetCategoryService;
         this.facetConceptService = facetConceptService;
@@ -63,6 +71,8 @@ public class FacetService {
         this.datasetRepository = datasetRepository;
         this.conceptRepository = conceptRepository;
         this.datasetFacetRefreshService = datasetFacetRefreshService;
+        this.facetCategoryRepository = facetCategoryRepository;
+        this.entityManager = entityManager;
     }
 
     public FacetModel save(FacetModel facetModel) {
@@ -77,21 +87,34 @@ public class FacetService {
      * This method will create the data_type FacetCategory, continuous & categorical Facet, and map all continuous and
      * categorical Concepts to the respective Facet.
      */
-    public void createDefaultFacets() {
-        FacetCategoryModel dataType = this.facetCategoryService.findByName("data_type").orElse(
-                this.facetCategoryService.save(new FacetCategoryModel("data_type", "Type of Variable", "Continuous or categorical"))
-        );
+    @Transactional
+    public void createOrUpdateDefaultFacets() {
+        // Ensure 'data_type' category exists
+        FacetCategoryModel dataTypeCategoryModel = this.facetCategoryRepository.findByName("data_type")
+                .orElseGet(() -> this.facetCategoryRepository.save(
+                        new FacetCategoryModel("data_type", "Type of Variable", "Continuous or categorical")
+                ));
+        Long dataTypeFacetCategoryId = dataTypeCategoryModel.getFacetCategoryId();
 
-        FacetModel categorical = this.findByName("categorical").orElse(
-                this.save(new FacetModel(dataType.getFacetCategoryId(), "categorical", "Categorical", "", null))
-        );
+        // Ensure categorical facet exists within data_type category
+        FacetModel catFacet = facetRepository
+                .findByNameAndFacetCategoryId("categorical", dataTypeFacetCategoryId)
+                .orElseGet(() -> facetRepository.save(
+                        new FacetModel(dataTypeFacetCategoryId, "categorical", "Categorical", "", null)
+                ));
+        Long catFacetId = catFacet.getFacetId();
 
-        FacetModel continuous = this.findByName("continuous").orElse(
-                this.save(new FacetModel(dataType.getFacetCategoryId(), "continuous", "Continuous", "", null))
-        );
+        // Ensure continuous facet exists within data_type category
+        FacetModel conFacet = facetRepository
+                .findByNameAndFacetCategoryId("continuous", dataTypeFacetCategoryId)
+                .orElseGet(() -> facetRepository.save(
+                        new FacetModel(dataTypeFacetCategoryId, "continuous", "Continuous", "", null)
+                ));
+        Long conFacetId = conFacet.getFacetId();
 
-        this.facetConceptService.mapConceptConceptTypeToFacet(categorical.getFacetId(), "categorical");
-        this.facetConceptService.mapConceptConceptTypeToFacet(continuous.getFacetId(), "continuous");
+        // Map concept types to facets (native queries are idempotent with ON CONFLICT DO NOTHING)
+        facetConceptRepository.mapConceptConceptTypeToFacet(catFacetId, catFacet.getName());
+        facetConceptRepository.mapConceptConceptTypeToFacet(conFacetId, conFacet.getName());
     }
 
     public List<String> getFacetMetadataKeyNames() {
@@ -133,7 +156,7 @@ public class FacetService {
 
     // Controller-delegated methods moved from FacetController to service layer
     public ResponseEntity<FacetModel> updateFacet(String categoryName, String name, String display, String desc, String parentName) {
-        Optional<edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel> facetCategoryModel = facetCategoryService.findByName(categoryName);
+        Optional<FacetCategoryModel> facetCategoryModel = facetCategoryService.findByName(categoryName);
         Long categoryId;
         if (facetCategoryModel.isPresent()) {
             categoryId = facetCategoryModel.get().getFacetCategoryId();
@@ -180,17 +203,30 @@ public class FacetService {
         // Delegate dataset-related refresh
         datasetFacetRefreshService.refreshDatasetFacet();
         // Ensure continuous/categorical facets and mappings
-        createDefaultFacets();
+        createOrUpdateDefaultFacets();
+
         // Create/update data_source category and genomic facet, and map SAMPLE_ID concepts
-        edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel dataSourceCategoryModel =
-                facetCategoryService.findByName("data_source").orElse(
-                        facetCategoryService.save(new edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel(
-                                "data_source", "Data Type", "Associated metadata source"))
+        Optional<FacetCategoryModel> dataSourceCategoryModel = facetCategoryService.findByName("data_source");
+        FacetCategoryModel dataSource;
+        if (dataSourceCategoryModel.isEmpty()) {
+            log.info("Did not find a 'data_source' category; Creating facet category...");
+            dataSource = facetCategoryService.save(new FacetCategoryModel("data_source", "Data Type", "Associated metadata source"));
+        } else {
+            log.info("Facet Category found: {}", dataSourceCategoryModel.get());
+             dataSource = dataSourceCategoryModel.get();
+        }
+
+        Long dataSourceFacetCategoryId = dataSource.getFacetCategoryId();
+        // Find facet by name constrained to the data_source category to avoid duplicate insert
+        FacetModel genomicSourceFacet = facetRepository
+                .findByNameAndFacetCategoryId("data_source_genomic", dataSourceFacetCategoryId)
+                .orElseGet(() -> save(new FacetModel(
+                        dataSourceFacetCategoryId,
+                        "data_source_genomic",
+                        "Genomic",
+                        "Associated with genomic data",
+                        null))
                 );
-        Long dataSourceFacetCategoryId = dataSourceCategoryModel.getFacetCategoryId();
-        FacetModel genomicSourceFacet = facetRepository.findByName("data_source_genomic").orElse(
-                save(new FacetModel(dataSourceFacetCategoryId, "data_source_genomic", "Genomic", "Associated with genomic data", null))
-        );
         Long genomicSourceFacetId = genomicSourceFacet.getFacetId();
         facetConceptRepository.mapConceptDisplayToFacet(genomicSourceFacetId, "SAMPLE_ID");
         return new ResponseEntity<>("Successfully updated default facets\n", HttpStatus.OK);
@@ -199,7 +235,7 @@ public class FacetService {
     @Transactional
     public ResponseEntity<String> refreshDataTypeFacet() {
         try {
-            createDefaultFacets();
+            createOrUpdateDefaultFacets();
             return new ResponseEntity<>("Successfully updated continuous and categorical data type facets\n", HttpStatus.OK);
         } catch (Exception e) {
             System.out.println(e.getLocalizedMessage());

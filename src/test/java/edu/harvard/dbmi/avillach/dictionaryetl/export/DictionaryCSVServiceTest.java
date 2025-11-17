@@ -107,7 +107,7 @@ class DictionaryCSVServiceTest {
         assertNotNull(syntheaResource);
         String syntheaFilePath = syntheaResource.getFile().toPath().toString();
         dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath + "/columnMetaErrors" + ".csv");
-        facetService.createDefaultFacets();
+        facetService.createOrUpdateDefaultFacets();
         assertFalse(conceptRepository.findByDatasetId(datasetRepository.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()).isEmpty());
         assertFalse(facetService.findAllFacetsByDatasetIDs(new Long[]{datasetRepository.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()}).isEmpty());
         // make a directory for the generated files
