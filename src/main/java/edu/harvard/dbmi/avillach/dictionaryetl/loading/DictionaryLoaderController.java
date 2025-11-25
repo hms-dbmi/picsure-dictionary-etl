@@ -61,9 +61,9 @@ public class DictionaryLoaderController {
                 }
                 response = this.dictionaryLoaderService.processColumnMetaCSV(request.csvPath(), request.errorDirectory());
                 if (includeDefaultFacets) {
-                    this.facetService.createDefaultFacets();
+                    this.facetService.createOrUpdateDefaultFacets();
                 }
-                datasetFacetRefreshService.refreshDatasetFacet();
+                datasetFacetRefreshService.refreshDatasetFacet(false);
             } finally {
                 reentrantLock.unlock();
             }

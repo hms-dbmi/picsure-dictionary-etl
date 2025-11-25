@@ -89,7 +89,7 @@ class DatasetFacetRefreshServiceTest {
         conceptRepository.save(cB);
         conceptRepository.save(cC);
 
-        subject.refreshDatasetFacet();
+        subject.refreshDatasetFacet(false);
 
         Optional<FacetCategoryModel> category = facetCategoryRepository.findByName("dataset_id");
         Assertions.assertFalse(category.isPresent());
@@ -117,7 +117,7 @@ class DatasetFacetRefreshServiceTest {
             .toList();
         conceptMetadataRepository.saveAll(conceptMetas);
 
-        subject.refreshDatasetFacet();
+        subject.refreshDatasetFacet(false);
 
         Optional<FacetCategoryModel> category = facetCategoryRepository.findByName("dataset_id");
         Assertions.assertTrue(category.isPresent());
