@@ -7,6 +7,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +51,10 @@ class FacetLoaderClearIntegrationTest {
     private FacetRepository facetRepository;
 
     @Autowired
-    private FacetConceptRepository facetConceptRepository;
+    private FacetCategoryRepository facetCategoryRepository;
 
     @Autowired
-    private FacetCategoryRepository facetCategoryRepository;
+    private FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -187,5 +188,24 @@ class FacetLoaderClearIntegrationTest {
         assertTrue(facetCategoryRepository.findByName("KeepCat").isPresent());
         assertTrue(facetRepository.findByName("Root").isEmpty());
         assertTrue(facetRepository.findByName("Leaf").isEmpty());
+    }
+
+    @Test
+    void clear_shouldRemoveCategoryAndMetadata() {
+        String name = "Consortium_Curated_Facets";
+        String display = "Consortium Curated Facets";
+        String description = "Consortium Curated Facets Description";
+        String metaKey = "Some Key";
+        FacetCategoryMetaDTO meta = new FacetCategoryMetaDTO(metaKey, "some value");
+        FacetCategoryDTO category = new FacetCategoryDTO(name, display, description, List.of(), List.of(meta));
+        service.load(List.of(new FacetCategoryWrapper(category)));
+
+        Optional<FacetCategoryModel> categoryRecord = facetCategoryRepository.findByName(name);
+        assertTrue(categoryRecord.isPresent());
+        Long categoryId = categoryRecord.get().getFacetCategoryId();
+        assertTrue(facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey).isPresent());
+
+        service.clear(new FacetClearRequest(List.of(name), null));
+        assertTrue(facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey).isEmpty());
     }
 }

@@ -1,13 +1,12 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryDTO;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryWrapper;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetDTO;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.Result;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +41,9 @@ class FacetLoaderServiceTest {
 
     @Autowired
     private FacetCategoryRepository facetCategoryRepository;
+
+    @Autowired
+    private FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
@@ -118,5 +119,38 @@ class FacetLoaderServiceTest {
         Assertions.assertEquals(1, result2.categoriesUpdated());
         Assertions.assertEquals(0, result2.facetsCreated());
         Assertions.assertEquals(2, result2.facetsUpdated());
+    }
+
+    @Test
+    void load_shouldCreateCategoryAndFacets_AndAddIdempotentMetadata() {
+        String name = "Consortium_Curated_Facets";
+        String display = "Consortium Curated Facets";
+        String description = "Consortium Curated Facets Description";
+        String data = "doesn't matter";
+        FacetDTO facet = new FacetDTO(data, data, data, null, null);
+        String metaKey = "Some Key";
+
+        String testValue = "some value";
+        FacetCategoryMetaDTO initialMeta = new FacetCategoryMetaDTO(metaKey, testValue);
+        FacetCategoryDTO categoryDto = new FacetCategoryDTO(name, display, description, List.of(facet), List.of(initialMeta));
+
+        // Load initial
+        service.load(List.of(new FacetCategoryWrapper(categoryDto)));
+        Optional<FacetCategoryModel> loadedCategory = facetCategoryRepository.findByName(name);
+        Assertions.assertTrue(loadedCategory.isPresent());
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(loadedCategory.get().getFacetCategoryId(), metaKey);
+        Assertions.assertTrue(metadata.isPresent());
+        Assertions.assertEquals(testValue, metadata.get().getValue());
+
+        // Load updated
+        String updatedTestValue = "some other value";
+        FacetCategoryMetaDTO updatedMeta = new FacetCategoryMetaDTO(metaKey, updatedTestValue);
+        FacetCategoryDTO updatedCategoryDto = new FacetCategoryDTO(name, display, description, List.of(facet), List.of(updatedMeta));
+        service.load(List.of(new FacetCategoryWrapper(updatedCategoryDto)));
+        Optional<FacetCategoryModel> reloadedCategory = facetCategoryRepository.findByName(name);
+        Assertions.assertTrue(reloadedCategory.isPresent());
+        Optional<FacetCategoryMeta> metadata2 = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(reloadedCategory.get().getFacetCategoryId(), metaKey);
+        Assertions.assertTrue(metadata2.isPresent());
+        Assertions.assertEquals(updatedTestValue, metadata2.get().getValue());
     }
 }

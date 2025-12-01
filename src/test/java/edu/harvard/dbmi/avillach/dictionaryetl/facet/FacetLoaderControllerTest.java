@@ -6,6 +6,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryWrapper;
@@ -47,10 +49,7 @@ class FacetLoaderControllerTest {
     private FacetCategoryRepository facetCategoryRepository;
 
     @Autowired
-    private DatasetRepository datasetRepository;
-
-    @Autowired
-    private ConceptService conceptService;
+    private FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -122,4 +121,44 @@ class FacetLoaderControllerTest {
         Assertions.assertEquals(parentFacet.get().getFacetId(), infectedFacet.get().getParentId());
     }
 
+    @Test
+    void postPayload_shouldCreateMetadataRecords() throws Exception {
+        String json = "[\n" +
+                "  {\n" +
+                "    \"Facet_Category\": {\n" +
+                "      \"Name\": \"Consortium_Curated_Facets\",\n" +
+                "      \"Display\": \"Consortium Curated Facets\",\n" +
+                "      \"Description\": \"Consortium Curated Facets Description\",\n" +
+                "      \"Metadata\": [\n" +
+                "        { \"key\": \"Some Key\", \"value\": \"some value\" }\n" +
+                "      ],\n" +
+                "      \"Facets\": [\n" +
+                "        {\n" +
+                "          \"Name\": \"Recover Adult\",\n" +
+                "          \"Display\": \"RECOVER Adult\",\n" +
+                "          \"Description\": \"Recover adult parent facet.\",\n" +
+                "          \"Facets\": [\n" +
+                "            {\n" +
+                "              \"Name\": \"Infected\",\n" +
+                "              \"Display\": \"Infected\",\n" +
+                "              \"Description\": \"Infected Facet Description\"\n" +
+                "            }\n" +
+                "          ]\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "]";
+
+        List<FacetCategoryWrapper> payload = objectMapper.readValue(
+                json, new TypeReference<>(){});
+
+        ResponseEntity<Result> response = controller.load(payload);
+        Assertions.assertEquals(200, response.getStatusCode().value());
+        Optional<FacetCategoryModel> cat = facetCategoryRepository.findByName("Consortium_Curated_Facets");
+        Assertions.assertTrue(cat.isPresent());
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(cat.get().getFacetCategoryId(), "Some Key");
+        Assertions.assertTrue(metadata.isPresent());
+        Assertions.assertEquals("some value", metadata.get().getValue());
+    }
 }
