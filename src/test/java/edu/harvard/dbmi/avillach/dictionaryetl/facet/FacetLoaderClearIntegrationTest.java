@@ -196,13 +196,13 @@ class FacetLoaderClearIntegrationTest {
         String display = "Consortium Curated Facets";
         String description = "Consortium Curated Facets Description";
         String metaKey = "Some Key";
-        FacetCategoryMetaDTO meta = new FacetCategoryMetaDTO(metaKey, "some value");
-        FacetCategoryDTO category = new FacetCategoryDTO(name, display, description, List.of(), List.of(meta));
-        service.load(List.of(new FacetCategoryWrapper(category)));
+        FacetCategoryMetaDTO requestMeta = new FacetCategoryMetaDTO(metaKey, "some value");
+        FacetCategoryDTO requestCategory = new FacetCategoryDTO(name, display, description, List.of(), List.of(requestMeta));
+        service.load(List.of(new FacetCategoryWrapper(requestCategory)));
 
-        Optional<FacetCategoryModel> categoryRecord = facetCategoryRepository.findByName(name);
-        assertTrue(categoryRecord.isPresent());
-        Long categoryId = categoryRecord.get().getFacetCategoryId();
+        Optional<FacetCategoryModel> category = facetCategoryRepository.findByName(name);
+        assertTrue(category.isPresent());
+        Long categoryId = category.get().getFacetCategoryId();
         assertTrue(facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey).isPresent());
 
         service.clear(new FacetClearRequest(List.of(name), null));

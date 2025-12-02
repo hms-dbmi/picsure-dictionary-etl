@@ -33,5 +33,5 @@ public interface FacetCategoryMetaRepository extends JpaRepository<FacetCategory
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM dict.facet_category_meta WHERE facet_category_id = :facetCategoryId", nativeQuery = true)
-    void deleteFacetCategoryMetaById(Long facetCategoryId);
+    void deleteFacetCategoryMetaByCategoryId(Long facetCategoryId);
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -123,14 +124,17 @@ class FacetLoaderControllerTest {
 
     @Test
     void postPayload_shouldCreateMetadataRecords() throws Exception {
+        String metaKey = "Some Key";
+        String metaValue = "some value";
+        String categoryName = "Consortium_Curated_Facets";
         String json = "[\n" +
                 "  {\n" +
                 "    \"Facet_Category\": {\n" +
-                "      \"Name\": \"Consortium_Curated_Facets\",\n" +
+                "      \"Name\": \"" + categoryName + "\",\n" +
                 "      \"Display\": \"Consortium Curated Facets\",\n" +
                 "      \"Description\": \"Consortium Curated Facets Description\",\n" +
                 "      \"Metadata\": [\n" +
-                "        { \"key\": \"Some Key\", \"value\": \"some value\" }\n" +
+                "        { \"Key\": \"" + metaKey + "\", \"Value\": \"" + metaValue + "\" }\n" +
                 "      ],\n" +
                 "      \"Facets\": [\n" +
                 "        {\n" +
@@ -149,16 +153,16 @@ class FacetLoaderControllerTest {
                 "    }\n" +
                 "  }\n" +
                 "]";
-
-        List<FacetCategoryWrapper> payload = objectMapper.readValue(
-                json, new TypeReference<>(){});
+        List<FacetCategoryWrapper> payload = objectMapper.readValue(json, new TypeReference<>(){});
 
         ResponseEntity<Result> response = controller.load(payload);
-        Assertions.assertEquals(200, response.getStatusCode().value());
-        Optional<FacetCategoryModel> cat = facetCategoryRepository.findByName("Consortium_Curated_Facets");
-        Assertions.assertTrue(cat.isPresent());
-        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(cat.get().getFacetCategoryId(), "Some Key");
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+        Optional<FacetCategoryModel> category = facetCategoryRepository.findByName(categoryName);
+        Assertions.assertTrue(category.isPresent());
+
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(category.get().getFacetCategoryId(), metaKey);
         Assertions.assertTrue(metadata.isPresent());
-        Assertions.assertEquals("some value", metadata.get().getValue());
+        Assertions.assertEquals(metaValue, metadata.get().getValue());
     }
 }

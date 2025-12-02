@@ -122,35 +122,60 @@ class FacetLoaderServiceTest {
     }
 
     @Test
-    void load_shouldCreateCategoryAndFacets_AndAddIdempotentMetadata() {
+    void load_shouldCreateCategory_andAddMetadata() {
         String name = "Consortium_Curated_Facets";
         String display = "Consortium Curated Facets";
         String description = "Consortium Curated Facets Description";
-        String data = "doesn't matter";
-        FacetDTO facet = new FacetDTO(data, data, data, null, null);
+        String metaKey = "Some Key";
+        String metaValue = "some value";
+
+        FacetCategoryMetaDTO requestMeta = new FacetCategoryMetaDTO(metaKey, metaValue);
+        FacetCategoryDTO requestCategory = new FacetCategoryDTO(name, display, description, List.of(), List.of(requestMeta));
+        service.load(List.of(new FacetCategoryWrapper(requestCategory)));
+
+        Optional<FacetCategoryModel> category = facetCategoryRepository.findByName(name);
+        Assertions.assertTrue(category.isPresent());
+
+        Long categoryId = category.get().getFacetCategoryId();
+
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey);
+        Assertions.assertTrue(metadata.isPresent());
+        Assertions.assertEquals(metaValue, metadata.get().getValue());
+    }
+
+    @Test
+    void load_shouldCreateCategory_andUpdateMetadata() {
+        String name = "Consortium_Curated_Facets";
+        String display = "Consortium Curated Facets";
+        String description = "Consortium Curated Facets Description";
         String metaKey = "Some Key";
 
-        String testValue = "some value";
-        FacetCategoryMetaDTO initialMeta = new FacetCategoryMetaDTO(metaKey, testValue);
-        FacetCategoryDTO categoryDto = new FacetCategoryDTO(name, display, description, List.of(facet), List.of(initialMeta));
-
         // Load initial
-        service.load(List.of(new FacetCategoryWrapper(categoryDto)));
-        Optional<FacetCategoryModel> loadedCategory = facetCategoryRepository.findByName(name);
-        Assertions.assertTrue(loadedCategory.isPresent());
-        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(loadedCategory.get().getFacetCategoryId(), metaKey);
+        String testValue = "some value";
+        FacetCategoryMetaDTO requestMeta = new FacetCategoryMetaDTO(metaKey, testValue);
+        FacetCategoryDTO requestCategory = new FacetCategoryDTO(name, display, description, List.of(), List.of(requestMeta));
+        service.load(List.of(new FacetCategoryWrapper(requestCategory)));
+
+        Optional<FacetCategoryModel> category = facetCategoryRepository.findByName(name);
+        Assertions.assertTrue(category.isPresent());
+
+        Long categoryId = category.get().getFacetCategoryId();
+
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey);
         Assertions.assertTrue(metadata.isPresent());
         Assertions.assertEquals(testValue, metadata.get().getValue());
 
         // Load updated
         String updatedTestValue = "some other value";
         FacetCategoryMetaDTO updatedMeta = new FacetCategoryMetaDTO(metaKey, updatedTestValue);
-        FacetCategoryDTO updatedCategoryDto = new FacetCategoryDTO(name, display, description, List.of(facet), List.of(updatedMeta));
-        service.load(List.of(new FacetCategoryWrapper(updatedCategoryDto)));
+        FacetCategoryDTO updatedCategory = new FacetCategoryDTO(name, display, description, List.of(), List.of(updatedMeta));
+        service.load(List.of(new FacetCategoryWrapper(updatedCategory)));
+
         Optional<FacetCategoryModel> reloadedCategory = facetCategoryRepository.findByName(name);
         Assertions.assertTrue(reloadedCategory.isPresent());
-        Optional<FacetCategoryMeta> metadata2 = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(reloadedCategory.get().getFacetCategoryId(), metaKey);
-        Assertions.assertTrue(metadata2.isPresent());
-        Assertions.assertEquals(updatedTestValue, metadata2.get().getValue());
+
+        Optional<FacetCategoryMeta> reloadedMetadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(categoryId, metaKey);
+        Assertions.assertTrue(reloadedMetadata.isPresent());
+        Assertions.assertEquals(updatedTestValue, reloadedMetadata.get().getValue());
     }
 }
