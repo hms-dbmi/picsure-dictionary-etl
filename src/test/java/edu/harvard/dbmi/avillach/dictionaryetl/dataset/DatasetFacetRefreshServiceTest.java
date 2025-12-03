@@ -5,7 +5,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
-import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
@@ -89,7 +89,7 @@ class DatasetFacetRefreshServiceTest {
         conceptRepository.save(cB);
         conceptRepository.save(cC);
 
-        subject.refreshDatasetFacet();
+        subject.refreshDatasetFacet(false);
 
         Optional<FacetCategoryModel> category = facetCategoryRepository.findByName("dataset_id");
         Assertions.assertFalse(category.isPresent());
@@ -117,7 +117,7 @@ class DatasetFacetRefreshServiceTest {
             .toList();
         conceptMetadataRepository.saveAll(conceptMetas);
 
-        subject.refreshDatasetFacet();
+        subject.refreshDatasetFacet(false);
 
         Optional<FacetCategoryModel> category = facetCategoryRepository.findByName("dataset_id");
         Assertions.assertTrue(category.isPresent());
