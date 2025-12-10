@@ -19,6 +19,7 @@
 Before contributing code, please set up our git hook:
 ```shell
   cp code-formatting/pre-commit.sh .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
 ```
 
 To skip formatting on a block of code, wrap in spotless:off, spotless:on comments
@@ -142,7 +143,7 @@ Example request body (minimal):
 ```
 
 Example with expressions (maps facets to concept nodes by concept_path):
-- Concept path sample: _\\\\phs003436\\\\Recover_Adult\\\\visits\\\\inf\\\\12\\\\pasc_cc_2024\\\\_
+- Concept path sample: _\\phs003436\\Recover_Adult\\visits\\inf\\12\\pasc_cc_2024\\_
 - Nodes (by index):
   - 0: phs003436
   - 1: Recover_Adult

@@ -82,7 +82,6 @@ public class FacetLoaderService {
                 int mappingsDeletedForCat = facetConceptRepository.deleteAllForCategory(cat.getFacetCategoryId());
                 int facetsDeletedForCat = facetRepository.deleteAllForCategory(cat.getFacetCategoryId());
                 facetCategoryRepository.deleteById(cat.getFacetCategoryId());
-                facetCategoryMetaRepository.deleteFacetCategoryMetaByCategoryId(cat.getFacetCategoryId());
 
                 categoriesDeleted += 1;
                 facetsDeleted += facetsDeletedForCat;
