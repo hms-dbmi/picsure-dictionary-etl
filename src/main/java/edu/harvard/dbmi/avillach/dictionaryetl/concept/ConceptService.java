@@ -272,4 +272,8 @@ public class ConceptService {
         //Sanitizes input to ensure that single quotes in strings, such as apostrophes, are properly escaped for sql
         return str.replaceAll("'", "''");
     }
+
+    public List<ConceptModel> saveAll(List<ConceptModel> conceptModels) {
+        return this.conceptRepository.saveAll(conceptModels);
+    }
 }
