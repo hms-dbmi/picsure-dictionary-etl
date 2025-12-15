@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ConceptNode {
 
+    private String datasetRef;
     private String conceptPath;
     private ConceptModel conceptModel;
     private ColumnMeta columnMeta;
@@ -19,9 +20,10 @@ public class ConceptNode {
         this.conceptPath = conceptPath;
     }
 
-    public ConceptNode(String conceptPath, ConceptModel conceptModel) {
+    public ConceptNode(String conceptPath, ConceptModel conceptModel, String datasetRef) {
         this.conceptPath = conceptPath;
         this.conceptModel = conceptModel;
+        this.datasetRef = datasetRef;
     }
 
     public ConceptNode(String conceptPath, ConceptModel conceptModel, ConceptNode parent) {
@@ -71,11 +73,21 @@ public class ConceptNode {
         this.columnMeta = columnMeta;
     }
 
+    public String getDatasetRef() {
+        return datasetRef;
+    }
+
+    public void setDatasetRef(String datasetRef) {
+        this.datasetRef = datasetRef;
+    }
+
     @Override
     public String toString() {
         return "ConceptNode{" +
-               "conceptPath='" + conceptPath + '\'' +
+               "datasetRef='" + datasetRef + '\'' +
+               ", conceptPath='" + conceptPath + '\'' +
                ", conceptModel=" + conceptModel +
+               ", columnMeta=" + columnMeta +
                ", parent=" + parent +
                ", children=" + children +
                '}';

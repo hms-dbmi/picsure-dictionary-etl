@@ -3,6 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.dataset;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.CSVUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,6 +19,7 @@ public class DatasetService {
         this.datasetRepository = datasetRepository;
     }
 
+    @Transactional
     public DatasetModel save(DatasetModel datasetModel) {
         return this.datasetRepository.save(datasetModel);
     }
@@ -52,4 +55,8 @@ public class DatasetService {
         return this.datasetRepository.deleteByRef(datasetRef);
     }
 
+    @Transactional
+    public void saveAll(List<DatasetModel> newDatasets) {
+        this.datasetRepository.saveAll(newDatasets);
+    }
 }

@@ -31,9 +31,7 @@ public class ConceptModel {
     private Long parentId;
     
 
-    public ConceptModel() {
-
-    }
+    public ConceptModel() {}
 
     public ConceptModel(String conceptPath) {
         this.conceptPath = conceptPath;

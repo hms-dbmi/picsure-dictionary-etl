@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +19,8 @@ public class ColumnMetaMapper {
     private final Logger log = LoggerFactory.getLogger(ColumnMetaMapper.class);
     private static final String NULL = "null";
 
-    public Optional<ColumnMeta> mapCSVRowToColumnMeta(String csvRow) {
+    public Optional<ColumnMeta> mapCSVRowToColumnMeta(String[] columns) {
         try {
-            String[] columns = parser.parseLine(csvRow);
             boolean isCategorical = columns[3].charAt(0) == 't';
             List<String> categoryValues = parseCategoryValuesToList(columns[4]);
 
@@ -55,8 +53,8 @@ public class ColumnMetaMapper {
                     col9,
                     col10
             ));
-        } catch (IOException e) {
-            log.error("Unable to parse line {}", csvRow);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            log.error("Unable to parse line {}", columns, e);
         }
         return Optional.empty();
     }
@@ -115,4 +113,7 @@ public class ColumnMetaMapper {
         return v;
     }
 
+    public CSVParser getParser() {
+        return parser;
+    }
 }

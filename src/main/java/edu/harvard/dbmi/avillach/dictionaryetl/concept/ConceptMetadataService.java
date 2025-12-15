@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +20,11 @@ public class ConceptMetadataService {
 
     public ConceptMetadataModel save(ConceptMetadataModel conceptMetadataModel) {
         return this.conceptMetadataRepository.save(conceptMetadataModel);
+    }
+
+    @Transactional
+    public List<ConceptMetadataModel> saveAll(List<ConceptMetadataModel> conceptMetadataModels) {
+        return this.conceptMetadataRepository.saveAll(conceptMetadataModels);
     }
 
     public int upsert(long conceptNodeId, String key, String value) {

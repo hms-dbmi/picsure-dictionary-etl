@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import jakarta.persistence.EntityManager;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -273,6 +272,7 @@ public class ConceptService {
         return str.replaceAll("'", "''");
     }
 
+    @Transactional
     public List<ConceptModel> saveAll(List<ConceptModel> conceptModels) {
         return this.conceptRepository.saveAll(conceptModels);
     }

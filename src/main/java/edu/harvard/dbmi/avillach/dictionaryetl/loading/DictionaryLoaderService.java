@@ -1,11 +1,16 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvValidationException;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConcurrentFullPathTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +22,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 @Service
 public class DictionaryLoaderService {
@@ -28,43 +32,40 @@ public class DictionaryLoaderService {
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
     private final ColumnMetaUtility columnMetaUtility;
+    private final ConcurrentFullPathTree concurrentFullPathTree;
+
+    // --- Batch Configuration ---
+    private static final int BATCH_SIZE = 1000;
+    private final BlockingQueue<ConceptMetadataModel> metadataBatchQueue = new LinkedBlockingQueue<>();
+    private final ExecutorService batchWriterExecutor;
+    private final ExecutorService columnMetaGroupExecutors;
+    // ---------------------------
 
     @Autowired
-    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility) throws SQLException {
+    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility, ConcurrentFullPathTree concurrentFullPathTree) throws SQLException {
         this.columnMetaMapper = columnMetaMapper;
         this.datasetService = datasetService;
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
         this.columnMetaUtility = columnMetaUtility;
-
-        int maxConnections = dataSource.getConnection().getMetaData().getMaxConnections();
-        this.fixedThreadPool = Executors.newFixedThreadPool(maxConnections);
+        this.concurrentFullPathTree = concurrentFullPathTree;
+        this.columnMetaGroupExecutors = Executors.newVirtualThreadPerTaskExecutor();
+        this.batchWriterExecutor = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
     }
 
-    private final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> conceptPaths = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<String, Long> datasetRefIDs = new ConcurrentHashMap<>();
     private final AtomicInteger task = new AtomicInteger();
     private final LinkedBlockingQueue<List<ColumnMeta>> readyToLoadMetadata = new LinkedBlockingQueue<>();
-    private final ExecutorService fixedThreadPool;
-    private volatile boolean running = true;
+    private volatile boolean processingColumnMetaRowsComplete = true;
 
-    /**
-     * If a List of ColumnMetas in the readyToLoadMetadata cannot be processed due to an error it will be inserted into
-     * this list.
-     */
-    private final ConcurrentSkipListSet<List<ColumnMeta>> columnMetaErrors =
-            new ConcurrentSkipListSet<>(Comparator.comparing(metas -> metas.getFirst().name())
-            );
+    private final Set<List<ColumnMeta>> columnMetaErrors = new HashSet<>();
 
-    /**
-     * Uses the columnMeta.csv that is created as part of the HPDS ETL to hydrate the data-dictionary database.
-     * The CSV file is expected to exist at /opt/local/hpds/columnMeta.csv.
-     */
     public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
-        // Backward-compatible signature delegates to a new overload with no filtering
         return processColumnMetaCSV(csvPath, errorFile, null);
     }
 
+    // TODO: By passing a list of studies we can reduce the concept paths we need to front load.
+    // TODO: By doing this we will reduce the amount of ram required to load the data.
     public String processColumnMetaCSV(String csvPath, String errorFile, List<String> studies) throws RuntimeException {
         if (errorFile == null) {
             errorFile = "/opt/local/hpds/columnMetaErrors.csv";
@@ -76,7 +77,6 @@ public class DictionaryLoaderService {
             csvPath = "/opt/local/hpds/columnMeta.csv";
         }
 
-        // Normalize allowed studies (case-insensitive) and include base phs expansion
         final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? null :
                 studies.stream()
                         .filter(Objects::nonNull)
@@ -85,14 +85,18 @@ public class DictionaryLoaderService {
                         .collect(java.util.stream.Collectors.toSet());
 
         this.startProcessing();
-        try (BufferedReader br = new BufferedReader(new FileReader(csvPath))) {
-            String line;
+        this.startBatchMetadataWriter(); // <--- Start the Consumer
+
+        try (BufferedReader br = new BufferedReader(new FileReader(csvPath));
+             CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(this.columnMetaMapper.getParser()).build()
+        ) {
+            String[] columns;
             String currentConcept = null;
             List<ColumnMeta> group = new ArrayList<>();
             boolean groupAllowed = true;
 
-            while ((line = br.readLine()) != null) {
-                Optional<ColumnMeta> columnMetaOpt = this.columnMetaMapper.mapCSVRowToColumnMeta(line);
+            while ((columns = csvReader.readNext()) != null) {
+                Optional<ColumnMeta> columnMetaOpt = this.columnMetaMapper.mapCSVRowToColumnMeta(columns);
                 if (columnMetaOpt.isEmpty()) {
                     continue;
                 }
@@ -100,8 +104,7 @@ public class DictionaryLoaderService {
                 String conceptName = meta.name();
 
                 if (!Objects.equals(conceptName, currentConcept)) {
-                    // Flush previous group if any
-                    if (!group.isEmpty() && groupAllowed) {
+                    if (!group.isEmpty()) {
                         readyToLoadMetadata.add(new ArrayList<>(group));
                         this.task.getAndAdd(1);
                     }
@@ -114,22 +117,28 @@ public class DictionaryLoaderService {
                 }
             }
 
-            // Flush the final group
-            if (!group.isEmpty() && groupAllowed) {
+            if (!group.isEmpty()) {
                 readyToLoadMetadata.add(new ArrayList<>(group));
                 this.task.getAndAdd(1);
             }
 
-            // Wait until the queue has finished processing.
             while (this.task.get() != 0) {
-                Thread.sleep(100); // Small sleep to prevent busy waiting
+                Thread.sleep(100);
             }
 
-            log.info("All tasks have been processed. Shutting down executor.");
-        } catch (IOException | InterruptedException e) {
+            // The tree TreePath has been built. We now want to start inserting records
+            log.info("Persisting Tree to Database");
+            this.persistTreeToDatabase();
+
+            while (!metadataBatchQueue.isEmpty()) {
+                Thread.sleep(100);
+            }
+
+            log.info("All tasks have been processed and batches flushed. Shutting down.");
+        } catch (IOException | InterruptedException | CsvValidationException e) {
             throw new RuntimeException(e);
         } finally {
-            running = false;
+            processingColumnMetaRowsComplete = false;
         }
 
         if (!this.columnMetaErrors.isEmpty()) {
@@ -140,39 +149,13 @@ public class DictionaryLoaderService {
         return "Success";
     }
 
-    private static boolean isAllowedByStudy(String conceptPath, Set<String> allowedStudies) {
-        if (allowedStudies == null || allowedStudies.isEmpty()) {
-            return true;
-        }
-        String root = rootSegment(conceptPath);
-        if (root == null) return false;
-        String rootLc = root.toLowerCase();
-        return allowedStudies.contains(rootLc);
-    }
-
-    private static String rootSegment(String conceptPath) {
-        if (conceptPath == null || conceptPath.isEmpty()) return null;
-        int start = conceptPath.startsWith("\\") ? 1 : 0;
-        int end = conceptPath.indexOf("\\", start);
-        if (end == -1) return conceptPath.substring(start);
-        return conceptPath.substring(start, end);
-    }
-
-    /**
-     * This method creates a thread that continues to process the queue until the processingColumnMetaCSV sets running
-     * to false.
-     * <br/>
-     * This method will continue until stopped by setting running to false or if an exception occurs.
-     */
     private void startProcessing() {
         Thread watcherThread = new Thread(() -> {
-            while (running) {
+            while (processingColumnMetaRowsComplete) {
                 try {
-                    // take() is a blocking operation. It will block the thread until an item becomes available to
-                    // process.
                     List<ColumnMeta> columnMetas = this.readyToLoadMetadata.take();
                     if (!columnMetas.isEmpty()) {
-                        this.fixedThreadPool.submit(() -> processColumnMetas(columnMetas));
+                        this.columnMetaGroupExecutors.submit(() -> processColumnMetas(columnMetas));
                     }
                 } catch (InterruptedException e) {
                     log.error(e.getMessage());
@@ -185,16 +168,113 @@ public class DictionaryLoaderService {
     }
 
     /**
-     * Processes the provided list of columns metas ultimately creating database records to represent the concept path.
-     *
-     * @param columnMetas One or more ColumnMetas. The list MUST not contain more than one ColumnMeta for continuous
-     *                    variables. It will not be processed correctly. The code operates under the assumption that only categorical
-     *                    variables can have multiple rows in the columnMeta.csv.
+     * NEW: Consumer thread that drains the queue and writes to DB in chunks.
      */
+    private void startBatchMetadataWriter() {
+        batchWriterExecutor.submit(() -> {
+            while (processingColumnMetaRowsComplete || !metadataBatchQueue.isEmpty()) {
+                try {
+                    List<ConceptMetadataModel> batch = new ArrayList<>();
+                    // Poll with timeout to prevent busy loops when empty
+                    ConceptMetadataModel firstItem = metadataBatchQueue.poll(1, TimeUnit.SECONDS);
+
+                    if (firstItem != null) {
+                        batch.add(firstItem);
+                        metadataBatchQueue.drainTo(batch, BATCH_SIZE - 1);
+
+                        try {
+                            // Note: Assuming ConceptMetadataService has a saveAll or batchUpsert method
+                            this.conceptMetadataService.saveAll(batch);
+                        } catch (Exception e) {
+                            log.error("Batch insert failed for {} records. Error: {}", batch.size(), e.getMessage());
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    log.error("Batch writer interrupted", e);
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+    }
+
+    private void persistTreeToDatabase() {
+        HashMap<String, Long> datasetIDs = new HashMap<>();
+        this.datasetService.findAll().parallelStream().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
+        Collection<ConceptNode> currentLayer = concurrentFullPathTree.getRoot().getChildren().values();
+
+        List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size()); // pre-size for performance.
+        currentLayer.parallelStream().forEach(node -> {
+            if (!datasetIDs.containsKey(node.getDatasetRef())) {
+                newDatasets.add(new DatasetModel(node.getDatasetRef(), "", "", ""));
+            }
+        });
+        this.datasetService.saveAll(newDatasets);
+        newDatasets.parallelStream().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
+
+        int depth = 1;
+
+        List<ConceptModel> batchModels = new ArrayList<>(BATCH_SIZE);
+        List<ConceptNode> batchNodes = new ArrayList<>(BATCH_SIZE);
+        while (!currentLayer.isEmpty()) {
+            log.info("Persisting Depth {}: {} nodes found. ", depth, currentLayer.size());
+
+            List<ConceptNode> nextLayer = new ArrayList<>();
+
+            for (ConceptNode node : currentLayer) {
+                // Add children to the next layer
+                nextLayer.addAll(node.getChildren().values());
+
+                if(node.getParent() != null && !"ROOT".equals(node.getParent().getConceptPath())) {
+                    ConceptModel parentEntity = node.getParent().getConceptModel();
+                    if (parentEntity.getConceptNodeId() == null) {
+                        throw new IllegalStateException("Integrity Error: Parent " + node.getParent().getConceptPath());
+                    }
+
+                    node.getConceptModel().setParentId(parentEntity.getConceptNodeId());
+                }
+
+                node.getConceptModel().setDatasetId(datasetIDs.get(node.getDatasetRef()));
+                batchModels.add(node.getConceptModel());
+                batchNodes.add(node);
+
+                if (batchModels.size() >= BATCH_SIZE) {
+                    flushBatch(batchModels, batchNodes);
+                }
+            }
+
+            // flush remaining models in the layer
+            if (!batchModels.isEmpty()) {
+                flushBatch(batchModels, batchNodes);
+            }
+
+            currentLayer = nextLayer;
+            depth++;
+        }
+
+        // Free memory
+        concurrentFullPathTree.registry.clear();
+    }
+
+    private void flushBatch(List<ConceptModel> batchModels, List<ConceptNode> batchNodes) {
+        conceptService.saveAll(batchModels);
+
+        for (ConceptNode node : batchNodes) {
+            ColumnMeta columnMeta = node.getColumnMeta();
+
+            // If the node has columnMeta we watch to add it to a collection
+            if (columnMeta != null) {
+                queueValuesMetadata(columnMeta, node.getConceptModel().getConceptNodeId());
+            }
+        }
+
+        // clear batch after it has been flushed
+        batchModels.clear();
+        batchNodes.clear();
+    }
+
     protected void processColumnMetas(List<ColumnMeta> columnMetas) {
-        ColumnMeta columnMeta;
-        ConceptNode rootConceptNode;
         try {
+            ColumnMeta columnMeta;
             if (columnMetas.size() == 1) {
                 columnMeta = columnMetas.getFirst();
             } else {
@@ -206,34 +286,23 @@ public class DictionaryLoaderService {
                 }
             }
 
-            rootConceptNode = buildConceptHierarchy(columnMeta.name());
-            createDatabaseEntries(rootConceptNode, columnMeta);
+            this.concurrentFullPathTree.ingestColumnMeta(columnMeta);
         } catch (Exception e) {
             log.error("Error processing concept path: {} with values for column metas: {}",
                     columnMetas.getFirst().name(),
                     e.getMessage());
             columnMetaErrors.add(columnMetas);
         } finally {
-            // Decrement the task counter no matter what happens
             task.getAndDecrement();
         }
     }
 
-    /**
-     * In some cases we need to flatten a group of ColumnMetaRows down to a single ColumnMeta.
-     * This is the case for Continuous Concept Paths in the columnMeta.csv that have more than one row.
-     *
-     * @param columnMetas A List of ColumnMeta where the first ColumnMeta is expected to be a continuous value.
-     * @return ColumnMeta that has a min and max based on all ColumnMetas in the list.
-     */
     private ColumnMeta flattenContinuousColumnMeta(List<ColumnMeta> columnMetas) {
-        // This is a special case. Where the parent (first element) being rolled into must be continuous.
         if (columnMetas.getFirst().categorical()) {
             throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
                                        "for a concept path.");
         }
 
-        // As the list is processed the min and max will adjust based on the "values" of other concepts.
         final Double[] min = {columnMetas.getFirst().min()};
         final Double[] max = {columnMetas.getFirst().max()};
 
@@ -268,13 +337,6 @@ public class DictionaryLoaderService {
         );
     }
 
-    /**
-     * In some cases we need to flatten a group of ColumnMetaRows down to a single ColumnMeta.
-     * This is the case for Categorical Concept Paths in the columnMeta.csv that have more than one row.
-     *
-     * @param columnMetas List of ColumnMeta that have the same concept path and are categorical
-     * @return A single ColumnMeta that contains ALL the values combined into a single list.
-     */
     protected ColumnMeta flattenCategoricalColumnMeta(List<ColumnMeta> columnMetas) {
         Set<String> setOfVals = new HashSet<>();
         columnMetas.forEach(columnMeta -> setOfVals.addAll(columnMeta.categoryValues()));
@@ -296,96 +358,9 @@ public class DictionaryLoaderService {
     }
 
     /**
-     * Creates a hierarchy of concepts for a given concept path.
-     * <br/>
-     * <strong>Example:</strong>
-     * conceptPath = \examination\blood pressure\mean diastolic\
-     * <strong>>Result:</strong>
-     * Root ConceptNode = \examination\
-     * First Child = \examination\blood pressure\
-     * Second Child = \examination\blood pressure\mean diastolic\
-     * <br/>
-     * There will be as many Concept Nodes as there are segments in the concept path.
-     *
-     * @param conceptPath The root ConceptNode for the given concept path.
-     * @return The root concept node of the given concept path.
+     * REFACTORED: Now queues the object instead of calling DB directly.
      */
-    protected ConceptNode buildConceptHierarchy(String conceptPath) {
-        ConceptNode root = null;
-        String[] segments = conceptPath.split("\\\\");
-        StringBuilder currentPath = new StringBuilder();
-        ConceptNode parent = null;
-        for (String segment : segments) {
-            if (segment.isEmpty()) continue;
-
-            if (currentPath.isEmpty()) {
-                currentPath.append("\\");
-            }
-
-            currentPath.append(segment).append("\\");
-            String nodePath = currentPath.toString();
-            ConceptNode currentNode = new ConceptNode(nodePath, segment);
-
-            if (root == null) {
-                root = currentNode;
-            }
-
-            if (parent != null) {
-                parent.setChild(currentNode);
-            }
-
-            parent = currentNode;
-        }
-
-        return root;
-    }
-
-    protected void createDatabaseEntries(ConceptNode rootConceptNode, ColumnMeta columnMeta) {
-        Long datasetID = this.getDatasetRefID(rootConceptNode.getName());
-        ConceptNode currentNode = rootConceptNode;
-        Long parentConceptID = null;
-        while (currentNode != null) {
-            Long conceptNodeID;
-            if (currentNode.getChild() == null) {
-                // We have reached the leaf node. We can create concept metadata
-                conceptNodeID = createConceptModel(currentNode, columnMeta, datasetID, parentConceptID);
-                buildValuesMetadata(columnMeta, conceptNodeID);
-            } else {
-                conceptNodeID = createConceptModel(currentNode, null, datasetID, parentConceptID);
-            }
-
-            currentNode = currentNode.getChild();
-            parentConceptID = conceptNodeID;
-        }
-    }
-
-    private Long createConceptModel(ConceptNode currentNode, ColumnMeta columnMeta, Long datasetID,
-                                    Long parentConceptID) {
-        log.debug("Creating concept model for concept path: {}", currentNode.getName());
-        return this.conceptPaths.computeIfAbsent(currentNode.getConceptPath(), conceptPath -> {
-            Optional<ConceptModel> optConceptModel = this.conceptService.findByConcept(conceptPath);
-            ConceptModel conceptModel;
-            if (optConceptModel.isEmpty()) {
-                String name = currentNode.getName();
-                 conceptModel = new ConceptModel(
-                        datasetID,
-                        name,
-                        "",
-                        ConceptTypes.conceptTypeFromColumnMeta(columnMeta),
-                        conceptPath,
-                        parentConceptID
-                );
-
-                conceptModel = this.conceptService.save(conceptModel);
-            } else {
-                conceptModel = optConceptModel.get();
-            }
-
-            return conceptModel.getConceptNodeId();
-        });
-    }
-
-    protected void buildValuesMetadata(ColumnMeta columnMeta, Long conceptID) {
+    protected void queueValuesMetadata(ColumnMeta columnMeta, Long conceptID) {
         try {
             List<String> values = columnMeta.categoryValues();
             if (!columnMeta.categorical()) {
@@ -393,26 +368,32 @@ public class DictionaryLoaderService {
             }
 
             String valuesJson = this.columnMetaUtility.listToJson(values);
-            // Use idempotent upsert to avoid unique constraint violations on (key, concept_node_id)
-            this.conceptMetadataService.upsert(conceptID, "values", valuesJson);
+
+            // Add to Queue (Thread-safe, non-blocking)
+            ConceptMetadataModel metadataModel = new ConceptMetadataModel(conceptID, "values", valuesJson);
+            this.metadataBatchQueue.add(metadataModel);
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Long getDatasetRefID(String datasetRef) {
-        return this.datasetRefIDs.computeIfAbsent(datasetRef, ref -> {
-            Optional<DatasetModel> optDatasetModel = this.datasetService.findByRef(ref);
-            DatasetModel datasetModel;
-            if (optDatasetModel.isPresent()) {
-                datasetModel = optDatasetModel.get();
-            } else {
-                datasetModel = new DatasetModel(ref, "", "","");
-                datasetModel = this.datasetService.save(datasetModel); // Blocking call
-            }
+    private static boolean isAllowedByStudy(String conceptPath, Set<String> allowedStudies) {
+        if (allowedStudies == null || allowedStudies.isEmpty()) {
+            return true;
+        }
+        String root = rootSegment(conceptPath);
+        if (root == null) return false;
+        String rootLc = root.toLowerCase();
+        return allowedStudies.contains(rootLc);
+    }
 
-            return datasetModel.getDatasetId();
-        });
+    private static String rootSegment(String conceptPath) {
+        if (conceptPath == null || conceptPath.isEmpty()) return null;
+        int start = conceptPath.startsWith("\\") ? 1 : 0;
+        int end = conceptPath.indexOf("\\", start);
+        if (end == -1) return conceptPath.substring(start);
+        return conceptPath.substring(start, end);
     }
 
     private void printColumnMetaErrorsToCSV(String csvFilePath) {
@@ -421,18 +402,22 @@ public class DictionaryLoaderService {
                     columnMetas.forEach(columnMeta ->
                             writer.writeNext(new String[]{
                                     columnMeta.name(),
-                                    columnMeta.widthInBytes(),
-                                    columnMeta.columnOffset(),
+                                    String.valueOf(columnMeta.widthInBytes()), // Cast to String
+                                    String.valueOf(columnMeta.columnOffset()), // Cast to String
                                     String.valueOf(columnMeta.categorical()),
                                     String.join("µ", columnMeta.categoryValues()),
-                                    columnMeta.allObservationsOffset(),
-                                    columnMeta.allObservationsLength(),
-                                    columnMeta.observationCount(),
-                                    columnMeta.patientCount()
+                                    String.valueOf(columnMeta.allObservationsOffset()),
+                                    String.valueOf(columnMeta.allObservationsLength()),
+                                    String.valueOf(columnMeta.observationCount()),
+                                    String.valueOf(columnMeta.patientCount())
                             })));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public ConcurrentHashMap<String, Long> getDatasetRefIDs() {
+        return datasetRefIDs;
     }
 
 }
