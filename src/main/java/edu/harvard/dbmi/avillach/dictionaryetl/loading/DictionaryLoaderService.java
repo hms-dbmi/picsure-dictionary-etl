@@ -11,7 +11,6 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConcurrentFullPathTree;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

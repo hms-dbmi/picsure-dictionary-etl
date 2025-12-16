@@ -3,6 +3,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetFacetRefreshService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.InitializeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

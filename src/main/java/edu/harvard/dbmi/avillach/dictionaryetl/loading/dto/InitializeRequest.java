@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
