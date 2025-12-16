@@ -50,4 +50,7 @@ public class ConceptMetadataService {
         return metadata;
     }
 
+    public List<ConceptMetadataModel> findAllByKey(String key) {
+        return this.conceptMetadataRepository.findAllByKey(key);
+    }
 }
