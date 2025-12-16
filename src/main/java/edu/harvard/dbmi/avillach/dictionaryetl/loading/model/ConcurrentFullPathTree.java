@@ -31,7 +31,7 @@ public class ConcurrentFullPathTree {
 
         for (int i = 0; i < node.length; i++) {
             String conceptSegment = node[i];
-            if (conceptSegment.isEmpty()) {
+            if (StringUtils.isBlank(conceptSegment)) {
                 continue;
             }
 
@@ -52,10 +52,6 @@ public class ConcurrentFullPathTree {
                             conceptPath,
                             null
                     );
-
-                if (StringUtils.isBlank(node[1])) {
-                    throw new IllegalStateException("Unable to derive dataset " + columnMeta.name());
-                }
 
                 currentNode = new ConceptNode(conceptPath, conceptModel, node[1]); // The second node is the dataset. Position 0 = ''
                 ConceptNode existingNode = registry.putIfAbsent(conceptPath, currentNode);
