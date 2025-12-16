@@ -1,8 +1,8 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading.model;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
