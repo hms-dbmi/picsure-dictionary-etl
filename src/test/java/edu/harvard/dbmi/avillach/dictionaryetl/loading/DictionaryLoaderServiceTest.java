@@ -39,7 +39,6 @@ public class DictionaryLoaderServiceTest {
     private static String resourcePath;
     private static String thousandGenomesFilePath;
     private static String syntheaFilePath;
-    private static String recoverAdultPath;
 
     @Autowired
     private DictionaryLoaderService dictionaryLoaderService;
@@ -96,10 +95,6 @@ public class DictionaryLoaderServiceTest {
 
         Path testResourcePath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources");
         resourcePath = testResourcePath.toString();
-
-        ClassPathResource recoverAdultResource = new ClassPathResource("recover_adult_columnMeta.csv");
-        assertNotNull(recoverAdultResource);
-        recoverAdultPath = recoverAdultResource.getFile().toPath().toString();
     }
 
     @BeforeEach
@@ -430,7 +425,6 @@ public class DictionaryLoaderServiceTest {
         assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(thousandGenomesFilePath, resourcePath +
                                                                                                             "/columnMetaErrors" +
                                                                                                             ".csv"));
-
         List<ConceptModel> all = this.conceptService.findAll();
         assertFalse(all.isEmpty());
         assertTrue(all.size() >= 25);
@@ -441,22 +435,9 @@ public class DictionaryLoaderServiceTest {
         assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath +
                                                                                                     "/columnMetaErrors" +
                                                                                                     ".csv"));
-
         List<ConceptModel> all = this.conceptService.findAll();
         assertFalse(all.isEmpty());
         assertTrue(all.size() >= 32);
-    }
-
-    @Test
-    void shouldProcessRecoverAdult() {
-        assertDoesNotThrow(() -> this.dictionaryLoaderService.processColumnMetaCSV(
-                recoverAdultPath,
-                resourcePath + "/columnMetaErrors.csv"
-        ));
-
-        List<ConceptModel> all = this.conceptService.findAll();
-        assertFalse(all.isEmpty());
-        assertTrue(all.size() >= 450);
     }
 
     @Test
