@@ -73,9 +73,15 @@ public class ColumnMetaMapper {
     }
 
     private static String getOptional(String[] columns, int idx) {
-        if (idx >= columns.length) return null;
+        if (idx >= columns.length) {
+            return null;
+        }
+
         String v = columns[idx];
-        if (!StringUtils.hasLength(v) || NULL.equalsIgnoreCase(v)) return null;
+        if (!StringUtils.hasLength(v) || NULL.equalsIgnoreCase(v)) {
+            return null;
+        }
+
         return v;
     }
 
