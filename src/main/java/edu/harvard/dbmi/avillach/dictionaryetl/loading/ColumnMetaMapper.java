@@ -19,44 +19,40 @@ public class ColumnMetaMapper {
     private final Logger log = LoggerFactory.getLogger(ColumnMetaMapper.class);
     private static final String NULL = "null";
 
-    public Optional<ColumnMeta> mapCSVRowToColumnMeta(String[] columns) {
-        try {
-            boolean isCategorical = columns[3].charAt(0) == 't';
-            List<String> categoryValues = parseCategoryValuesToList(columns[4]);
+    public ColumnMeta mapCSVRowToColumnMeta(String[] columns) throws ArrayIndexOutOfBoundsException
+    {
+        boolean isCategorical = columns[3].charAt(0) == 't';
+        List<String> categoryValues = parseCategoryValuesToList(columns[4]);
 
-            String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
+        String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
 
-            Double min = null;
-            Double max = null;
-            if (!isCategorical) {
-                if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
-                    min = Double.parseDouble(columns[5]);
-                }
-                if (StringUtils.hasLength(columns[6]) && !NULL.equals(columns[6])) {
-                    max = Double.parseDouble(columns[6]);
-                }
+        Double min = null;
+        Double max = null;
+        if (!isCategorical) {
+            if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
+                min = Double.parseDouble(columns[5]);
             }
-
-            String col9  = getOptional(columns, 9);
-            String col10 = getOptional(columns, 10);
-
-            return Optional.of(new ColumnMeta(
-                    conceptPath,
-                    columns[1],
-                    columns[2],
-                    isCategorical,
-                    categoryValues,
-                    min,
-                    max,
-                    columns[7],
-                    columns[8],
-                    col9,
-                    col10
-            ));
-        } catch (ArrayIndexOutOfBoundsException e) {
-            log.error("Unable to parse line {}", columns, e);
+            if (StringUtils.hasLength(columns[6]) && !NULL.equals(columns[6])) {
+                max = Double.parseDouble(columns[6]);
+            }
         }
-        return Optional.empty();
+
+        String col9 = getOptional(columns, 9);
+        String col10 = getOptional(columns, 10);
+
+        return new ColumnMeta(
+                conceptPath,
+                columns[1],
+                columns[2],
+                isCategorical,
+                categoryValues,
+                min,
+                max,
+                columns[7],
+                columns[8],
+                col9,
+                col10
+        );
     }
 
     private static String getConceptPath(String[] columns, boolean isCategorical, List<String> categoryValues) {
