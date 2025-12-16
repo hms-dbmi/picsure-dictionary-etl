@@ -123,6 +123,7 @@ public class DictionaryLoaderService {
         // The tree TreePath has been built. We now want to start inserting records
         log.info("Persisting Tree to Database");
         this.persistTreeToDatabase();
+
         this.metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the posion pill
         dbWriterFuture.join();
         log.info("All tasks have been processed and batches flushed. Shutting down.");
@@ -175,7 +176,7 @@ public class DictionaryLoaderService {
         this.datasetService.findAll().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
         Collection<ConceptNode> currentLayer = concurrentFullPathTree.getRoot().getChildren().values();
 
-        List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size()); // pre-size for performance.
+        List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size());
         currentLayer.forEach(node -> {
             if (!datasetIDs.containsKey(node.getDatasetRef())) {
                 newDatasets.add(new DatasetModel(node.getDatasetRef(), "", "", ""));
@@ -184,13 +185,10 @@ public class DictionaryLoaderService {
         this.datasetService.saveAll(newDatasets);
         newDatasets.parallelStream().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
 
-        int depth = 1;
-
+        int numberOfConceptPaths = 0;
         List<ConceptModel> batchModels = new ArrayList<>(BATCH_SIZE);
         List<ConceptNode> batchNodes = new ArrayList<>(BATCH_SIZE);
         while (!currentLayer.isEmpty()) {
-            log.info("Persisting Depth {}: {} nodes found. ", depth, currentLayer.size());
-
             List<ConceptNode> nextLayer = new ArrayList<>();
 
             for (ConceptNode node : currentLayer) {
@@ -219,10 +217,11 @@ public class DictionaryLoaderService {
                 flushBatch(batchModels, batchNodes);
             }
 
+            numberOfConceptPaths += currentLayer.size();
             currentLayer = nextLayer;
-            depth++;
         }
 
+        log.info("Number of concept paths processed: {}", numberOfConceptPaths);
         concurrentFullPathTree.registry.clear();
     }
 
@@ -238,7 +237,7 @@ public class DictionaryLoaderService {
             }
         }
 
-        // clear batch after it has been flushed
+        // clear the batch after it has been flushed
         batchModels.clear();
         batchNodes.clear();
     }
@@ -319,9 +318,6 @@ public class DictionaryLoaderService {
         );
     }
 
-    /**
-     * REFACTORED: Now queues the object instead of calling DB directly.
-     */
     protected void queueValuesMetadata(ColumnMeta columnMeta, Long conceptID) {
         try {
             List<String> values = columnMeta.categoryValues();
@@ -331,7 +327,6 @@ public class DictionaryLoaderService {
 
             String valuesJson = this.columnMetaUtility.listToJson(values);
 
-            // Add to Queue (Thread-safe, non-blocking)
             ConceptMetadataModel metadataModel = new ConceptMetadataModel(conceptID, "values", valuesJson);
             this.metadataBatchQueue.add(metadataModel);
 
