@@ -1,6 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
@@ -11,6 +12,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConcurrentFullPathTree;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,10 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class DictionaryLoaderService {
@@ -33,6 +35,7 @@ public class DictionaryLoaderService {
     private final ConceptMetadataService conceptMetadataService;
     private final ColumnMetaUtility columnMetaUtility;
     private final ConcurrentFullPathTree concurrentFullPathTree;
+    private final CSVParser csvParser;
 
     // --- Batch Configuration ---
     private static final int BATCH_SIZE = 5000;
@@ -40,30 +43,33 @@ public class DictionaryLoaderService {
     // ---------------------------
 
     @Autowired
-    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility, ConcurrentFullPathTree concurrentFullPathTree) throws SQLException {
+    public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility, ConcurrentFullPathTree concurrentFullPathTree, CSVParser csvParser) throws SQLException {
         this.columnMetaMapper = columnMetaMapper;
         this.datasetService = datasetService;
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
         this.columnMetaUtility = columnMetaUtility;
         this.concurrentFullPathTree = concurrentFullPathTree;
+        this.csvParser = csvParser;
     }
 
-    private final Set<List<ColumnMeta>> columnMetaErrors = new HashSet<>();
+    private final Set<String> columnMetaErrors = new HashSet<>();
 
     public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
         return processColumnMetaCSV(csvPath, errorFile, null);
     }
 
     public String processColumnMetaCSV(String csvPath, String errorFile, List<String> studies) throws RuntimeException {
+        String baseDir = System.getProperty("hpds.data.dir", "/opt/local/hpds");
+
         if (errorFile == null) {
-            errorFile = "/opt/local/hpds/columnMetaErrors.csv";
+            errorFile = java.nio.file.Path.of(baseDir, "columnMetaErrors.csv").toString();
         } else if (!errorFile.endsWith(".csv")) {
             return "The error file must be a csv.";
         }
 
         if (csvPath == null) {
-            csvPath = "/opt/local/hpds/columnMeta.csv";
+            csvPath = java.nio.file.Path.of(baseDir, "columnMeta.csv").toString();
         }
 
         final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? null :
@@ -76,7 +82,7 @@ public class DictionaryLoaderService {
         CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
         try (ExecutorService columnMetaScopeExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
             try (BufferedReader br = new BufferedReader(new FileReader(csvPath));
-                 CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(this.columnMetaMapper.getParser()).build()
+                 CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(this.csvParser).build()
             ) {
                 String[] columns;
                 String currentConcept = null;
@@ -84,31 +90,35 @@ public class DictionaryLoaderService {
                 boolean groupAllowed = true;
 
                 while ((columns = csvReader.readNext()) != null) {
-                    Optional<ColumnMeta> columnMetaOpt = this.columnMetaMapper.mapCSVRowToColumnMeta(columns);
-                    if (columnMetaOpt.isEmpty()) {
-                        continue;
+                    ColumnMeta meta = null;
+                    try {
+                         meta = this.columnMetaMapper.mapCSVRowToColumnMeta(columns);
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        String error = StringUtils.joinWith(",", Arrays.stream(columns).toArray());
+                        this.columnMetaErrors.add("Unable to process columnMeta %s".formatted(error));
                     }
-                    ColumnMeta meta = columnMetaOpt.get();
-                    String conceptName = meta.name();
 
-                    if (!conceptName.equals(currentConcept)) {
-                        if (!group.isEmpty()) {
-                            // We must create a shallow copy of group because we are going to clear it immediately after
-                            // when we clear it the group collection passed to the thread will be cleared. This creates
-                            // race conditions
-                            ArrayList<ColumnMeta> columnMetas = new ArrayList<>(group);
-                            columnMetaScopeExecutor.submit(() -> this.processColumnMetas(columnMetas));
+                    if (meta != null) {
+                        String conceptName = meta.name();
+
+                        if (!conceptName.equals(currentConcept)) {
+                            if (!group.isEmpty()) {
+                                // We must create a shallow copy of group because we are going to clear it immediately after
+                                // when we clear it the group collection passed to the thread will be cleared. This creates
+                                // race conditions
+                                ArrayList<ColumnMeta> columnMetas = new ArrayList<>(group);
+                                columnMetaScopeExecutor.submit(() -> this.processColumnMetas(columnMetas));
+                            }
+
+                            group.clear();
+                            currentConcept = conceptName;
+                            groupAllowed = isAllowedByStudy(conceptName, allowedStudies);
                         }
 
-                        group.clear();
-                        currentConcept = conceptName;
-                        groupAllowed = isAllowedByStudy(conceptName, allowedStudies);
+                        if (groupAllowed) {
+                            group.add(meta);
+                        }
                     }
-
-                    if (groupAllowed) {
-                        group.add(meta);
-                    }
-
                 }
 
                 if (!group.isEmpty()) {
@@ -194,13 +204,8 @@ public class DictionaryLoaderService {
             for (ConceptNode node : currentLayer) {
                 nextLayer.addAll(node.getChildren().values());
 
-                if (node.getParent() != null && !"ROOT".equals(node.getParent().getConceptPath())) {
-                    ConceptModel parentEntity = node.getParent().getConceptModel();
-                    if (parentEntity.getConceptNodeId() == null) {
-                        throw new IllegalStateException("Integrity Error: Parent " + node.getParent().getConceptPath());
-                    }
-
-                    node.getConceptModel().setParentId(parentEntity.getConceptNodeId());
+                if (!"ROOT".equals(node.getParent().getConceptPath())) {
+                    node.getConceptModel().setParentId(node.getParent().getConceptModel().getConceptNodeId());
                 }
 
                 node.getConceptModel().setDatasetId(datasetIDs.get(node.getDatasetRef()));
@@ -354,20 +359,9 @@ public class DictionaryLoaderService {
     }
 
     private void printColumnMetaErrorsToCSV(String csvFilePath) {
-        try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath))) {
-            this.columnMetaErrors.forEach(columnMetas ->
-                    columnMetas.forEach(columnMeta ->
-                            writer.writeNext(new String[]{
-                                    columnMeta.name(),
-                                    String.valueOf(columnMeta.widthInBytes()), // Cast to String
-                                    String.valueOf(columnMeta.columnOffset()), // Cast to String
-                                    String.valueOf(columnMeta.categorical()),
-                                    String.join("µ", columnMeta.categoryValues()),
-                                    String.valueOf(columnMeta.allObservationsOffset()),
-                                    String.valueOf(columnMeta.allObservationsLength()),
-                                    String.valueOf(columnMeta.observationCount()),
-                                    String.valueOf(columnMeta.patientCount())
-                            })));
+        List<String[]> errors = this.columnMetaErrors.stream().map(error -> new String[]{error}).toList();
+        try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath, StandardCharsets.UTF_8))) {
+            writer.writeAll(errors);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
