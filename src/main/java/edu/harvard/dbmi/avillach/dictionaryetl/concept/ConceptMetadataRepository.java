@@ -73,4 +73,6 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             group by key;
     """, nativeQuery = true)
     List<String> findByDatasetID(Long[] datasetIDs);
+
+    List<ConceptMetadataModel> findAllByKey(String key);
 }
