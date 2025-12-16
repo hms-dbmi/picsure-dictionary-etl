@@ -15,7 +15,7 @@ public class ConcurrentFullPathTree {
     // Registry maps the Full Path (String) to the Node object
     public final ConcurrentMap<String, ConceptNode> registry = new ConcurrentHashMap<>();
 
-    // A virtual root to hold the top-level paths (e.g., "\laboratory\")
+    // A placeholder root to hold the top-level paths (e.g., "\laboratory\")
     private final ConceptNode root;
     private static final String ROOT_ID = "ROOT";
 
