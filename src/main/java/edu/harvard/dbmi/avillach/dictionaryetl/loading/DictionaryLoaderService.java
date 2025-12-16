@@ -78,7 +78,6 @@ public class DictionaryLoaderService {
                         .map(String::toLowerCase)
                         .collect(java.util.stream.Collectors.toSet());
 
-        CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
         try (ExecutorService columnMetaScopeExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
             try (BufferedReader br = new BufferedReader(new FileReader(csvPath));
                  CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(this.csvParser).build()
@@ -102,9 +101,8 @@ public class DictionaryLoaderService {
 
                         if (!conceptName.equals(currentConcept)) {
                             if (!group.isEmpty()) {
-                                // We must create a shallow copy of group because we are going to clear it immediately after
-                                // when we clear it the group collection passed to the thread will be cleared. This creates
-                                // race conditions
+                                // We must create a shallow copy of a group because we are going to clear it immediately after
+                                // When we clear it, the group collection passed to the thread will be cleared.
                                 ArrayList<ColumnMeta> columnMetas = new ArrayList<>(group);
                                 columnMetaScopeExecutor.submit(() -> this.processColumnMetas(columnMetas));
                             }
@@ -129,13 +127,17 @@ public class DictionaryLoaderService {
             throw new RuntimeException(e);
         }
 
-        // The tree TreePath has been built. We now want to start inserting records
-        log.info("Persisting Tree to Database");
-        this.persistTreeToDatabase();
+        CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
+        try {
+            log.info("Persisting Tree to Database");
+            this.persistTreeToDatabase();
 
-        this.metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the posion pill
-        dbWriterFuture.join();
-        log.info("All tasks have been processed and batches flushed. Shutting down.");
+            this.metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the poison pill
+            log.info("Waiting for column meta processing to complete.");
+        } finally {
+            dbWriterFuture.join();
+            log.info("All tasks have been processed and batches flushed. Shutting down.");
+        }
 
         if (!this.columnMetaErrors.isEmpty()) {
             this.printColumnMetaErrorsToCSV(errorFile);
@@ -173,8 +175,8 @@ public class DictionaryLoaderService {
                         batch.clear();
                     }
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
+                    log.info("Error in metadata consumer thread. {}", e.getMessage());
+                    this.columnMetaErrors.add("Error in metadata consumer thread. " + e.getMessage());
                 }
             }
         }, Executors.newVirtualThreadPerTaskExecutor());
