@@ -276,4 +276,8 @@ public class ConceptService {
     public List<ConceptModel> saveAll(List<ConceptModel> conceptModels) {
         return this.conceptRepository.saveAll(conceptModels);
     }
+
+    public List<ConceptModel> findAllConceptsWithMetadataValues() {
+        return this.conceptRepository.findAllConceptPathsWithMetadataValues();
+    }
 }

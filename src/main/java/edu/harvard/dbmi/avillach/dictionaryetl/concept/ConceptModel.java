@@ -53,7 +53,16 @@ public class ConceptModel {
         this.display = display;
         this.conceptType = concept_type;
         this.conceptPath = concept_path;
-        
+    }
+
+    public ConceptModel(Long conceptNodeId, Long datasetId, String name, String display, String conceptType, String conceptPath, Long parentId) {
+        this.conceptNodeId = conceptNodeId;
+        this.datasetId = datasetId;
+        this.name = name;
+        this.display = display;
+        this.conceptType = conceptType;
+        this.conceptPath = conceptPath;
+        this.parentId = parentId;
     }
 
     public Long getConceptNodeId() {
