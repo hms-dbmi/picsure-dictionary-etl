@@ -1,22 +1,14 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class ColumnMetaMapper {
 
-    private final CSVParser parser =
-            new CSVParserBuilder().withSeparator(',').withQuoteChar('"').withEscapeChar(CSVParser.NULL_CHARACTER).build();
-    private final Logger log = LoggerFactory.getLogger(ColumnMetaMapper.class);
     private static final String NULL = "null";
 
     public ColumnMeta mapCSVRowToColumnMeta(String[] columns) throws ArrayIndexOutOfBoundsException
@@ -87,7 +79,4 @@ public class ColumnMetaMapper {
         return v;
     }
 
-    public CSVParser getParser() {
-        return parser;
-    }
 }
