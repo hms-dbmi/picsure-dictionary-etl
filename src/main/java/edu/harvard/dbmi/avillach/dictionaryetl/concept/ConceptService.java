@@ -160,8 +160,11 @@ public class ConceptService {
                     conceptMeta.setValue(metaEntries.get(metaKey));
                     metaList.add(conceptMeta);
                 }));
-                Query metaQuery = entityManager.createNativeQuery(getUpsertConceptMetaBatchQuery(metaList));
-                metaUpdateCount += metaQuery.executeUpdate();
+
+                if (!metaList.isEmpty()) {
+                    Query metaQuery = entityManager.createNativeQuery(getUpsertConceptMetaBatchQuery(metaList));
+                    metaUpdateCount += metaQuery.executeUpdate();
+                }
 
                 // clear all dataobjects for next batch
                 conceptModels = new ArrayList<>();
