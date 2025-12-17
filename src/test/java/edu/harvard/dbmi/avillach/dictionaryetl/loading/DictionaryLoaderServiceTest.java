@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -124,19 +125,6 @@ public class DictionaryLoaderServiceTest {
         assertEquals(15, all.size());
     }
 
-//    @Test
-//    void shouldProduceConceptHierarchy() {
-//        String examinationConceptPath = "\\examination\\physical fitness\\Recovery 2 diastolic BP (mm Hg)\\";
-//        ConceptNode conceptNode = this.dictionaryLoaderService.buildConceptHierarchy(examinationConceptPath);
-//        assertEquals("\\examination\\", conceptNode.getConceptPath());
-//        System.out.println(conceptNode.getConceptPath());
-//        assertEquals("\\examination\\physical fitness\\", conceptNode.getChild().getConceptPath());
-//        System.out.println(conceptNode.getChild().getConceptPath());
-//        assertEquals("\\examination\\physical fitness\\Recovery 2 diastolic BP (mm Hg)\\",
-//                conceptNode.getChild().getChild().getConceptPath());
-//        System.out.println(conceptNode.getChild().getChild().getConceptPath());
-//    }
-
     @Test
     void shouldFlattenConceptMeta_demographics() throws IOException {
         List<ColumnMeta> columnMetas = new ArrayList<>();
@@ -218,18 +206,15 @@ public class DictionaryLoaderServiceTest {
         columnMetas.add(columnMetaMapper.mapCSVRowToColumnMeta(
                 csvParser.parseLine("\\demographics\\area\\1_17\\,4,0,true,1_17,null,null," +
                                                                         "4694276,4699538,107,107")));
+
         ColumnMeta columnMeta = this.dictionaryLoaderService.flattenCategoricalColumnMeta(columnMetas);
-
-        DatasetModel dataset = new DatasetModel("TEST", "", "", "");
-        dataset = this.datasetService.save(dataset);
-
-        ConceptModel concept = new ConceptModel(dataset.getDatasetId(), "area", "", "categorical", columnMeta.name(), null);
-        concept = this.conceptService.save(concept);
 
         this.dictionaryLoaderService.processColumnMetas(columnMetas);
         this.dictionaryLoaderService.persistConcepts(Set.of());
 
-        List<ConceptMetadataModel> metadataModel = this.conceptMetadataService.findByConceptID(concept.getConceptNodeId());
+        Optional<ConceptModel> concept = this.conceptService.findByConcept("\\demographics\\area\\");
+        assertTrue(concept.isPresent());
+        List<ConceptMetadataModel> metadataModel = this.conceptMetadataService.findByConceptID(concept.get().getConceptNodeId());
         assertNotNull(metadataModel);
         assertFalse(metadataModel.isEmpty());
         assertEquals(this.columnMetaUtility.parseValues(metadataModel.getFirst().getValue()).toString(), columnMeta.categoryValues().toString());
