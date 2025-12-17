@@ -20,9 +20,11 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Service
 public class DictionaryLoaderService {
@@ -60,13 +62,13 @@ public class DictionaryLoaderService {
         String baseDir = System.getProperty("hpds.data.dir", "/opt/local/hpds");
 
         if (errorFile == null) {
-            errorFile = java.nio.file.Path.of(baseDir, "columnMetaErrors.csv").toString();
+            errorFile = Path.of(baseDir, "columnMetaErrors.csv").toString();
         } else if (!errorFile.endsWith(".csv")) {
             return "The error file must be a csv.";
         }
 
         if (csvPath == null) {
-            csvPath = java.nio.file.Path.of(baseDir, "columnMeta.csv").toString();
+            csvPath = Path.of(baseDir, "columnMeta.csv").toString();
         }
 
         final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? new HashSet<>() :
@@ -74,23 +76,23 @@ public class DictionaryLoaderService {
                         .filter(Objects::nonNull)
                         .map(String::trim)
                         .map(String::toLowerCase)
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
 
         try (ExecutorService columnMetaScopeExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
             try (BufferedReader br = new BufferedReader(new FileReader(csvPath));
                  CSVReader csvReader = new CSVReaderBuilder(br).withCSVParser(this.csvParser).build()
             ) {
-                String[] columns;
+                String[] cells;
                 String currentConcept = null;
                 List<ColumnMeta> group = new ArrayList<>();
                 boolean groupAllowed = true;
 
-                while ((columns = csvReader.readNext()) != null) {
+                while ((cells = csvReader.readNext()) != null) {
                     ColumnMeta meta = null;
                     try {
-                         meta = this.columnMetaMapper.mapCSVRowToColumnMeta(columns);
+                         meta = this.columnMetaMapper.mapCSVRowToColumnMeta(cells);
                     } catch (ArrayIndexOutOfBoundsException e) {
-                        String error = StringUtils.joinWith(",", Arrays.stream(columns).toArray());
+                        String error = StringUtils.joinWith(",", Arrays.stream(cells).toArray());
                         this.columnMetaErrors.add("Unable to process columnMeta %s".formatted(error));
                     }
 
@@ -350,22 +352,25 @@ public class DictionaryLoaderService {
         }
     }
 
-    private static boolean isAllowedByStudy(String conceptPath, Set<String> allowedStudies) {
+    protected boolean isAllowedByStudy(String conceptPath, Set<String> allowedStudies) {
         if (allowedStudies == null || allowedStudies.isEmpty()) {
             return true;
         }
+
         String root = rootSegment(conceptPath);
-        if (root == null) return false;
-        String rootLc = root.toLowerCase();
-        return allowedStudies.contains(rootLc);
+        if (root == null) {
+            return false;
+        }
+
+        return allowedStudies.contains(root.toLowerCase());
     }
 
-    private static String rootSegment(String conceptPath) {
-        if (conceptPath == null || conceptPath.isEmpty()) return null;
-        int start = conceptPath.startsWith("\\") ? 1 : 0;
-        int end = conceptPath.indexOf("\\", start);
-        if (end == -1) return conceptPath.substring(start);
-        return conceptPath.substring(start, end);
+    protected String rootSegment(String conceptPath) {
+        if (!StringUtils.isNotBlank(conceptPath)) {
+            return null;
+        }
+
+        return conceptPath.split("\\\\")[1];
     }
 
     protected void printColumnMetaErrorsToCSV(String csvFilePath) {

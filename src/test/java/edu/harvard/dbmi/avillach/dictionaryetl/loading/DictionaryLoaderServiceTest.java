@@ -21,7 +21,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
-import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -538,6 +537,13 @@ public class DictionaryLoaderServiceTest {
         assertTrue(acrylamide.isPresent());
         assertEquals("acrylamide", acrylamide.get().getName());
         assertEquals(acrylamide.get().getConceptType(), ConceptTypes.CATEGORICAL.getConceptType());
+    }
+
+    @Test
+    void shouldReturnRootSegment() {
+        String rootSegment = this.dictionaryLoaderService.rootSegment("\\test\\concept\\path\\");
+        assertEquals("test", rootSegment);
+
     }
 
 }
