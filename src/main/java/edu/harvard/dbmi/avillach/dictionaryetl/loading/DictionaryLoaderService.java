@@ -260,35 +260,39 @@ public class DictionaryLoaderService {
     }
 
     protected void processColumnMetas(List<ColumnMeta> columnMetas) {
-        ColumnMeta columnMeta;
-        if (columnMetas.size() == 1) {
-            columnMeta = columnMetas.getFirst();
-        } else {
-            boolean isContinuous = columnMetas.stream().anyMatch(meta -> !meta.categorical());
-            if (!isContinuous) {
-                columnMeta = flattenCategoricalColumnMeta(columnMetas);
+        try {
+            ColumnMeta columnMeta;
+            if (columnMetas.size() == 1) {
+                columnMeta = columnMetas.getFirst();
             } else {
-                columnMeta = flattenContinuousColumnMeta(columnMetas);
+                boolean isContinuous = columnMetas.stream().anyMatch(meta -> !meta.categorical());
+                if (!isContinuous) {
+                    columnMeta = flattenCategoricalColumnMeta(columnMetas);
+                } else {
+                    columnMeta = flattenContinuousColumnMeta(columnMetas);
+                }
             }
-        }
 
-        this.concurrentFullPathTree.ingestColumnMeta(columnMeta);
+            this.concurrentFullPathTree.ingestColumnMeta(columnMeta);
+        } catch (IllegalArgumentException e) {
+            this.columnMetaErrors.add(e.getMessage());
+        }
     }
 
     private ColumnMeta flattenContinuousColumnMeta(List<ColumnMeta> columnMetas) throws IllegalArgumentException {
         if (columnMetas.getFirst().categorical()) {
-            throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
-                                       "for a concept path.");
+            throw new IllegalArgumentException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
+                                       "for a concept path. ColumnMetas: " + StringUtils.joinWith(",", columnMetas));
         }
 
         final Double[] min = {columnMetas.getFirst().min()};
         final Double[] max = {columnMetas.getFirst().max()};
 
-        columnMetas.forEach(columnMeta -> {
+        for (ColumnMeta columnMeta : columnMetas) {
             if (columnMeta.categorical()) {
                 if (columnMeta.categoryValues().size() > 1) {
-                    throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
-                                               "for a concept path.");
+                    throw new IllegalArgumentException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
+                                                       "for a concept path. ColumnMetas: " + StringUtils.joinWith(",", columnMetas));
                 }
 
                 double value = Double.parseDouble(columnMeta.categoryValues().getFirst());
@@ -298,7 +302,7 @@ public class DictionaryLoaderService {
                 min[0] = Math.min(min[0], columnMeta.min());
                 max[0] = Math.max(max[0], columnMeta.max());
             }
-        });
+        }
 
         return new ColumnMeta(
                 columnMetas.getFirst().name(),
