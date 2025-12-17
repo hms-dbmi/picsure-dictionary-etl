@@ -1,9 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReaderBuilder;
-import org.junit.jupiter.api.BeforeAll;
+import edu.harvard.dbmi.avillach.dictionaryetl.configuration.Config;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,12 +10,11 @@ import org.springframework.test.context.ContextConfiguration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ContextConfiguration(classes = ColumnMetaMapper.class)
+@ContextConfiguration(classes = {ColumnMetaMapper.class, Config.class})
 class ColumnMetaMapperTest {
 
     @Autowired

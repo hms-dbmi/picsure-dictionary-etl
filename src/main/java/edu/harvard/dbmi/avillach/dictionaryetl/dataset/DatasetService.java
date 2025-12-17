@@ -31,10 +31,14 @@ public class DatasetService {
     public List<DatasetModel> findAll() {
         return this.datasetRepository.findAll();
     }
+
+    public List<DatasetModel> findAllByRefs(List<String> refs) {
+        return this.datasetRepository.findAllByRef(refs);
+    }
+
     public Map<String, Integer> buildCsvInputsHeaderMap(String[] headers) {
         return CSVUtility.buildCsvInputsHeaderMap(headers);
     }
-
 
     public Optional<DatasetModel> findByID(Long datasetId) {
         if (datasetId == null) {
@@ -59,4 +63,5 @@ public class DatasetService {
     public void saveAll(List<DatasetModel> newDatasets) {
         this.datasetRepository.saveAll(newDatasets);
     }
+
 }
