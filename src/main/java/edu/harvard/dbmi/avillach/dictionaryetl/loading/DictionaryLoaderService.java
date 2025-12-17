@@ -71,7 +71,7 @@ public class DictionaryLoaderService {
             csvPath = java.nio.file.Path.of(baseDir, "columnMeta.csv").toString();
         }
 
-        final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? null :
+        final Set<String> allowedStudies = (studies == null || studies.isEmpty()) ? new HashSet<>() :
                 studies.stream()
                         .filter(Objects::nonNull)
                         .map(String::trim)
@@ -127,17 +127,7 @@ public class DictionaryLoaderService {
             throw new RuntimeException(e);
         }
 
-        CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
-        try {
-            log.info("Persisting Tree to Database");
-            this.persistTreeToDatabase();
-
-            this.metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the poison pill
-            log.info("Waiting for column meta processing to complete.");
-        } finally {
-            dbWriterFuture.join();
-            log.info("All tasks have been processed and batches flushed. Shutting down.");
-        }
+        this.persistConcepts(allowedStudies);
 
         if (!this.columnMetaErrors.isEmpty()) {
             this.printColumnMetaErrorsToCSV(errorFile);
@@ -145,6 +135,27 @@ public class DictionaryLoaderService {
         }
 
         return "Success";
+    }
+
+     protected void persistConcepts(Set<String> allowedStudies) {
+        CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
+        try {
+            log.info("Persisting Tree to Database");
+
+            List<DatasetModel> allByRefs;
+            if (allowedStudies.isEmpty()) {
+                allByRefs = this.datasetService.findAll();
+            } else {
+                 allByRefs = this.datasetService.findAllByRefs(allowedStudies.stream().toList());
+            }
+
+            this.persistTreeToDatabase(allByRefs);
+            this.metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the poison pill
+            log.info("Waiting for column meta processing to complete.");
+        } finally {
+            dbWriterFuture.join();
+            log.info("All tasks have been processed and batches flushed. Shutting down.");
+        }
     }
 
     /**
@@ -182,9 +193,9 @@ public class DictionaryLoaderService {
         }, Executors.newVirtualThreadPerTaskExecutor());
     }
 
-    private void persistTreeToDatabase() {
+    private void persistTreeToDatabase(List<DatasetModel> datasets) {
         HashMap<String, Long> datasetIDs = new HashMap<>();
-        this.datasetService.findAll().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
+        datasets.forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
         Collection<ConceptNode> currentLayer = concurrentFullPathTree.getRoot().getChildren().values();
 
         List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size());
@@ -264,7 +275,7 @@ public class DictionaryLoaderService {
         this.concurrentFullPathTree.ingestColumnMeta(columnMeta);
     }
 
-    private ColumnMeta flattenContinuousColumnMeta(List<ColumnMeta> columnMetas) {
+    private ColumnMeta flattenContinuousColumnMeta(List<ColumnMeta> columnMetas) throws IllegalArgumentException {
         if (columnMetas.getFirst().categorical()) {
             throw new RuntimeException("Cannot flatten rows. Mixed concept types. Must be continuous OR categorical " +
                                        "for a concept path.");
@@ -359,7 +370,7 @@ public class DictionaryLoaderService {
         return conceptPath.substring(start, end);
     }
 
-    private void printColumnMetaErrorsToCSV(String csvFilePath) {
+    protected void printColumnMetaErrorsToCSV(String csvFilePath) {
         List<String[]> errors = this.columnMetaErrors.stream().map(error -> new String[]{error}).toList();
         try (CSVWriter writer = new CSVWriter(new FileWriter(csvFilePath, StandardCharsets.UTF_8))) {
             writer.writeAll(errors);
