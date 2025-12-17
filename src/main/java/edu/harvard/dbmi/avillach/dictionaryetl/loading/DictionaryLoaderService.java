@@ -36,10 +36,8 @@ public class DictionaryLoaderService {
     private final ConcurrentFullPathTree concurrentFullPathTree;
     private final CSVParser csvParser;
 
-    // --- Batch Configuration ---
     private static final int BATCH_SIZE = 5000;
     private final BlockingQueue<ConceptMetadataModel> metadataBatchQueue = new LinkedBlockingQueue<>();
-    // ---------------------------
 
     @Autowired
     public DictionaryLoaderService(ColumnMetaMapper columnMetaMapper, DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, DataSource dataSource, ColumnMetaUtility columnMetaUtility, ConcurrentFullPathTree concurrentFullPathTree, CSVParser csvParser) throws SQLException {
@@ -158,9 +156,6 @@ public class DictionaryLoaderService {
         }
     }
 
-    /**
-     * NEW: Consumer thread that drains the queue and writes to DB in chunks.
-     */
     private CompletableFuture<Void> startBatchMetadataConsumer() {
         return CompletableFuture.runAsync(() -> {
             List<ConceptMetadataModel> batch = new ArrayList<>();
@@ -229,7 +224,6 @@ public class DictionaryLoaderService {
                 }
             }
 
-            // flush remaining models in the layer
             if (!batchModels.isEmpty()) {
                 flushBatch(batchModels, batchNodes);
             }
