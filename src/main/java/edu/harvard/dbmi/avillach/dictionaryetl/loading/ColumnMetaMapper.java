@@ -13,7 +13,7 @@ public class ColumnMetaMapper {
 
     public ColumnMeta mapCSVRowToColumnMeta(String[] columns) throws ArrayIndexOutOfBoundsException
     {
-        boolean isCategorical = columns[3].charAt(0) == 't';
+        boolean isCategorical = columns[3].equalsIgnoreCase("true");
         List<String> categoryValues = parseCategoryValuesToList(columns[4]);
 
         String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
