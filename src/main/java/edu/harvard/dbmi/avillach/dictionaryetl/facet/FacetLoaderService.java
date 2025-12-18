@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +35,7 @@ public class FacetLoaderService {
     private final FacetRepository facetRepository;
     private final ConceptRepository conceptRepository;
     private final FacetConceptRepository facetConceptRepository;
+    private final FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     // Meta repositories + object mapper
     private final FacetMetadataRepository facetMetadataRepository;
@@ -48,13 +51,14 @@ public class FacetLoaderService {
     @Autowired
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,
                               ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository,
-                              FacetMetadataRepository facetMetadataRepository,
+                              FacetMetadataRepository facetMetadataRepository, FacetCategoryMetaRepository facetCategoryMetaRepo,
                               ObjectMapper objectMapper) {
         this.facetCategoryRepository = facetCategoryRepository;
         this.facetRepository = facetRepository;
         this.conceptRepository = conceptRepository;
         this.facetConceptRepository = facetConceptRepository;
         this.facetMetadataRepository = facetMetadataRepository;
+        this.facetCategoryMetaRepository = facetCategoryMetaRepo;
         this.objectMapper = objectMapper.copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
@@ -182,6 +186,9 @@ public class FacetLoaderService {
                 accum.createdCategoryNames().add(category.getName());
             }
 
+            // If metadata was included, update or add
+            updateFacetCategoryMetadata(category, facetCategory.metadata());
+
             // Recursively process facets (collect only; single-pass mapping later)
             if (facetCategory.facets() != null) {
                 for (FacetDTO f : facetCategory.facets()) {
@@ -225,6 +232,30 @@ public class FacetLoaderService {
 
         return new Result(categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated,
                 List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
+    }
+
+    private void updateFacetCategoryMetadata(FacetCategoryModel category, List<FacetCategoryMetaDTO> metadataList){
+        if(metadataList == null || metadataList.isEmpty()) return;
+
+        for(FacetCategoryMetaDTO metadata: metadataList){
+            if (metadata.key() == null || metadata.value() == null) {
+                logger.warn("load() - Skipping null or incomplete key/value metadata pair for facet category " + category.getName());
+                continue;
+            }
+            Optional<FacetCategoryMeta> maybeMeta = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(category.getFacetCategoryId(), metadata.key());
+            FacetCategoryMeta metaRecord;
+            if (maybeMeta.isPresent()) {
+                metaRecord = maybeMeta.get();
+                metaRecord.setValue(metadata.value());
+            } else {
+                metaRecord = new FacetCategoryMeta(
+                    category.getFacetCategoryId(),
+                    metadata.key(),
+                    metadata.value()
+                );
+            }
+            facetCategoryMetaRepository.save(metaRecord);
+        }
     }
 
     // Collect-only recursion: upsert facets and metadata; gather leaves/structure for single-pass mapping

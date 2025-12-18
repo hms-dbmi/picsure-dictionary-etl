@@ -1,9 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.facet.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 
 import java.util.List;
 
@@ -14,6 +11,10 @@ public record FacetCategoryDTO(
         @JsonProperty("Name") @JsonAlias("name") String name,
         @JsonProperty("Display") @JsonAlias("display") String display,
         @JsonProperty("Description") @JsonAlias("description") String description,
-        @JsonProperty("Facets") @JsonAlias("facets") List<FacetDTO> facets
+        @JsonProperty("Facets") @JsonAlias("facets") List<FacetDTO> facets,
+        @JsonProperty("Metadata") @JsonAlias("metadata") @JsonSetter(nulls = Nulls.AS_EMPTY) List<FacetCategoryMetaDTO> metadata
 ) {
+    public FacetCategoryDTO(String name, String display, String description, List<FacetDTO> facets) {
+        this(name, display, description, facets, List.of());
+    }
 }

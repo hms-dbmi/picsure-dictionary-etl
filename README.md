@@ -1,11 +1,36 @@
-## Code Formatting
-Before contributing code, please set up our git hook: `cp code-formatting/pre-commit.sh .git/hooks/pre-commit`
+<!-- TOC -->
+  * [Code Formatting](#code-formatting)
+  * [Uploading a TSV file for `/anvil/upload-tsv` data ingest](#uploading-a-tsv-file-for-anvilupload-tsv-data-ingest)
+  * [Local Database for Development](#local-database-for-development)
+    * [Installing `pg_restore` and `pg_dump` on Mac](#installing-pg_restore-and-pg_dump-on-mac)
+    * [Accessing the docker database](#accessing-the-docker-database)
+  * [Facet Loader](#facet-loader)
+      * [Expression evaluation rules](#expression-evaluation-rules)
+      * [Idempotency and updates](#idempotency-and-updates)
+      * [Running tests](#running-tests)
+    * [Troubleshooting](#troubleshooting)
+    * [Clear facets and categories](#clear-facets-and-categories)
+    * [Testing requests with FacetLoader.http](#testing-requests-with-facetloaderhttp)
+  * [Running dev application locally on command line](#running-dev-application-locally-on-command-line)
+<!-- TOC -->
 
-    To skip formatting on a block of code, wrap in spotless:off, spotless:on comments
+## Code Formatting
+
+Before contributing code, please set up our git hook:
+```shell
+  cp code-formatting/pre-commit.sh .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
+```
+
+To skip formatting on a block of code, wrap in spotless:off, spotless:on comments
 
 ## Uploading a TSV file for `/anvil/upload-tsv` data ingest
-```aiignore
-curl -X POST -H "Content-Type: text/plain" --data-binary @path/to/your/file.tsv http://localhost:8080/anvil/upload-tsv
+
+```shell
+  curl -X POST \
+      -H "Content-Type: text/plain" \
+      --data-binary @path/to/your/file.tsv \
+      http://localhost:8080/anvil/upload-tsv
 ```
 
 ## Local Database for Development
@@ -13,14 +38,14 @@ curl -X POST -H "Content-Type: text/plain" --data-binary @path/to/your/file.tsv 
 To set up a local development database, follow these steps:
 
 1. Run the `docker-compose.postgres.yml` file to start the required services:
-   ```bash
+```bash
    docker-compose -f docker-compose.postgres.yml up --build -d
-   ```
+```
 
 2. Execute the `db/schema.sql` script to create the `dict` schema and all necessary database tables.
 
 3. *(Optional)* If you have a dump file generated with `pg_dump`, you can restore it using `pg_restore`. If the backup is from our `BDC` database, the following command will work:
-   ```bash
+```bash
    pg_restore \
       --host="localhost" \
       --port="5432" \
@@ -30,8 +55,8 @@ To set up a local development database, follow these steps:
       --verbose \
       --no-owner \
       ./dictionary_db
-   ```
-   You will be prompted to enter the database password after executing this command.
+```
+  You will be prompted to enter the database password after executing this command.
 
 4. Now you can run the Spring Boot application with `dev` as the active profile.
 
@@ -40,41 +65,35 @@ To set up a local development database, follow these steps:
 If you do not have `pg_restore` and `pg_dump`, you can install them by following these steps:
 
 1. Install `postgresql@16`, which includes both `pg_restore` and `pg_dump`:
-   ```bash
+ ```bash
    brew install postgresql@16
-   ```
+ ```
 
 2. Link the installed PostgreSQL version:
-   ```bash
+```bash
    brew link postgresql@16
-   ```
+```
 
 3. Add PostgreSQL to your `zshrc` or `bash` profile. For `zshrc`, use the following command:
-   ```bash
+ ```bash
    echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
-   ```
+ ```
 
 4. Verify the versions of `pg_dump` and `pg_restore`:
-   ```bash
+ ```bash
    pg_dump --version
    pg_restore --version
-   ```
+ ```
 
-   If the command doesn’t work immediately, you may need to restart your terminal.
+If the command doesn’t work immediately, you may need to restart your terminal.
 
+### Accessing the docker database
 
-## Table of Contents
+```shell
+  docker exec -it postgres-db psql -U username -d dictionary_db
+```
 
-- [Code Formatting](#code-formatting)
-- [Uploading a TSV file for /anvil/upload-tsv data ingest](#uploading-a-tsv-file-for-anvilupload-tsv-data-ingest)
-- [Local Database for Development](#local-database-for-development)
-- [Facet Loader](#facet-loader)
-  - [API: Load Facets](#facet-loader)
-  - [Expression Evaluation](#expression-evaluation-rules)
-  - [Clear facets and categories](#clear-facets-and-categories)
-  - [Testing with FacetLoader.http](#testing-requests-with-facetloaderhttp)
-- [Tests](#tests-you-can-run-docker-required-for-testcontainers)
-- [Troubleshooting](#troubleshooting)
+From within, you can execute `set search_path to dict;` to search within the dict schema (similar to running `use dict;` in mysql databases).
 
 ## Facet Loader
 
@@ -86,17 +105,24 @@ What it does:
 - Evaluates expressions to map facets to concept nodes (rows in dict.concept_node) and writes relationships into dict.facet__concept_node.
 
 API endpoint:
-- POST /api/facet/loader/load
+- POST `/api/facet/loader/load`
 - Request body is a JSON array of objects each containing a Facet_Category.
 - Returns a JSON object with counts: categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated.
 
 Example request body (minimal):
+```json
 [
   {
     "Facet_Category": {
       "Name": "Consortium_Curated_Facets",
       "Display": "Consortium Curated Facets",
       "Description": "Consortium Curated Facets Description",
+      "Metadata": [
+        {
+          "Key": "order",
+          "Value": "1"
+        }
+      ],
       "Facets": [
         {
           "Name": "Recover Adult",
@@ -114,9 +140,10 @@ Example request body (minimal):
     }
   }
 ]
+```
 
 Example with expressions (maps facets to concept nodes by concept_path):
-- Concept path sample: \\phs003436\\Recover_Adult\\biostats_derived\\visits\\inf\\12\\pasc_cc_2024\\
+- Concept path sample: _\\phs003436\\Recover_Adult\\visits\\inf\\12\\pasc_cc_2024\\_
 - Nodes (by index):
   - 0: phs003436
   - 1: Recover_Adult
@@ -128,33 +155,38 @@ Example with expressions (maps facets to concept nodes by concept_path):
 - Negative indices are allowed (e.g., -1 is last node, -2 second to last, etc.).
 
 Example payload fragment using OR expression groups (OR-of-ANDs):
-{
-  "Facet_Category": {
-    "Name": "Consortium_Curated_Facets",
-    "Facets": [
-      {
-        "Name": "Recover Adult Infected or PASC",
-        "Expression_Groups": [
-          [
-            { "regex": "(?i)\\binf(ected)?\\b", "node": -3 }
-          ],
-          [
-            { "contains": "pasc", "node": -1 }
+```json
+[
+  {
+    "Facet_Category": {
+      "Name": "Consortium_Curated_Facets",
+      "Facets": [
+        {
+          "Name": "Recover Adult Infected or PASC",
+          "Expression_Groups": [
+            [
+              { "regex": "(?i)\\binf(ected)?\\b", "node": -3 }
+            ],
+            [
+              { "contains": "pasc", "node": -1 }
+            ]
           ]
-        ]
-      },
-      {
-        "Name": "Same using camelCase alias",
-        "expressionGroups": [
-          [ { "regex": "(?i)\\binf(ected)?\\b", "node": -3 } ],
-          [ { "contains": "pasc", "node": -1 } ]
-        ]
-      }
-    ]
+        },
+        {
+          "Name": "Same using camelCase alias",
+          "expressionGroups": [
+            [ { "regex": "(?i)\\binf(ected)?\\b", "node": -3 } ],
+            [ { "contains": "pasc", "node": -1 } ]
+          ]
+        }
+      ]
+    }
   }
-}
+]
+```
 
-Expression evaluation rules:
+#### Expression evaluation rules
+
 - Supported keys per expression entry: exactly, contains, regex (use one or more).
 - Two ways to define rules:
   - Expression_Groups (new): an array of groups; OR across groups, AND within each group.
@@ -179,86 +211,103 @@ Alias handling in payload:
 Pre-requisites for mapping:
 - dict.concept_node should already be populated (e.g., via the Dictionary Loader) so that concept_path values exist to evaluate.
 
-cURL example:
-- Save payload to payload.json and run:
+**cURL examples:**
+
+Save payload to payload.json and run:
+```shell
   curl -X POST \
-       -H "Content-Type: application/json" \
-       --data-binary @payload.json \
-       http://localhost:8080/api/facet/loader/load
+      -H "Content-Type: application/json" \
+      --data-binary @payload.json \
+      http://localhost:8080/api/facet/loader/load
+````
 
 Sample response:
+```json
 {
   "categoriesCreated": 1,
   "categoriesUpdated": 0,
   "facetsCreated": 5,
   "facetsUpdated": 0
 }
+```
 
-Idempotency and updates:
+#### Idempotency and updates
+
 - Re-posting the same payload will update existing categories/facets and keep the hierarchy; counts will reflect updates rather than creations.
 - Facet-to-concept mappings avoid duplicates using ON CONFLICT semantics in the repository/service layer.
 
-Tests you can run (Docker required for Testcontainers):
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderControllerTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderServiceTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderMappingIntegrationTest test
-- mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetExpressionEvaluatorTest test
-Or run all tests:
-- mvn test
+#### Running tests
 
-Troubleshooting:
+Tests you can run (Docker required for Testcontainers):
+- `mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetExpressionEvaluatorTest test`
+- `mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderClearIntegrationTest test`
+- `mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderControllerTest test`
+- `mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderMappingIntegrationTest test`
+- `mvn -Dtest=edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetLoaderServiceTest test`
+
+Or run all tests:
+- `mvn test`
+
+### Troubleshooting
+
 - If no concept nodes are mapped after posting, verify that concept_node rows exist and your node positions/regex align with your concept_path structure.
 - Ensure the app is running on the expected port and CORS origin (Facet Loader controller is configured with CrossOrigin for http://localhost:8081 by default).
 
-## Clear facets and categories
+### Clear facets and categories
 
 Use this endpoint to remove facet categories and/or specific facets (including all their descendants) by name. The service will also remove facet-to-concept mappings first to preserve referential integrity.
 
 - Endpoint: POST /api/facet/loader/clear
 - Request body (JSON):
-
-  {
-    "Facet_Categories": ["CategoryName1", "CategoryName2"],
-    "Facets": ["FacetNameA", "FacetNameB"]
-  }
+```json
+{
+  "Facet_Categories": ["CategoryName1", "CategoryName2"],
+  "Facets": ["FacetNameA", "FacetNameB"]
+}
+```
 
 - Both properties are optional. Provide one or both:
   - facetCategories: Deletes each listed category by name, all facets within, and all mappings. Returns counts.
   - facets: Deletes each listed facet by name and all of its descendants in the hierarchy, plus all related mappings. Other categories/facets remain intact.
 
-- Response body (JSON):
-
-  {
-    "categoriesDeleted": 1,
-    "facetsDeleted": 7,
-    "mappingsDeleted": 42
-  }
+Response body (JSON):
+```json
+{
+  "categoriesDeleted": 1,
+  "facetsDeleted": 7,
+  "mappingsDeleted": 42
+}
+```
 
 Behavior notes:
 - Deletions are name-based and case-sensitive to match stored names.
-- For categories, the service deletes mappings, then facets, then the category record.
+- For categories, the service deletes mappings, then facets, then the category record and any associated category metadata.
 - For facets, the service deletes mappings, then deletes the facet and all descendants in a breadth-first traversal.
 - Requests are idempotent: nonexistent names are ignored (counted as zero deletions).
 
-cURL example (clear by category):
+**cURL examples:**
 
+Clear by category:
+```shell
   curl -X POST \
-       -H "Content-Type: application/json" \
-       --data-binary '{
-         "Facet_Categories": ["Consortium_Curated_Facets"]
-       }' \
-       http://localhost:8080/api/facet/loader/clear
+      -H "Content-Type: application/json" \
+      --data-binary '{
+        "Facet_Categories": ["Consortium_Curated_Facets"]
+      }' \
+      http://localhost:8080/api/facet/loader/clear
+````
 
-cURL example (clear by facet names):
-
+Clear by facet names:
+```shell
   curl -X POST \
-       -H "Content-Type: application/json" \
-       --data-binary '{
-         "facets": ["Recover Adult", "Infected"]
-       }' \
-       http://localhost:8080/api/facet/loader/clear
+      -H "Content-Type: application/json" \
+      --data-binary '{
+        "facets": ["Recover Adult", "Infected"]
+      }' \
+      http://localhost:8080/api/facet/loader/clear
+```
 
-## Testing requests with FacetLoader.http
+### Testing requests with FacetLoader.http
 
 A FacetLoader.http file is included at the repository root with ready-to-run sample requests compatible with the IntelliJ HTTP Client.
 
@@ -266,3 +315,17 @@ How to use:
 - Open FacetLoader.http in IntelliJ IDEA or any IDE that supports the HTTP Client.
 - Adjust the @host variable at the top if your application runs on a different port (e.g., 8086 in Docker).
 - Click the gutter icons to execute requests for loading facets and clearing by category/facet names.
+
+## Running dev application locally on command line
+
+```shell
+  mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev"
+```
+
+You can reduce logging level by setting these properties in the applications-dev.properties file.
+```properties
+spring.jpa.show-sql=false
+logging.level.org.hibernate.type=INFO
+logging.level.org.hibernate.SQL=INFO
+logging.level.org.hibernate.type.descriptor.sql=INFO
+```

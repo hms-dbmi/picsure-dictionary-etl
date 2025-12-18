@@ -6,6 +6,8 @@ import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.FacetCategoryWrapper;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -47,10 +50,7 @@ class FacetLoaderControllerTest {
     private FacetCategoryRepository facetCategoryRepository;
 
     @Autowired
-    private DatasetRepository datasetRepository;
-
-    @Autowired
-    private ConceptService conceptService;
+    private FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -122,4 +122,47 @@ class FacetLoaderControllerTest {
         Assertions.assertEquals(parentFacet.get().getFacetId(), infectedFacet.get().getParentId());
     }
 
+    @Test
+    void postPayload_shouldCreateMetadataRecords() throws Exception {
+        String metaKey = "Some Key";
+        String metaValue = "some value";
+        String categoryName = "Consortium_Curated_Facets";
+        String json = "[\n" +
+                "  {\n" +
+                "    \"Facet_Category\": {\n" +
+                "      \"Name\": \"" + categoryName + "\",\n" +
+                "      \"Display\": \"Consortium Curated Facets\",\n" +
+                "      \"Description\": \"Consortium Curated Facets Description\",\n" +
+                "      \"Metadata\": [\n" +
+                "        { \"Key\": \"" + metaKey + "\", \"Value\": \"" + metaValue + "\" }\n" +
+                "      ],\n" +
+                "      \"Facets\": [\n" +
+                "        {\n" +
+                "          \"Name\": \"Recover Adult\",\n" +
+                "          \"Display\": \"RECOVER Adult\",\n" +
+                "          \"Description\": \"Recover adult parent facet.\",\n" +
+                "          \"Facets\": [\n" +
+                "            {\n" +
+                "              \"Name\": \"Infected\",\n" +
+                "              \"Display\": \"Infected\",\n" +
+                "              \"Description\": \"Infected Facet Description\"\n" +
+                "            }\n" +
+                "          ]\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "]";
+        List<FacetCategoryWrapper> payload = objectMapper.readValue(json, new TypeReference<>(){});
+
+        ResponseEntity<Result> response = controller.load(payload);
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+        Optional<FacetCategoryModel> category = facetCategoryRepository.findByName(categoryName);
+        Assertions.assertTrue(category.isPresent());
+
+        Optional<FacetCategoryMeta> metadata = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(category.get().getFacetCategoryId(), metaKey);
+        Assertions.assertTrue(metadata.isPresent());
+        Assertions.assertEquals(metaValue, metadata.get().getValue());
+    }
 }
