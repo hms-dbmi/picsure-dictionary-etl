@@ -12,8 +12,7 @@ public class ColumnMetaMapper {
 
     private static final String NULL = "null";
 
-    public ColumnMeta mapCSVRowToColumnMeta(String[] cells) throws ArrayIndexOutOfBoundsException
-    {
+    public ColumnMeta mapCSVRowToColumnMeta(String[] cells) throws ArrayIndexOutOfBoundsException {
         boolean isCategorical = cells[3].equalsIgnoreCase("true");
         List<String> categoryValues = parseCategoryValuesToList(cells[4]);
 

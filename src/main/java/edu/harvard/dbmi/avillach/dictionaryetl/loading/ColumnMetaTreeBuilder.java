@@ -1,8 +1,5 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
-import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
@@ -12,19 +9,20 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
 
 @Component
 public class ColumnMetaTreeBuilder {
 
     private final ConceptModelTree conceptModelTree;
-    private final ColumnMetaUtility columnMetaUtility;
     private final ColumnMetaFlattener columnMetaFlattener;
+    private final ConceptMetadataModelMapper conceptMetadataModelMapper;
     private final LoadingErrorRegistry loadingErrorRegistry;
 
-    public ColumnMetaTreeBuilder(ConceptModelTree conceptModelTree, ColumnMetaUtility columnMetaUtility, ColumnMetaFlattener columnMetaFlattener, LoadingErrorRegistry loadingErrorRegistry) {
+    public ColumnMetaTreeBuilder(ConceptModelTree conceptModelTree, ColumnMetaFlattener columnMetaFlattener, ConceptMetadataModelMapper conceptMetadataModelMapper, LoadingErrorRegistry loadingErrorRegistry) {
         this.conceptModelTree = conceptModelTree;
-        this.columnMetaUtility = columnMetaUtility;
         this.columnMetaFlattener = columnMetaFlattener;
+        this.conceptMetadataModelMapper = conceptMetadataModelMapper;
         this.loadingErrorRegistry = loadingErrorRegistry;
     }
 
@@ -77,25 +75,30 @@ public class ColumnMetaTreeBuilder {
 
             if (i == node.length - 1) {
                 currentNode.getConceptModel().setConceptType(ConceptTypes.conceptTypeFromColumnMeta(columnMeta));
-                currentNode.setConceptMetadataModel(processMetadata(columnMeta));
+                currentNode.setConceptMetadataModel(conceptMetadataModelMapper.fromColumnMeta(columnMeta));
+                handleCompliantConceptSpecialCase(currentNode);
             }
 
             parent = currentNode;
         }
     }
 
-    private ConceptMetadataModel processMetadata(ColumnMeta columnMeta) {
-        try {
-            List<String> values = columnMeta.categoryValues();
-            if (!columnMeta.categorical()) {
-                values = List.of(String.valueOf(columnMeta.min()), String.valueOf(columnMeta.max()));
-            }
-
-            String valuesJson = this.columnMetaUtility.listToJson(values);
-            return new ConceptMetadataModel("values", valuesJson);
-
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+    /**
+     * If a concept path meets this format: "\\phs\\pht\\^phv[0-9]+$\\variable_name\\"
+     *
+     * Example: \\phs000001\\pht000001\\phv000123\\age\\
+     * The second-to-last node meets the format.
+     *
+     * If a variable meets these criteria, we set the ConceptModel display to the variable name
+     * and Concept name to the phv.
+     *
+     * @param conceptNode Current Concept Node
+     */
+    protected void handleCompliantConceptSpecialCase(ConceptNode conceptNode) {
+        boolean matches = Pattern.matches("^phv[0-9]+$", conceptNode.getParent().getConceptModel().getName());
+        if (matches) {
+            String phvVal = conceptNode.getParent().getConceptModel().getName();
+            conceptNode.getConceptModel().setName(phvVal);
         }
     }
 
