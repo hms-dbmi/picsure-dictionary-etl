@@ -2,6 +2,7 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import com.opencsv.CSVParser;
 import edu.harvard.dbmi.avillach.dictionaryetl.configuration.Config;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
