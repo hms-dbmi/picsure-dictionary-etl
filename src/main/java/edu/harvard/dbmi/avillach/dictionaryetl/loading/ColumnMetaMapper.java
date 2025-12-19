@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -11,37 +12,37 @@ public class ColumnMetaMapper {
 
     private static final String NULL = "null";
 
-    public ColumnMeta mapCSVRowToColumnMeta(String[] columns) throws ArrayIndexOutOfBoundsException
+    public ColumnMeta mapCSVRowToColumnMeta(String[] cells) throws ArrayIndexOutOfBoundsException
     {
-        boolean isCategorical = columns[3].equalsIgnoreCase("true");
-        List<String> categoryValues = parseCategoryValuesToList(columns[4]);
+        boolean isCategorical = cells[3].equalsIgnoreCase("true");
+        List<String> categoryValues = parseCategoryValuesToList(cells[4]);
 
-        String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
+        String conceptPath = getConceptPath(cells, isCategorical, categoryValues);
 
         Double min = null;
         Double max = null;
         if (!isCategorical) {
-            if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
-                min = Double.parseDouble(columns[5]);
+            if (StringUtils.hasLength(cells[5]) && !NULL.equals(cells[5])) {
+                min = Double.parseDouble(cells[5]);
             }
-            if (StringUtils.hasLength(columns[6]) && !NULL.equals(columns[6])) {
-                max = Double.parseDouble(columns[6]);
+            if (StringUtils.hasLength(cells[6]) && !NULL.equals(cells[6])) {
+                max = Double.parseDouble(cells[6]);
             }
         }
 
-        String col9 = getOptional(columns, 9);
-        String col10 = getOptional(columns, 10);
+        String col9 = getOptional(cells, 9);
+        String col10 = getOptional(cells, 10);
 
         return new ColumnMeta(
                 conceptPath,
-                columns[1],
-                columns[2],
+                cells[1],
+                cells[2],
                 isCategorical,
                 categoryValues,
                 min,
                 max,
-                columns[7],
-                columns[8],
+                cells[7],
+                cells[8],
                 col9,
                 col10
         );
