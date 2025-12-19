@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CrossOrigin(origins = "http://localhost:8081")
@@ -63,7 +65,7 @@ public class DictionaryLoaderController {
                 response = this.dictionaryLoaderService.processColumnMetaCSV(
                         request.csvPath(),
                         request.errorDirectory(),
-                        request.studies()
+                        (request.studies() != null) ? request.studies() : List.of()
                 );
                 if (includeDefaultFacets) {
                     this.facetService.createOrUpdateDefaultFacets();
