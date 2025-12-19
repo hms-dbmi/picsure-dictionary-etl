@@ -1,7 +1,7 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading.model;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.ColumnMeta;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -11,7 +11,7 @@ public class ConceptNode {
     private String datasetRef;
     private String conceptPath;
     private ConceptModel conceptModel;
-    private ColumnMeta columnMeta;
+    private ConceptMetadataModel conceptMetadataModel;
 
     private ConceptNode parent;
     private final ConcurrentMap<String, ConceptNode> children = new ConcurrentHashMap<>();
@@ -65,14 +65,6 @@ public class ConceptNode {
         return children;
     }
 
-    public ColumnMeta getColumnMeta() {
-        return columnMeta;
-    }
-
-    public void setColumnMeta(ColumnMeta columnMeta) {
-        this.columnMeta = columnMeta;
-    }
-
     public String getDatasetRef() {
         return datasetRef;
     }
@@ -81,13 +73,21 @@ public class ConceptNode {
         this.datasetRef = datasetRef;
     }
 
+    public ConceptMetadataModel getConceptMetadataModel() {
+        return conceptMetadataModel;
+    }
+
+    public void setConceptMetadataModel(ConceptMetadataModel conceptMetadataModel) {
+        this.conceptMetadataModel = conceptMetadataModel;
+    }
+
     @Override
     public String toString() {
         return "ConceptNode{" +
                "datasetRef='" + datasetRef + '\'' +
                ", conceptPath='" + conceptPath + '\'' +
                ", conceptModel=" + conceptModel +
-               ", columnMeta=" + columnMeta +
+               ", conceptMeta=" + conceptMetadataModel +
                ", parent=" + parent +
                ", children=" + children +
                '}';
