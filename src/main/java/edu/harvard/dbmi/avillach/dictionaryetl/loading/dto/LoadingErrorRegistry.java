@@ -1,11 +1,8 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
-
-import org.springframework.stereotype.Component;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading.dto;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 public class LoadingErrorRegistry {
 
     private final Set<String> errors = ConcurrentHashMap.newKeySet();

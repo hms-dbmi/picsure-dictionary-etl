@@ -54,12 +54,10 @@ public class DictionaryLoaderController {
                 request.includeDefaultFacets(),
                 request.clearDatabase());
 
-        boolean includeDefaultFacets = (request.includeDefaultFacets() != null) ? request.includeDefaultFacets() : true;
-        boolean clearDatabase = (request.clearDatabase() != null) ? request.clearDatabase() : false;
         String response;
         if (this.reentrantLock.tryLock()) {
             try {
-                if (clearDatabase) {
+                if (request.clearDatabase()) {
                     databaseCleanupUtility.truncateTablesAllTables();
                 }
                 response = this.dictionaryLoaderService.processColumnMetaCSV(
@@ -67,10 +65,10 @@ public class DictionaryLoaderController {
                         request.errorDirectory(),
                         (request.studies() != null) ? request.studies() : List.of()
                 );
-                if (includeDefaultFacets) {
+                if (request.includeDefaultFacets()) {
                     this.facetService.createOrUpdateDefaultFacets();
                 }
-                datasetFacetRefreshService.refreshDatasetFacet(false);
+                datasetFacetRefreshService.refreshDatasetFacet(request.isBDC());
             } finally {
                 reentrantLock.unlock();
             }

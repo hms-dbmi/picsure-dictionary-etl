@@ -1,5 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.hibernate.query.spi.CloseableIterator;
 import org.springframework.stereotype.Component;
@@ -21,13 +22,13 @@ public class ColumnMetaGroupingPipeline {
         this.studyFilter = studyFilter;
     }
 
-    public void run(String csvPath, Set<String> allowedStudies) {
+    public void run(LoadingContext context) {
         try (ExecutorService columnMetaScopeExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
             String currentConcept = null;
             List<ColumnMeta> group = new ArrayList<>();
             boolean groupAllowed = true;
 
-            try (CloseableIterator<ColumnMeta> iterator = columnMetaSource.read(csvPath)) {
+            try (CloseableIterator<ColumnMeta> iterator = columnMetaSource.read(context)) {
                 while (iterator.hasNext()) {
                     ColumnMeta meta = iterator.next();
                     String conceptName = meta.name();
@@ -37,12 +38,12 @@ public class ColumnMetaGroupingPipeline {
                             // When we clear it, the group collection passed to the thread will be cleared.
                             // Because of this we need to create a shallow copy of the file.
                             ArrayList<ColumnMeta> columnMetas = new ArrayList<>(group);
-                            columnMetaScopeExecutor.submit(() -> this.columnMetaTreeBuilder.process(columnMetas));
+                            columnMetaScopeExecutor.submit(() -> this.columnMetaTreeBuilder.process(columnMetas, context));
                         }
 
                         group.clear();
                         currentConcept = conceptName;
-                        groupAllowed = studyFilter.isAllowed(conceptName, allowedStudies);
+                        groupAllowed = studyFilter.isAllowed(conceptName, context.allowedStudies());
                     }
 
                     if (groupAllowed) {
@@ -52,7 +53,7 @@ public class ColumnMetaGroupingPipeline {
 
                 if (!group.isEmpty()) {
                     ArrayList<ColumnMeta> columnMetas = new ArrayList<>(group);
-                    columnMetaScopeExecutor.submit(() -> this.columnMetaTreeBuilder.process(columnMetas));
+                    columnMetaScopeExecutor.submit(() -> this.columnMetaTreeBuilder.process(columnMetas, context));
                 }
             }
         }

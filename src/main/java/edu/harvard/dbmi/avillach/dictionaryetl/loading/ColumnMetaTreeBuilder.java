@@ -2,6 +2,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingErrorRegistry;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
 import org.apache.commons.lang3.StringUtils;
@@ -14,29 +16,25 @@ import java.util.regex.Pattern;
 @Component
 public class ColumnMetaTreeBuilder {
 
-    private final ConceptModelTree conceptModelTree;
     private final ColumnMetaFlattener columnMetaFlattener;
     private final ConceptMetadataModelMapper conceptMetadataModelMapper;
-    private final LoadingErrorRegistry loadingErrorRegistry;
 
-    public ColumnMetaTreeBuilder(ConceptModelTree conceptModelTree, ColumnMetaFlattener columnMetaFlattener, ConceptMetadataModelMapper conceptMetadataModelMapper, LoadingErrorRegistry loadingErrorRegistry) {
-        this.conceptModelTree = conceptModelTree;
+    public ColumnMetaTreeBuilder(ColumnMetaFlattener columnMetaFlattener, ConceptMetadataModelMapper conceptMetadataModelMapper) {
         this.columnMetaFlattener = columnMetaFlattener;
         this.conceptMetadataModelMapper = conceptMetadataModelMapper;
-        this.loadingErrorRegistry = loadingErrorRegistry;
     }
 
-    public void process(List<ColumnMeta> columnMetas) {
+    public void process(List<ColumnMeta> columnMetas, LoadingContext context) {
         try {
-            addToTree(columnMetaFlattener.flatten(columnMetas));
+            addToTree(columnMetaFlattener.flatten(columnMetas), context);
         } catch (IllegalArgumentException e) {
-            this.loadingErrorRegistry.addError(e.getMessage());
+            context.loadingErrorRegistry().addError(e.getMessage());
         }
     }
 
-    private void addToTree(ColumnMeta columnMeta) {
-        ConceptNode parent = this.conceptModelTree.getRoot();
-        ConcurrentMap<String, ConceptNode> registry = this.conceptModelTree.getRegistry();
+    private void addToTree(ColumnMeta columnMeta, LoadingContext context) {
+        ConceptNode parent = context.conceptModelTree().getRoot();
+        ConcurrentMap<String, ConceptNode> registry = context.conceptModelTree().getRegistry();
         String[] node = columnMeta.name().split("\\\\");
         StringBuilder currentPath = new StringBuilder();
 

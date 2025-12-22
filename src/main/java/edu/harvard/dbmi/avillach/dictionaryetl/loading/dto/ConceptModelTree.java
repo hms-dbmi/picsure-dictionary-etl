@@ -1,12 +1,10 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading.dto;
 
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
-import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@Component
 public class ConceptModelTree {
 
     // Registry maps the Full Path (String) to the Node object

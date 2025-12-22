@@ -6,16 +6,14 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 @Component
 public class ColumnMetaTreePersister {
@@ -25,39 +23,39 @@ public class ColumnMetaTreePersister {
     private final DatasetService datasetService;
     private final ConceptService conceptService;
     private final ConceptMetadataService conceptMetadataService;
-    private final ConceptModelTree conceptModelTree;
-    private final LoadingErrorRegistry loadingErrorRegistry;
 
     private static final int BATCH_SIZE = 5000;
-    private final BlockingQueue<ConceptMetadataModel> metadataBatchQueue = new LinkedBlockingQueue<>();
 
-    public ColumnMetaTreePersister(DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService, ConceptModelTree conceptModelTree, LoadingErrorRegistry loadingErrorRegistry) {
+    public ColumnMetaTreePersister(DatasetService datasetService, ConceptService conceptService, ConceptMetadataService conceptMetadataService) {
         this.datasetService = datasetService;
         this.conceptService = conceptService;
         this.conceptMetadataService = conceptMetadataService;
-        this.conceptModelTree = conceptModelTree;
-        this.loadingErrorRegistry = loadingErrorRegistry;
     }
 
-    protected void persist(Set<String> allowedStudies) {
-        CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer();
-        try {
-            log.info("Writing tree to database");
-            persistConceptTreeModel(getDatasetModels(allowedStudies));
-            metadataBatchQueue.add(new ConceptMetadataModel()); // Empty conceptMetadataModel is the poison pill
+    protected void persist(LoadingContext context) {
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            CompletableFuture<Void> dbWriterFuture = startBatchMetadataConsumer(executorService, context);
+            try {
+                log.info("Writing tree to database");
+                persistConceptTreeModel(getDatasetModels(context.allowedStudies()), context);
+            } finally {
+                // Ensure the poison pill is added to the metadataBatchQueue
+                // even if an exception occurs
+                context.metadataBatchQueue().add(new ConceptMetadataModel());
+            }
+
             log.info("Waiting for column meta processing to complete.");
-        } finally {
             dbWriterFuture.join();
             log.info("All tasks have been processed and batches flushed. Shutting down.");
         }
     }
 
-    private CompletableFuture<Void> startBatchMetadataConsumer() {
+    private CompletableFuture<Void> startBatchMetadataConsumer(Executor executor, LoadingContext context) {
         return CompletableFuture.runAsync(() -> {
             List<ConceptMetadataModel> batch = new ArrayList<>();
             while (true) {
                 try {
-                    ConceptMetadataModel metadataModel = this.metadataBatchQueue.take();
+                    ConceptMetadataModel metadataModel = context.metadataBatchQueue().take();
                     if (metadataModel.getConceptNodeId() == null) {
                         // NOTE: Poison pill has been reached. We should never have a metadataModel with a null concept node ID.
 
@@ -78,10 +76,10 @@ public class ColumnMetaTreePersister {
                     }
                 } catch (InterruptedException e) {
                     log.info("Error in metadata consumer thread. {}", e.getMessage());
-                    this.loadingErrorRegistry.addError("Error in metadata consumer thread. " + e.getMessage());
+                    context.loadingErrorRegistry().addError("Error in metadata consumer thread. " + e.getMessage());
                 }
             }
-        }, Executors.newVirtualThreadPerTaskExecutor());
+        }, executor);
     }
 
     private List<DatasetModel> getDatasetModels(Set<String> allowedStudies) {
@@ -94,10 +92,10 @@ public class ColumnMetaTreePersister {
         return allByRefs;
     }
 
-    private void persistConceptTreeModel(List<DatasetModel> datasets) {
+    private void persistConceptTreeModel(List<DatasetModel> datasets, LoadingContext context) {
         HashMap<String, Long> datasetIDs = new HashMap<>();
         datasets.forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
-        Collection<ConceptNode> currentLayer = conceptModelTree.getRoot().getChildren().values();
+        Collection<ConceptNode> currentLayer = context.conceptModelTree().getRoot().getChildren().values();
 
         List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size());
         currentLayer.forEach(node -> {
@@ -106,7 +104,7 @@ public class ColumnMetaTreePersister {
             }
         });
         this.datasetService.saveAll(newDatasets);
-        newDatasets.parallelStream().forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
+        newDatasets.forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
 
         int numberOfConceptPaths = 0;
         List<ConceptModel> batchModels = new ArrayList<>(BATCH_SIZE);
@@ -129,14 +127,14 @@ public class ColumnMetaTreePersister {
 
                 if (batchModels.size() >= BATCH_SIZE) {
                     this.conceptService.saveAll(batchModels);
-                    queueMetadata(batchNodes);
+                    queueMetadata(batchNodes, context);
                     flushBatch(batchModels, batchNodes);
                 }
             }
 
             if (!batchModels.isEmpty()) {
                 this.conceptService.saveAll(batchModels);
-                queueMetadata(batchNodes);
+                queueMetadata(batchNodes, context);
                 flushBatch(batchModels, batchNodes);
             }
 
@@ -146,17 +144,16 @@ public class ColumnMetaTreePersister {
         }
 
         log.info("Number of concept paths processed: {}", numberOfConceptPaths);
-        conceptModelTree.getRegistry().clear();
     }
 
-    private void queueMetadata(List<ConceptNode> batchNodes) {
+    private void queueMetadata(List<ConceptNode> batchNodes, LoadingContext context) {
         for (ConceptNode node : batchNodes) {
             ConceptMetadataModel conceptMetadataModel = node.getConceptMetadataModel();
 
             // If the node has columnMeta we watch to add it to a collection
             if (conceptMetadataModel != null) {
                 conceptMetadataModel.setConceptNodeId(node.getConceptModel().getConceptNodeId());
-                this.metadataBatchQueue.add(conceptMetadataModel);
+                context.metadataBatchQueue().add(conceptMetadataModel);
             }
         }
     }

@@ -3,6 +3,8 @@ package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptTypes;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.ConceptModelTree;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingErrorRegistry;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ConceptNode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

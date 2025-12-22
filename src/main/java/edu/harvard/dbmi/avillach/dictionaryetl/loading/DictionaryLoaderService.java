@@ -1,5 +1,8 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.ConceptModelTree;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingErrorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,11 +50,17 @@ public class DictionaryLoaderService {
                         .map(String::trim)
                         .map(String::toLowerCase)
                         .collect(Collectors.toSet());
-        log.info("Processing Studies: {}", allowedStudies);
+        LoadingContext context = new LoadingContext(allowedStudies, csvPath, errorFile);
 
-        this.columnMetaGroupingPipeline.run(csvPath, allowedStudies);
-        this.columnMetaTreePersister.persist(allowedStudies);
-        this.columnMetaErrorWriter.writeErrors(errorFile);
+        log.info("Processing Studies: {}", allowedStudies);
+        try {
+            this.columnMetaGroupingPipeline.run(context);
+            this.columnMetaTreePersister.persist(context);
+        } catch (Exception e) {
+            log.info(e.getMessage());
+        } finally {
+            this.columnMetaErrorWriter.writeErrors(context);
+        }
 
         return "Success";
     }
