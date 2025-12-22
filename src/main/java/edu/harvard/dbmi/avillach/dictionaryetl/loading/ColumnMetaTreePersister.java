@@ -111,8 +111,10 @@ public class ColumnMetaTreePersister {
         int numberOfConceptPaths = 0;
         List<ConceptModel> batchModels = new ArrayList<>(BATCH_SIZE);
         List<ConceptNode> batchNodes = new ArrayList<>(BATCH_SIZE);
+        int depth = 0;
         while (!currentLayer.isEmpty()) {
             List<ConceptNode> nextLayer = new ArrayList<>();
+            log.info("{} concept nodes at depth {}", currentLayer.size(), depth);
 
             for (ConceptNode node : currentLayer) {
                 nextLayer.addAll(node.getChildren().values());
@@ -140,6 +142,7 @@ public class ColumnMetaTreePersister {
 
             numberOfConceptPaths += currentLayer.size();
             currentLayer = nextLayer;
+            depth++;
         }
 
         log.info("Number of concept paths processed: {}", numberOfConceptPaths);
