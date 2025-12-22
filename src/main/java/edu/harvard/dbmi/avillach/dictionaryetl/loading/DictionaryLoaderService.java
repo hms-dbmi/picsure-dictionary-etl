@@ -47,6 +47,7 @@ public class DictionaryLoaderService {
                         .map(String::trim)
                         .map(String::toLowerCase)
                         .collect(Collectors.toSet());
+        log.info("Processing Studies: {}", allowedStudies);
 
         this.columnMetaGroupingPipeline.run(csvPath, allowedStudies);
         this.columnMetaTreePersister.persist(allowedStudies);
