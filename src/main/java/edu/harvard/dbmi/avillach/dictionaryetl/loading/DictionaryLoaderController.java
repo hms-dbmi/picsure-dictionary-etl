@@ -39,7 +39,7 @@ public class DictionaryLoaderController {
     /**
      * This method is responsible for loading all data from a provided columnMeta.csv into the data dictionary
      * SQL database. It will return a response based on the results. If there are errors during the transform process
-     * the rows will be printed to a separate error file.
+     * the rows will be printed in a separate error file.
      *
      * @param request InitializeRequest
      * @return Returns a string response based on the results of attempting to load the initial data.

@@ -6,6 +6,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.Utility.DatabaseCleanupUtility;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +76,8 @@ public class DictionaryLoaderServiceIntegrationTest {
     @Autowired
     private ColumnMetaFlattener columnMetaFlattener;
 
+    private LoadingContext context;
+
     @Container
     static final PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
@@ -113,6 +116,7 @@ public class DictionaryLoaderServiceIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         this.databaseCleanupUtility.truncateTables();
+        this.context = new LoadingContext(Set.of(), null, null);
     }
 
     @Test
@@ -217,8 +221,8 @@ public class DictionaryLoaderServiceIntegrationTest {
                                                                         "4694276,4699538,107,107")));
         ColumnMeta columnMeta = this.columnMetaFlattener.flatten(columnMetas);
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> concept = this.conceptService.findByConcept("\\demographics\\area\\");
         assertTrue(concept.isPresent());
@@ -242,8 +246,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         List<ColumnMeta> columnMetas = new ArrayList<>();
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(this.csvParser.parseLine("\\examination\\body measures\\Waist Circumference (cm)\\,8,0,false,,32.0,170.7,10198148,10514943,8317,8317")));
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> concept = this.conceptService.findByConcept("\\examination\\body measures\\Waist Circumference (cm)\\");
         assertTrue(concept.isPresent());
@@ -277,8 +281,8 @@ public class DictionaryLoaderServiceIntegrationTest {
                 this.csvParser.parseLine("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
                                                                              " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                              "12069274,5,5")));
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
         assertTrue(laboratory.isPresent());
@@ -309,8 +313,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(
                 this.csvParser.parseLine(csvRow)));
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> questionnaire = this.conceptService.findByConcept("\\questionnaire\\");
         assertTrue(questionnaire.isPresent());
@@ -340,8 +344,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(
                 this.csvParser.parseLine("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\10254\\\",5,0,true,10254,null,null,29178026,29179443,12,12")));
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
 
@@ -379,8 +383,8 @@ public class DictionaryLoaderServiceIntegrationTest {
                 "\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\76543\\\",5,0,false,76543,4,76543.0,29178026,29179443,12,12"
             )));
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
@@ -408,8 +412,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(
                 this.csvParser.parseLine("\"\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\76543\\\",5,0,true,76543,null,null,29178026,29179443,12,12")));
 
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         Optional<ConceptModel> byConcept = this.conceptService.findByConcept("\\laboratory\\biochemistry\\Creatinine, urine (umol per L)\\");
         assertTrue(byConcept.isPresent());
@@ -494,8 +498,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         assertNotNull(columnMeta);
         assertEquals("\\1000Genomes\\open_access-1000Genomes\\BIOSAMPLE ID\\", columnMeta.name());
 
-        this.columnMetaTreeBuilder.process(List.of(columnMeta));
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(List.of(columnMeta), context);
+        this.columnMetaTreePersister.persist(context);
 
         // get the column meta from the dictionary
         List<ConceptModel> all = this.conceptService.findAll();
@@ -530,8 +534,8 @@ public class DictionaryLoaderServiceIntegrationTest {
         columnMetas.add(this.columnMetaMapper.mapCSVRowToColumnMeta(this.csvParser.parseLine("\\laboratory\\acrylamide\\Acrylamide (pmoL per G" +
                                                                              " Hb)\\103\\,3,0,true,103,null,null,12068169," +
                                                                              "12069274,5,5")));
-        this.columnMetaTreeBuilder.process(columnMetas);
-        this.columnMetaTreePersister.persist(Set.of());
+        this.columnMetaTreeBuilder.process(columnMetas, context);
+        this.columnMetaTreePersister.persist(context);
 
         // find all concepts
         Optional<ConceptModel> laboratory = this.conceptService.findByConcept("\\laboratory\\");
