@@ -1,61 +1,50 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class ColumnMetaMapper {
 
-    private final CSVParser parser =
-            new CSVParserBuilder().withSeparator(',').withQuoteChar('"').withEscapeChar(CSVParser.NULL_CHARACTER).build();
-    private final Logger log = LoggerFactory.getLogger(ColumnMetaMapper.class);
     private static final String NULL = "null";
 
-    public Optional<ColumnMeta> mapCSVRowToColumnMeta(String csvRow) {
-        try {
-            String[] columns = parser.parseLine(csvRow);
-            boolean isCategorical = columns[3].charAt(0) == 't';
-            List<String> categoryValues = parseCategoryValuesToList(columns[4]);
+    public ColumnMeta mapCSVRowToColumnMeta(String[] cells) throws ArrayIndexOutOfBoundsException {
+        boolean isCategorical = cells[3].equalsIgnoreCase("true");
+        List<String> categoryValues = parseCategoryValuesToList(cells[4]);
 
-            String conceptPath = getConceptPath(columns, isCategorical, categoryValues);
+        String conceptPath = getConceptPath(cells, isCategorical, categoryValues);
 
-            double min = 0;
-            double max = 0;
-            if (!isCategorical) {
-                if (StringUtils.hasLength(columns[5]) && !NULL.equals(columns[5])) {
-                    min = Double.parseDouble(columns[5]);
-                }
-                if (StringUtils.hasLength(columns[6]) && !NULL.equals(columns[6])) {
-                    max = Double.parseDouble(columns[6]);
-                }
+        Double min = null;
+        Double max = null;
+        if (!isCategorical) {
+            if (StringUtils.hasLength(cells[5]) && !NULL.equals(cells[5])) {
+                min = Double.parseDouble(cells[5]);
             }
-
-            return Optional.of(new ColumnMeta(
-                    conceptPath,
-                    columns[1],
-                    columns[2],
-                    isCategorical,
-                    categoryValues,
-                    min,
-                    max,
-                    columns[7],
-                    columns[8],
-                    columns[9],
-                    columns[10]
-            ));
-        } catch (IOException e) {
-            log.error("Unable to parse line {}", csvRow);
+            if (StringUtils.hasLength(cells[6]) && !NULL.equals(cells[6])) {
+                max = Double.parseDouble(cells[6]);
+            }
         }
-        return Optional.empty();
+
+        String col9 = getOptional(cells, 9);
+        String col10 = getOptional(cells, 10);
+
+        return new ColumnMeta(
+                conceptPath,
+                cells[1],
+                cells[2],
+                isCategorical,
+                categoryValues,
+                min,
+                max,
+                cells[7],
+                cells[8],
+                col9,
+                col10
+        );
     }
 
     private static String getConceptPath(String[] columns, boolean isCategorical, List<String> categoryValues) {
@@ -69,6 +58,7 @@ public class ColumnMetaMapper {
                 conceptPath = conceptPath.substring(0, secondLastBackslash + 1);
             }
         }
+
         return conceptPath;
     }
 
@@ -80,6 +70,19 @@ public class ColumnMetaMapper {
         // µ is used as our delimiter between categorical values.
         String[] categoricalValues = column.split("µ");
         return List.of(categoricalValues);
+    }
+
+    private static String getOptional(String[] columns, int idx) {
+        if (idx >= columns.length) {
+            return null;
+        }
+
+        String v = columns[idx];
+        if (!StringUtils.hasLength(v) || NULL.equalsIgnoreCase(v)) {
+            return null;
+        }
+
+        return v;
     }
 
 }

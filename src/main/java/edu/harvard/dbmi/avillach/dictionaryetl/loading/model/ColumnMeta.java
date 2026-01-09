@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading.model;
 
 import java.util.List;
 

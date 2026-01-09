@@ -5,15 +5,14 @@ import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.dataset.DatasetRepository;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import jakarta.persistence.EntityManager;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -161,8 +160,11 @@ public class ConceptService {
                     conceptMeta.setValue(metaEntries.get(metaKey));
                     metaList.add(conceptMeta);
                 }));
-                Query metaQuery = entityManager.createNativeQuery(getUpsertConceptMetaBatchQuery(metaList));
-                metaUpdateCount += metaQuery.executeUpdate();
+
+                if (!metaList.isEmpty()) {
+                    Query metaQuery = entityManager.createNativeQuery(getUpsertConceptMetaBatchQuery(metaList));
+                    metaUpdateCount += metaQuery.executeUpdate();
+                }
 
                 // clear all dataobjects for next batch
                 conceptModels = new ArrayList<>();
@@ -271,5 +273,14 @@ public class ConceptService {
     public String escapeQuotesForSql(String str) {
         //Sanitizes input to ensure that single quotes in strings, such as apostrophes, are properly escaped for sql
         return str.replaceAll("'", "''");
+    }
+
+    @Transactional
+    public List<ConceptModel> saveAll(List<ConceptModel> conceptModels) {
+        return this.conceptRepository.saveAll(conceptModels);
+    }
+
+    public List<ConceptModel> findAllConceptsWithMetadataValues() {
+        return this.conceptRepository.findAllConceptPathsWithMetadataValues();
     }
 }

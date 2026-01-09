@@ -20,8 +20,11 @@ public class ConceptMetadataModel {
     @Column(name = "value")
     private String value;
 
-    public ConceptMetadataModel() {
+    public ConceptMetadataModel() {}
 
+    public ConceptMetadataModel(String key, String value) {
+        this.key = key;
+        this.value = value;
     }
 
     public ConceptMetadataModel(Long conceptNodeId, String key, String value) {
