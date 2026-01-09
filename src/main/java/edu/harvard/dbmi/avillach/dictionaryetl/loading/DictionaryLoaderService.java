@@ -1,8 +1,6 @@
 package edu.harvard.dbmi.avillach.dictionaryetl.loading;
 
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.ConceptModelTree;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingContext;
-import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.LoadingErrorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +26,11 @@ public class DictionaryLoaderService {
         this.columnMetaErrorWriter = columnMetaErrorWriter;
     }
 
-    public String processColumnMetaCSV(String csvPath, String errorFile) throws RuntimeException {
+    public String processColumnMetaCSV(String csvPath, String errorFile) {
         return processColumnMetaCSV(csvPath, errorFile, List.of());
     }
 
-    public String processColumnMetaCSV(String csvPath, String errorFile, List<String> studies) throws RuntimeException {
+    public String processColumnMetaCSV(String csvPath, String errorFile, List<String> studies) {
         String baseDir = System.getProperty("hpds.data.dir", "/opt/local/hpds");
 
         if (errorFile == null) {
