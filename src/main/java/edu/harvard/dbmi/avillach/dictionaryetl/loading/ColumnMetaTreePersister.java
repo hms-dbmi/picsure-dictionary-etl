@@ -107,14 +107,16 @@ public class ColumnMetaTreePersister {
                 if (batchModels.size() >= BATCH_SIZE) {
                     this.conceptService.saveAll(batchModels);
                     collectMetadata(batchNodes, pendingMetadata, metadataFutures, executor);
-                    batchModels = new ArrayList<>();
-                    batchNodes = new ArrayList<>();
+                    batchModels.clear();
+                    batchNodes.clear();
                 }
             }
 
             if (!batchModels.isEmpty()) {
                 this.conceptService.saveAll(batchModels);
                 collectMetadata(batchNodes, pendingMetadata, metadataFutures, executor);
+                batchModels.clear();
+                batchNodes.clear();
             }
 
             numberOfConceptPaths += currentLayer.size();
@@ -139,7 +141,7 @@ public class ColumnMetaTreePersister {
 
                 if (pendingMetadata.size() >= BATCH_SIZE) {
                     metadataFutures.add(saveMetadataBatchAsync(List.copyOf(pendingMetadata), executor));
-                    pendingMetadata = new ArrayList<>();
+                    pendingMetadata.clear();
                 }
             }
         }
