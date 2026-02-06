@@ -76,7 +76,7 @@ public class ColumnMetaTreePersister {
         datasets.forEach(dataset -> datasetIDs.put(dataset.getRef(), dataset.getDatasetId()));
         Collection<ConceptNode> currentLayer = context.conceptModelTree().getRoot().getChildren().values();
 
-        List<DatasetModel> newDatasets = new ArrayList<>(currentLayer.size() - datasetIDs.size());
+        List<DatasetModel> newDatasets = new ArrayList<>(Math.max(0, currentLayer.size() - datasetIDs.size()));
         currentLayer.forEach(node -> {
             if (!datasetIDs.containsKey(node.getDatasetRef())) {
                 newDatasets.add(new DatasetModel(node.getDatasetRef(), "", "", ""));
