@@ -460,7 +460,7 @@ public class DictionaryLoaderServiceIntegrationTest {
 
         // Allow only the first study (full ref)
         String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234"));
-        assertEquals("Success", result);
+        assertFalse(result.contains("Failed"), result);
 
         // Only one dataset should be created and it should be the allowed one
         List<DatasetModel> datasets = this.datasetService.findAll();
@@ -481,7 +481,7 @@ public class DictionaryLoaderServiceIntegrationTest {
         Path tmpErr = Files.createTempFile("cmerr2", ".csv");
 
         String result = this.dictionaryLoaderService.processColumnMetaCSV(tmpCsv.toString(), tmpErr.toString(), List.of("phs001234"));
-        assertEquals("Success", result);
+        assertFalse(result.contains("Failed"), result);
 
         List<DatasetModel> datasets = this.datasetService.findAll();
         assertEquals(1, datasets.size());

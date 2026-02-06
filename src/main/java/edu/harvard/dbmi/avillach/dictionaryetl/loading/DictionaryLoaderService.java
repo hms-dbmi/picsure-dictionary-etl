@@ -60,21 +60,34 @@ public class DictionaryLoaderService {
 
         log.info("Processing Studies: {}", allowedStudies);
         log.info("Found {} columnMeta.csv file(s) to process", csvFiles.size());
+        csvFiles.forEach(f -> log.info("Discovered file: {}", f));
 
+        List<String> successFiles = new ArrayList<>();
+        List<String> failedFiles = new ArrayList<>();
         for (Path csvFile : csvFiles) {
             log.info("Processing file: {}", csvFile);
             LoadingContext context = new LoadingContext(allowedStudies, csvFile.toString(), errorFile);
             try {
                 this.columnMetaGroupingPipeline.run(context);
                 this.columnMetaTreePersister.persist(context);
+                successFiles.add(csvFile.toString());
             } catch (Exception e) {
-                log.info(e.getMessage());
+                log.error("Failed to process file: {}", csvFile, e);
+                failedFiles.add(csvFile.toString());
             } finally {
                 this.columnMetaErrorWriter.writeErrors(context);
             }
         }
 
-        return "Success";
+        StringBuilder result = new StringBuilder();
+        result.append("Processed %d of %d file(s).\n".formatted(successFiles.size(), csvFiles.size()));
+        result.append("Successful:\n");
+        successFiles.forEach(f -> result.append("  ").append(f).append("\n"));
+        if (!failedFiles.isEmpty()) {
+            result.append("Failed:\n");
+            failedFiles.forEach(f -> result.append("  ").append(f).append("\n"));
+        }
+        return result.toString();
     }
 
     /**
