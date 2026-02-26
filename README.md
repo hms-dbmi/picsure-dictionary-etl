@@ -4,6 +4,7 @@
   * [Local Database for Development](#local-database-for-development)
     * [Installing `pg_restore` and `pg_dump` on Mac](#installing-pg_restore-and-pg_dump-on-mac)
     * [Accessing the docker database](#accessing-the-docker-database)
+  * [FHIR Controller](#fhir-controller)
   * [Facet Loader](#facet-loader)
       * [Expression evaluation rules](#expression-evaluation-rules)
       * [Idempotency and updates](#idempotency-and-updates)
@@ -94,6 +95,56 @@ If the command doesn’t work immediately, you may need to restart your terminal
 ```
 
 From within, you can execute `set search_path to dict;` to search within the dict schema (similar to running `use dict;` in mysql databases).
+
+## FHIR Controller
+
+The FHIR Controller provides endpoints to interact with a FHIR (Fast Healthcare Interoperability Resources) API for fetching and processing research study metadata.
+
+Configuration:
+
+Add the following properties to your application configuration file (e.g., application-dev.properties):
+```properties
+fhir.api.base.url=https://dbgap-api.ncbi.nlm.nih.gov/fhir/x1
+fhir.api.bulk.endpoint=/ResearchStudy
+```
+
+Endpoints:
+
+1. **GET `/api/fhir/research-studies/`**
+   - Fetches all research studies from the FHIR API.
+   - Returns a list of ResearchStudy objects containing study metadata.
+   - Uses pagination (500 results per page) to handle large datasets.
+   ```shell
+   curl -X GET http://localhost:8080/api/fhir/research-studies/
+   ```
+
+2. **GET `/api/fhir/research-studies/find-dbgap`**
+   - Extracts distinct phs (dbGaP study) values from all research studies.
+   - Returns a list of unique study identifiers.
+   ```shell
+   curl -X GET http://localhost:8080/api/fhir/research-studies/find-dbgap
+   ```
+
+3. **PATCH `/api/fhir/load/metadata/refresh`**
+   - Refreshes dataset metadata by fetching studies from the FHIR API.
+   - Updates dataset records based on study identifiers and metadata.
+   - Returns a summary of datasets updated and metadata records processed.
+   ```shell
+   curl -X PATCH http://localhost:8080/api/fhir/load/metadata/refresh
+   ```
+
+4. **PATCH `/api/fhir/load/metadata/mapping`**
+   - Maps FHIR metadata keys to dataset metadata fields.
+   - Reads a JSON mapping configuration to associate metadata attributes with datasets.
+   - Requires `fhir.api.url.to.key.map.json` configuration property.
+   ```shell
+   curl -X PATCH http://localhost:8080/api/fhir/load/metadata/mapping
+   ```
+
+Implementation notes:
+- The service uses pagination with a page size of 500 results to stay within the default 10MB WebClient buffer limit.
+- Each paginated request fetches approximately 9.7MB of data, safely below the buffer threshold.
+- The Meta model supports `versionId`, `lastUpdated`, and `source` fields returned by the FHIR API.
 
 ## Facet Loader
 
