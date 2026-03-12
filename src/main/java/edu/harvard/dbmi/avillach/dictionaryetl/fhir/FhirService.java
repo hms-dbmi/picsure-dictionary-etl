@@ -18,7 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.util.*;
@@ -29,11 +33,17 @@ public class FhirService {
 
     private static final Logger logger = LoggerFactory.getLogger(FhirService.class);
 
+    @Value("${fhir.api.bulk.fhir-page-size}")
+    private int fhirPageSize = 200;
+
     @Value("${fhir.api.bulk.endpoint}")
     private String fhirBulkEndpoint;
 
     @Value("${fhir.url-to-key-map-json}")
     private String urlToKeyMapJson;
+
+    @Value("${fhir.webclient.max-in-memory-size:10485760}")
+    private int webClientMaxInMemorySize;
 
     private Map<String, String> urlToKeyMap = new HashMap<>();
 
@@ -49,8 +59,25 @@ public class FhirService {
     public FhirService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper,
                        DatasetRepository datasetRepository,
                        DatasetMetadataRepository datasetMetadataRepository,
-                       @Value("${fhir.api.base.url}") String fhirApiBaseUrl) {
-        this.webClient = webClientBuilder.baseUrl(fhirApiBaseUrl).build();
+                       @Value("${fhir.api.base.url}") String fhirApiBaseUrl,
+                       @Value("${fhir.webclient.max-in-memory-size:10485760}") int maxInMemorySize) {
+
+        this.webClientMaxInMemorySize = maxInMemorySize;
+
+        // Configure buffer size to handle large paginated responses
+        ExchangeStrategies strategies = ExchangeStrategies.builder()
+                .codecs(codecs -> {
+                    codecs.defaultCodecs().maxInMemorySize(webClientMaxInMemorySize);
+                    codecs.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper));
+                    codecs.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper));
+                })
+                .build();
+
+        this.webClient = webClientBuilder
+                .baseUrl(fhirApiBaseUrl)
+                .exchangeStrategies(strategies)
+                .build();
+
         this.objectMapper = objectMapper;
         this.datasetRepository = datasetRepository;
         this.datasetMetadataRepository = datasetMetadataRepository;
@@ -139,16 +166,53 @@ public class FhirService {
     }
 
     public List<ResearchStudy> getResearchStudies() throws IOException {
+        List<ResearchStudy> out = new ArrayList<>();
+
+        String nextUrl = withCountParam(fhirBulkEndpoint, fhirPageSize);
+
+        while (nextUrl != null) {
+            JsonNode bundle = fetchJson(nextUrl);
+
+            JsonNode entries = bundle.path("entry");
+            if (entries.isArray()) {
+                for (JsonNode entry : entries) {
+                    JsonNode resource = entry.path("resource");
+                    if (!resource.isMissingNode() && !resource.isNull()) {
+                        out.add(objectMapper.treeToValue(resource, ResearchStudy.class));
+                    }
+                }
+            }
+
+            nextUrl = extractNextLink(bundle);
+        }
+
+        return out;
+    }
+
+    private JsonNode fetchJson(String url) throws IOException {
         String responseBody = webClient.get()
-                .uri(fhirBulkEndpoint)
+                .uri(url)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
+        return objectMapper.readTree(responseBody);
+    }
 
-        Bundle bundle = objectMapper.readValue(responseBody, Bundle.class);
-        return bundle.entry().stream()
-                .map(Entry::resource)
-                .toList();
+    private String extractNextLink(JsonNode bundle) {
+        JsonNode links = bundle.path("link");
+        if (links.isArray()) {
+            for (JsonNode link : links) {
+                if ("next".equals(link.path("relation").asText())) {
+                    return link.path("url").asText(null);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String withCountParam(String url, int count) {
+        String sep = url.contains("?") ? "&" : "?";
+        return url + sep + "_count=" + count;
     }
 
     public List<String> getDistinctPhsValues() throws IOException {
