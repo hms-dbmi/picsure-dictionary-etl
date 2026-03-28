@@ -30,11 +30,13 @@ class ConceptMetadataModelMapperTest {
                null,
                 null,
                null,
-                null
+                null,
+                false
         );
-        ConceptMetadataModel conceptMetadataModel = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
-        assertNotNull(conceptMetadataModel);
-        assertEquals("[\"10.0\",\"20.0\"]", conceptMetadataModel.getValue());
+        List<ConceptMetadataModel> result = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("[\"10.0\",\"20.0\"]", result.getFirst().getValue());
     }
 
     @Test
@@ -50,10 +52,58 @@ class ConceptMetadataModelMapperTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                false
         );
-        ConceptMetadataModel conceptMetadataModel = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
-        assertNotNull(conceptMetadataModel);
-        assertEquals("[\"up\",\"down\",\"left\",\"right\"]", conceptMetadataModel.getValue());
+        List<ConceptMetadataModel> result = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("[\"up\",\"down\",\"left\",\"right\"]", result.getFirst().getValue());
+    }
+
+    @Test
+    void shouldIncludeIsTimestamp_whenTimestampIsTrue() {
+        ColumnMeta columnMeta = new ColumnMeta(
+                "test",
+                "0",
+                "1",
+                true,
+                List.of("2024-01-01", "2024-01-02"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true
+        );
+        List<ConceptMetadataModel> result = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("values", result.get(0).getKey());
+        assertEquals("is_timestamp", result.get(1).getKey());
+        assertEquals("true", result.get(1).getValue());
+    }
+
+    @Test
+    void shouldNotIncludeIsTimestamp_whenTimestampIsFalse() {
+        ColumnMeta columnMeta = new ColumnMeta(
+                "test",
+                "0",
+                "1",
+                true,
+                List.of("a", "b"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        );
+        List<ConceptMetadataModel> result = this.conceptMetadataModelMapper.fromColumnMeta(columnMeta);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.stream().noneMatch(m -> "is_timestamp".equals(m.getKey())));
     }
 }

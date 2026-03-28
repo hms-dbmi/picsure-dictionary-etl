@@ -134,10 +134,10 @@ public class ColumnMetaTreePersister {
             Executor executor
     ) {
         for (ConceptNode node : batchNodes) {
-            ConceptMetadataModel conceptMetadataModel = node.getConceptMetadataModel();
-            if (conceptMetadataModel != null) {
-                conceptMetadataModel.setConceptNodeId(node.getConceptModel().getConceptNodeId());
-                pendingMetadata.add(conceptMetadataModel);
+            List<ConceptMetadataModel> models = node.getConceptMetadataModels();
+            for (ConceptMetadataModel model : models) {
+                model.setConceptNodeId(node.getConceptModel().getConceptNodeId());
+                pendingMetadata.add(model);
 
                 if (pendingMetadata.size() >= BATCH_SIZE) {
                     metadataFutures.add(saveMetadataBatchAsync(List.copyOf(pendingMetadata), executor));

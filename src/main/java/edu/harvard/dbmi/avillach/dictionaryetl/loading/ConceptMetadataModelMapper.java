@@ -6,6 +6,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -17,7 +18,7 @@ public class ConceptMetadataModelMapper {
         this.columnMetaUtility = columnMetaUtility;
     }
 
-    public ConceptMetadataModel fromColumnMeta(ColumnMeta columnMeta) {
+    public List<ConceptMetadataModel> fromColumnMeta(ColumnMeta columnMeta) {
         try {
             List<String> values = columnMeta.categoryValues();
             if (!columnMeta.categorical()) {
@@ -25,7 +26,14 @@ public class ConceptMetadataModelMapper {
             }
 
             String valuesJson = this.columnMetaUtility.listToJson(values);
-            return new ConceptMetadataModel("values", valuesJson);
+            List<ConceptMetadataModel> result = new ArrayList<>();
+            result.add(new ConceptMetadataModel("values", valuesJson));
+
+            if (columnMeta.timestamp()) {
+                result.add(new ConceptMetadataModel("is_timestamp", "true"));
+            }
+
+            return result;
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

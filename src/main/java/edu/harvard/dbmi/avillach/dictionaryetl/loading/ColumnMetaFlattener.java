@@ -53,6 +53,7 @@ public class ColumnMetaFlattener {
             }
         }
 
+        boolean isTimestamp = columnMetas.stream().anyMatch(ColumnMeta::timestamp);
         return new ColumnMeta(
                 columnMetas.getFirst().name(),
                 null,
@@ -64,7 +65,8 @@ public class ColumnMetaFlattener {
                 null,
                 null,
                 null,
-                null
+                null,
+                isTimestamp
         );
     }
 
@@ -72,6 +74,7 @@ public class ColumnMetaFlattener {
         Set<String> setOfVals = new HashSet<>();
         columnMetas.forEach(columnMeta -> setOfVals.addAll(columnMeta.categoryValues()));
 
+        boolean isTimestamp = columnMetas.stream().anyMatch(ColumnMeta::timestamp);
         List<String> values = new ArrayList<>(setOfVals);
         return new ColumnMeta(
                 columnMetas.getFirst().name(),
@@ -84,7 +87,8 @@ public class ColumnMetaFlattener {
                 null,
                 null,
                 null,
-                null
+                null,
+                isTimestamp
         );
     }
 

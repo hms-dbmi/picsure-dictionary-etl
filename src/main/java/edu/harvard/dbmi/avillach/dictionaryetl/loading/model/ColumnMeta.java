@@ -13,6 +13,7 @@ public record ColumnMeta(
     String allObservationsOffset,
     String allObservationsLength,
     String observationCount,
-    String patientCount
+    String patientCount,
+    boolean timestamp
 ) {
 }
