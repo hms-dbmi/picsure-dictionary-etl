@@ -71,7 +71,7 @@ public class ColumnMetaTreeBuilder {
 
             if (i == node.length - 1) {
                 currentNode.getConceptModel().setConceptType(ConceptTypes.conceptTypeFromColumnMeta(columnMeta));
-                currentNode.setConceptMetadataModel(conceptMetadataModelMapper.fromColumnMeta(columnMeta));
+                currentNode.setConceptMetadataModels(conceptMetadataModelMapper.fromColumnMeta(columnMeta));
             }
 
             parent = currentNode;

@@ -31,6 +31,7 @@ public class ColumnMetaMapper {
 
         String col9 = getOptional(cells, 9);
         String col10 = getOptional(cells, 10);
+        boolean isTimestamp = "true".equalsIgnoreCase(getOptional(cells, 11));
 
         return new ColumnMeta(
                 conceptPath,
@@ -43,7 +44,8 @@ public class ColumnMetaMapper {
                 cells[7],
                 cells[8],
                 col9,
-                col10
+                col10,
+                isTimestamp
         );
     }
 

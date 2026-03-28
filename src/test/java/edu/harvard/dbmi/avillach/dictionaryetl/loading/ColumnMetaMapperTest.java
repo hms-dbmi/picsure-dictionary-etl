@@ -39,7 +39,7 @@ class ColumnMetaMapperTest {
 
                 // dates are parsed as category values
                 assertFalse(cmOpt.categoryValues().isEmpty());
-                assertTrue(cmOpt.categoryValues().get(0).matches("\\d{4}-\\d{2}-\\d{2}"));
+                assertTrue(cmOpt.categoryValues().getFirst().matches("\\d{4}-\\d{2}-\\d{2}"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -137,6 +137,22 @@ class ColumnMetaMapperTest {
     void shouldParseGenomicConceptPath_ofLengthTwo() throws IOException {
         ColumnMeta columnMeta = this.columnMetaMapper.mapCSVRowToColumnMeta(csvParser.parseLine("\\open_access-1000Genomes\\GENOMES ON GRCH381000\\,5,0,true,FALSE,null,null,1569879,1735060,4978,4978"));
         assertEquals("\\open_access-1000Genomes\\GENOMES ON GRCH381000\\", columnMeta.name());
+    }
+
+    @Test
+    void shouldParseTimestampTrue_whenColumn11IsTrue() throws IOException {
+        String csvRow = "\\study\\variable\\,8,0,false,,0.0,85.0,380670,761347,9999,9999,true";
+        ColumnMeta columnMeta = columnMetaMapper.mapCSVRowToColumnMeta(csvParser.parseLine(csvRow));
+        assertNotNull(columnMeta);
+        assertTrue(columnMeta.timestamp());
+    }
+
+    @Test
+    void shouldParseTimestampFalse_whenColumn11IsAbsent() throws IOException {
+        String csvRow = "\\study\\variable\\,8,0,false,,0.0,85.0,380670,761347,9999,9999";
+        ColumnMeta columnMeta = columnMetaMapper.mapCSVRowToColumnMeta(csvParser.parseLine(csvRow));
+        assertNotNull(columnMeta);
+        assertFalse(columnMeta.timestamp());
     }
 
 }
