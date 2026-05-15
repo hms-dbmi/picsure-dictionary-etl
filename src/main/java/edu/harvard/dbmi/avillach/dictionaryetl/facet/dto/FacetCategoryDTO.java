@@ -12,9 +12,14 @@ public record FacetCategoryDTO(
         @JsonProperty("Display") @JsonAlias("display") String display,
         @JsonProperty("Description") @JsonAlias("description") String description,
         @JsonProperty("Facets") @JsonAlias("facets") List<FacetDTO> facets,
-        @JsonProperty("Metadata") @JsonAlias("metadata") @JsonSetter(nulls = Nulls.AS_EMPTY) List<FacetCategoryMetaDTO> metadata
+        @JsonProperty("Metadata") @JsonAlias("metadata") @JsonSetter(nulls = Nulls.AS_EMPTY) List<FacetCategoryMetaDTO> metadata,
+        @JsonProperty("Concept_Meta_Key") @JsonAlias({ "conceptMetaKey", "ConceptMetaKey" }) String conceptMetaKey
 ) {
     public FacetCategoryDTO(String name, String display, String description, List<FacetDTO> facets) {
-        this(name, display, description, facets, List.of());
+        this(name, display, description, facets, List.of(), null);
+    }
+
+    public FacetCategoryDTO(String name, String display, String description, List<FacetDTO> facets, List<FacetCategoryMetaDTO> metadata) {
+        this(name, display, description, facets, metadata, null);
     }
 }
