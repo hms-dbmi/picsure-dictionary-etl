@@ -32,7 +32,7 @@ public class DatasetFacetRefreshService {
         this.facetConceptRepository = facetConceptRepository;
     }
 
-    public void refreshDatasetFacet() {
+    public void refreshDatasetFacet(boolean isBDC) {
         if (datasetRepository.findAll().size() < 2) {
             log.info("Less than 2 datasets detected. Not altering facets");
             return;
@@ -52,7 +52,11 @@ public class DatasetFacetRefreshService {
         }
 
         log.info("Adding facets for each dataset");
-        facetRepository.createFacetForEachDatasetForCategory(category.getFacetCategoryId());
+        if (isBDC) {
+            facetRepository.bdcCreateFacetForEachDatasetForCategory(category.getFacetCategoryId());
+        } else {
+            facetRepository.createFacetForEachDatasetForCategory(category.getFacetCategoryId());
+        }
         log.info("Adding facet/concept pairs for each leaf concept node");
         facetConceptRepository.createDatasetPairForEachLeafConcept(category.getFacetCategoryId());
     }

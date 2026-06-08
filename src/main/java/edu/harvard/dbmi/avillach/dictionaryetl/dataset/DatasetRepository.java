@@ -41,5 +41,17 @@ WITH refs AS (
     @Transactional
     @Query(value = "DELETE FROM dict.dataset WHERE ref = :ref", nativeQuery = true)
     int deleteByRef(@Param("ref") String ref);
+
+    @Query(value = """
+        select
+            dataset_id,
+            ref,
+            full_name,
+            abbreviation,
+            description
+        from dict.dataset ds
+        where ds.ref in (:refs)
+    """, nativeQuery = true)
+    List<DatasetModel> findAllByRef(@Param("refs") List<String> refs);
 }
 

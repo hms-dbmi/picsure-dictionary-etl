@@ -68,4 +68,21 @@ public interface ConceptRepository extends JpaRepository<ConceptModel, Long> {
     @Transactional(readOnly = true)
     Stream<ConceptPathRow> streamDatasetNodeIdAndPath(String ref);
 
+    @Query(value = """
+        select
+            cn.concept_node_id,
+            cn.dataset_id,
+            cn.name,
+            cn.display,
+            cn.concept_type,
+            cn.concept_path,
+            cn.parent_id
+        from dict.concept_node cn
+        left join dict.concept_node_meta cnm ON cn.concept_node_id = cnm.concept_node_id
+        where
+        cnm.key = 'values'
+        and
+        cnm.value is not null;
+    """, nativeQuery = true)
+    List<ConceptModel> findAllConceptPathsWithMetadataValues();
 }

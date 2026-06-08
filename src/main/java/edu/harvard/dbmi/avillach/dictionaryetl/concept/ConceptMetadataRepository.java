@@ -2,10 +2,13 @@ package edu.harvard.dbmi.avillach.dictionaryetl.concept;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,18 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             do update set value = EXCLUDED.value
             """, nativeQuery = true)
     int updateStigvarsFromConceptPaths(@Param(value = "paths") String[] paths, String val);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+            insert into dict.concept_node_meta (concept_node_id, key, value)
+            values (:conceptNodeId, :key, :value)
+            on conflict (key, concept_node_id)
+            do update set value = EXCLUDED.value
+            """, nativeQuery = true)
+    int upsert(@Param("conceptNodeId") long conceptNodeId,
+               @Param("key") String key,
+               @Param("value") String value);
 
     @Query(value = """
             select new edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptStigvarIdentificationModel(
@@ -61,4 +76,22 @@ public interface ConceptMetadataRepository extends JpaRepository<ConceptMetadata
             group by key;
     """, nativeQuery = true)
     List<String> findByDatasetID(Long[] datasetIDs);
+
+    List<ConceptMetadataModel> findAllByKey(String key);
+
+    @Query(value = "SELECT DISTINCT value FROM dict.concept_node_meta WHERE key = :key", nativeQuery = true)
+    List<String> findDistinctValuesForKey(@Param("key") String key);
+
+    @Query(value = """
+            SELECT concept_node_id AS conceptNodeId, value AS metaValue
+            FROM dict.concept_node_meta
+            WHERE key = :key
+            """, nativeQuery = true)
+    @QueryHints({
+            @QueryHint(name = "hibernate.jdbc.fetch_size", value = "1000"),
+            @QueryHint(name = "hibernate.query.readOnly", value = "true"),
+            @QueryHint(name = "hibernate.query.cacheable", value = "false")
+    })
+    @Transactional(readOnly = true)
+    Stream<ConceptMetaValueRow> streamConceptIdAndValueForKey(@Param("key") String key);
 }

@@ -3,9 +3,13 @@ package edu.harvard.dbmi.avillach.dictionaryetl.facet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetaValueRow;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.dto.*;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMeta;
+import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryMetaRepository;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facetcategory.FacetCategoryRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +36,9 @@ public class FacetLoaderService {
     private final FacetCategoryRepository facetCategoryRepository;
     private final FacetRepository facetRepository;
     private final ConceptRepository conceptRepository;
+    private final ConceptMetadataRepository conceptMetadataRepository;
     private final FacetConceptRepository facetConceptRepository;
+    private final FacetCategoryMetaRepository facetCategoryMetaRepository;
 
     // Meta repositories + object mapper
     private final FacetMetadataRepository facetMetadataRepository;
@@ -47,14 +53,17 @@ public class FacetLoaderService {
 
     @Autowired
     public FacetLoaderService(FacetCategoryRepository facetCategoryRepository, FacetRepository facetRepository,
-                              ConceptRepository conceptRepository, FacetConceptRepository facetConceptRepository,
-                              FacetMetadataRepository facetMetadataRepository,
+                              ConceptRepository conceptRepository, ConceptMetadataRepository conceptMetadataRepository,
+                              FacetConceptRepository facetConceptRepository,
+                              FacetMetadataRepository facetMetadataRepository, FacetCategoryMetaRepository facetCategoryMetaRepo,
                               ObjectMapper objectMapper) {
         this.facetCategoryRepository = facetCategoryRepository;
         this.facetRepository = facetRepository;
         this.conceptRepository = conceptRepository;
+        this.conceptMetadataRepository = conceptMetadataRepository;
         this.facetConceptRepository = facetConceptRepository;
         this.facetMetadataRepository = facetMetadataRepository;
+        this.facetCategoryMetaRepository = facetCategoryMetaRepo;
         this.objectMapper = objectMapper.copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
@@ -140,6 +149,7 @@ public class FacetLoaderService {
 
         // Collectors for single-pass mapping and parent rebuild across ALL categories
         List<LeafFacetSpec> leafFacets = new ArrayList<>();
+        List<MetaLeafFacetSpec> metaLeafFacets = new ArrayList<>();
         Map<Long, List<Long>> childrenByParent = new HashMap<>();
         Map<Long, Integer> depthByFacet = new HashMap<>();
         Set<Long> toClear = new HashSet<>();
@@ -182,8 +192,15 @@ public class FacetLoaderService {
                 accum.createdCategoryNames().add(category.getName());
             }
 
-            // Recursively process facets (collect only; single-pass mapping later)
-            if (facetCategory.facets() != null) {
+            // If metadata was included, update or add
+            updateFacetCategoryMetadata(category, facetCategory.metadata());
+
+            if (StringUtils.isNotBlank(facetCategory.conceptMetaKey())) {
+                Counts c = discoverAndCollectMetaFacets(
+                        category, facetCategory.conceptMetaKey(), accum, metaLeafFacets, nameById, categoryById);
+                facetsCreated += c.created();
+                facetsUpdated += c.updated();
+            } else if (facetCategory.facets() != null) {
                 for (FacetDTO f : facetCategory.facets()) {
                     Counts c = upsertFacetRecursiveCollect(
                             category.getFacetCategoryId(),
@@ -211,6 +228,9 @@ public class FacetLoaderService {
         // Single pass over concepts to map leaf facets
         singlePassMapLeaves(leafFacets);
 
+        // Single pass over concept metadata to map metadata-driven leaf facets
+        metadataPassMapLeaves(metaLeafFacets);
+
         // Rebuild parent facets bottom-up from their direct children
         rebuildParentsBottomUp(childrenByParent, depthByFacet);
 
@@ -225,6 +245,30 @@ public class FacetLoaderService {
 
         return new Result(categoriesCreated, categoriesUpdated, facetsCreated, facetsUpdated,
                 List.copyOf(accum.createdCategoryNames()), List.copyOf(accum.createdFacetNames()), List.copyOf(accum.facetMappings()));
+    }
+
+    private void updateFacetCategoryMetadata(FacetCategoryModel category, List<FacetCategoryMetaDTO> metadataList){
+        if(metadataList == null || metadataList.isEmpty()) return;
+
+        for(FacetCategoryMetaDTO metadata: metadataList){
+            if (metadata.key() == null || metadata.value() == null) {
+                logger.warn("load() - Skipping null or incomplete key/value metadata pair for facet category " + category.getName());
+                continue;
+            }
+            Optional<FacetCategoryMeta> maybeMeta = facetCategoryMetaRepository.findFacetCategoryMetaByCategoryId(category.getFacetCategoryId(), metadata.key());
+            FacetCategoryMeta metaRecord;
+            if (maybeMeta.isPresent()) {
+                metaRecord = maybeMeta.get();
+                metaRecord.setValue(metadata.value());
+            } else {
+                metaRecord = new FacetCategoryMeta(
+                    category.getFacetCategoryId(),
+                    metadata.key(),
+                    metadata.value()
+                );
+            }
+            facetCategoryMetaRepository.save(metaRecord);
+        }
     }
 
     // Collect-only recursion: upsert facets and metadata; gather leaves/structure for single-pass mapping
@@ -324,7 +368,6 @@ public class FacetLoaderService {
 
         boolean hasChildren = facetDTO.facets() != null && !facetDTO.facets().isEmpty();
         if (!hasChildren) {
-            // Collect leaf facet for single-pass mapping
             leafFacets.add(new LeafFacetSpec(facet.getFacetId(), effectiveGroups));
         } else {
             // Recurse into children
@@ -352,6 +395,89 @@ public class FacetLoaderService {
         return new Counts(created, updated);
     }
 
+    /**
+     * Generator for metadata-driven facets. Queries every distinct value stored under
+     * {@code metaKey} in concept_node_meta, upserts one facet per value in {@code category},
+     * and registers each as a {@link MetaLeafFacetSpec} for the subsequent metadata mapping pass.
+     */
+    private Counts discoverAndCollectMetaFacets(
+            FacetCategoryModel category,
+            String metaKey,
+            LoadAccum accum,
+            List<MetaLeafFacetSpec> metaLeafFacets,
+            Map<Long, String> nameById,
+            Map<Long, String> categoryById
+    ) {
+        int created = 0;
+        int updated = 0;
+
+        List<String> distinctValues = conceptMetadataRepository.findDistinctValuesForKey(metaKey);
+        for (String value : distinctValues) {
+            if (StringUtils.isBlank(value)) continue;
+
+            Optional<FacetModel> existing = facetRepository.findByNameAndFacetCategoryId(value, category.getFacetCategoryId());
+            FacetModel facet;
+            if (existing.isPresent()) {
+                facet = existing.get();
+                updated++;
+            } else {
+                facet = new FacetModel(category.getFacetCategoryId(), value, value, "", null);
+                facetRepository.save(facet);
+                accum.createdFacetNames().add(new FacetNameNested(value));
+                created++;
+            }
+
+            nameById.put(facet.getFacetId(), value);
+            categoryById.put(facet.getFacetId(), category.getName());
+            metaLeafFacets.add(new MetaLeafFacetSpec(facet.getFacetId(), metaKey, value));
+        }
+
+        return new Counts(created, updated);
+    }
+
+    private void metadataPassMapLeaves(List<MetaLeafFacetSpec> metaLeafFacets) {
+        if (metaLeafFacets.isEmpty()) {
+            return;
+        }
+
+        // Group specs by metaKey so each key is queried only once
+        Map<String, Map<String, Long>> facetIdByValueByKey = new HashMap<>();
+        for (MetaLeafFacetSpec spec : metaLeafFacets) {
+            facetIdByValueByKey
+                    .computeIfAbsent(spec.metaKey(), k -> new HashMap<>())
+                    .put(spec.metaValue(), spec.facetId());
+        }
+
+        final int BATCH = 1000;
+        Map<Long, List<Long>> buffers = new HashMap<>();
+
+        for (Map.Entry<String, Map<String, Long>> keyEntry : facetIdByValueByKey.entrySet()) {
+            String metaKey = keyEntry.getKey();
+            Map<String, Long> facetIdByValue = keyEntry.getValue();
+
+            try (Stream<ConceptMetaValueRow> rows = conceptMetadataRepository.streamConceptIdAndValueForKey(metaKey)) {
+                Iterator<ConceptMetaValueRow> it = rows.iterator();
+                while (it.hasNext()) {
+                    ConceptMetaValueRow row = it.next();
+                    Long facetId = facetIdByValue.get(row.getMetaValue());
+                    if (facetId == null) continue;
+
+                    List<Long> buf = buffers.computeIfAbsent(facetId, k -> new ArrayList<>(BATCH));
+                    buf.add(row.getConceptNodeId());
+                    if (buf.size() >= BATCH) {
+                        facetConceptRepository.bulkMap(facetId, buf);
+                        buf.clear();
+                    }
+                }
+            }
+        }
+
+        for (Map.Entry<Long, List<Long>> e : buffers.entrySet()) {
+            if (!e.getValue().isEmpty()) {
+                facetConceptRepository.bulkMap(e.getKey(), e.getValue());
+            }
+        }
+    }
 
     private void singlePassMapLeaves(List<LeafFacetSpec> leafFacets) {
         if (leafFacets.isEmpty()) {

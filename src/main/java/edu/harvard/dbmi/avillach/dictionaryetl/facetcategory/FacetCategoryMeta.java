@@ -31,6 +31,12 @@ public class FacetCategoryMeta {
         this.value = value;
     }
 
+    public FacetCategoryMeta(Long facetCategoryId, String key, String value) {
+        this.facetCategoryId = facetCategoryId;
+        this.key = key;
+        this.value = value;
+    }
+
     public Long getFacetCategoryMetaId() {
         return facetCategoryMetaId;
     }

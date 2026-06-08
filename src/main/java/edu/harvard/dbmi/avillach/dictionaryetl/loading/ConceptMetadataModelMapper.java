@@ -1,0 +1,42 @@
+package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.harvard.dbmi.avillach.dictionaryetl.Utility.ColumnMetaUtility;
+import edu.harvard.dbmi.avillach.dictionaryetl.concept.ConceptMetadataModel;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.model.ColumnMeta;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class ConceptMetadataModelMapper {
+
+    private final ColumnMetaUtility columnMetaUtility;
+
+    public ConceptMetadataModelMapper(ColumnMetaUtility columnMetaUtility) {
+        this.columnMetaUtility = columnMetaUtility;
+    }
+
+    public List<ConceptMetadataModel> fromColumnMeta(ColumnMeta columnMeta) {
+        try {
+            List<String> values = columnMeta.categoryValues();
+            if (!columnMeta.categorical()) {
+                values = List.of(String.valueOf(columnMeta.min()), String.valueOf(columnMeta.max()));
+            }
+
+            String valuesJson = this.columnMetaUtility.listToJson(values);
+            List<ConceptMetadataModel> result = new ArrayList<>();
+            result.add(new ConceptMetadataModel("values", valuesJson));
+
+            if (columnMeta.timestamp()) {
+                result.add(new ConceptMetadataModel("is_timestamp", "true"));
+            }
+
+            return result;
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

@@ -208,7 +208,6 @@ public class ConceptController {
     @Transactional
     @PutMapping("/concept/csv")
     public ResponseEntity<Object> updateConceptsFromCSV(@RequestBody String input) {
-
         List<String[]> concepts;
         Map<String, Integer> headerMap;
         List<String> metaColumnNames;

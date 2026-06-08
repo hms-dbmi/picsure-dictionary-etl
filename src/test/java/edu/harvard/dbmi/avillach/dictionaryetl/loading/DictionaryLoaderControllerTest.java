@@ -10,6 +10,7 @@ import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetConceptModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetConceptService;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.model.FacetModel;
 import edu.harvard.dbmi.avillach.dictionaryetl.facet.FacetService;
+import edu.harvard.dbmi.avillach.dictionaryetl.loading.dto.InitializeRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

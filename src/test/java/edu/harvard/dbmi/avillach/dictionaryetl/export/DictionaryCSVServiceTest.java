@@ -107,7 +107,7 @@ class DictionaryCSVServiceTest {
         assertNotNull(syntheaResource);
         String syntheaFilePath = syntheaResource.getFile().toPath().toString();
         dictionaryLoaderService.processColumnMetaCSV(syntheaFilePath, resourcePath + "/columnMetaErrors" + ".csv");
-        facetService.createDefaultFacets();
+        facetService.createOrUpdateDefaultFacets();
         assertFalse(conceptRepository.findByDatasetId(datasetRepository.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()).isEmpty());
         assertFalse(facetService.findAllFacetsByDatasetIDs(new Long[]{datasetRepository.findByRef("ACT Diagnosis ICD-10").get().getDatasetId()}).isEmpty());
         // make a directory for the generated files
@@ -138,9 +138,11 @@ class DictionaryCSVServiceTest {
 
         File conceptsFile = generatedFilesPath.resolve("Concepts.csv").toFile();
         Assertions.assertTrue(conceptsFile.exists());
+
         //check if concepts.csv can be reloaded
         String conceptReload = Files.readString(conceptsFile.toPath());
         Assertions.assertEquals(HttpStatus.OK, conceptController.updateConceptsFromCSV(conceptReload).getStatusCode());
+
         //Check all datasets got merged and updated correctly
         datasetRepository.findAll().forEach(
         dataset ->{

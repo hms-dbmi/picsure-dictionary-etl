@@ -1,4 +1,4 @@
-package edu.harvard.dbmi.avillach.dictionaryetl.loading;
+package edu.harvard.dbmi.avillach.dictionaryetl.loading.model;
 
 import java.util.List;
 
@@ -13,6 +13,7 @@ public record ColumnMeta(
     String allObservationsOffset,
     String allObservationsLength,
     String observationCount,
-    String patientCount
+    String patientCount,
+    boolean timestamp
 ) {
 }
