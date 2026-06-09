@@ -84,22 +84,36 @@ class RecoverMonthsFacetGeneratorServiceTest {
 
     @Test
     void generate_shouldDiscoverMonths_andLoadFacetsAndMappings() {
-        // Seed dataset and concept nodes with paths containing (Inf|Noninf) followed by months
+        // Seed datasets
         DatasetModel dsAdult = datasetRepository.save(new DatasetModel("phs003463", "RECOVER Adult", "", ""));
         DatasetModel dsOther = datasetRepository.save(new DatasetModel("phs000000", "OTHER", "", ""));
-        FacetCategoryModel consortiumFacetCat = facetCategoryRepository.save(new FacetCategoryModel("Consortium_Curated_Facets", "Consortium_Curated_Facets", null));
-        FacetModel facetRecoverAdult = facetRepository.save(new FacetModel(consortiumFacetCat.getFacetCategoryId(), "RECOVER Adult Curated", "RECOVER Adult Curated", "RECOVER Adult Curated Description", null));
-        facetMetadataRepository.save(new FacetMetadataModel(facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS, "[[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]]"));
 
-        // Matching RECOVER adult concepts
+        // Seed required facet category and prerequisite facets
+        FacetCategoryModel consortiumFacetCat = facetCategoryRepository.save(
+                new FacetCategoryModel("Consortium_Curated_Facets", "Consortium_Curated_Facets", null));
+        FacetModel facetRecoverAdult = facetRepository.save(new FacetModel(
+                consortiumFacetCat.getFacetCategoryId(), "RECOVER Adult Curated", "RECOVER Adult Curated",
+                "RECOVER Adult Curated Description", null));
+        facetMetadataRepository.save(new FacetMetadataModel(
+                facetRecoverAdult.getFacetId(), FacetLoaderService.KEY_EFFECTIVE_EXPRESSION_GROUPS,
+                "[[{ \"exactly\": \"phs003463\", \"node\": 0 },{ \"regex\": \"(?i)RECOVER_Adult$\", \"node\": 1 }]]"));
+
+        FacetModel infectedFacet = facetRepository.save(new FacetModel(
+                consortiumFacetCat.getFacetCategoryId(), "Infected", "Infected", "", null));
+        FacetModel nonInfectedFacet = facetRepository.save(new FacetModel(
+                consortiumFacetCat.getFacetCategoryId(), "Non-infected", "Non-infected", "", null));
+
+        // Seed concepts
+        // c1: Non-infected month 9
         ConceptModel c1 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
                 "\\phs003463\\RECOVER_Adult\\biospecimens\\Inventory of Samples Collected\\ac_cptcoll\\Noninf\\9\\", null);
+        // c2: Infected month 12
         ConceptModel c2 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
                 "\\phs003463\\RECOVER_Adult\\flder_tier2\\chest_ct\\Qualitative Read\\chestct_reticular\\Inf\\12\\", null);
+        // c3: Infected month 9
         ConceptModel c3 = new ConceptModel(dsAdult.getDatasetId(), "phs003463", "phs003463", "",
                 "\\phs003463\\RECOVER_Adult\\flder_tier2\\echocardiogram_with_strain\\Echocardiogram\\rttestrain_aregurg\\Inf\\9\\", null);
-
-        // Non-matching concept (no Inf/Noninf before last)
+        // cNo: different dataset — must not appear in any month facet
         ConceptModel cNo = new ConceptModel(dsOther.getDatasetId(), "phs000000", "phs000000", "",
                 "\\phs000000\\SomeStudy\\something\\42\\", null);
 
@@ -108,7 +122,12 @@ class RecoverMonthsFacetGeneratorServiceTest {
         conceptService.save(c3);
         conceptService.save(cNo);
 
-        // 1) Dry run to discover months
+        // Map concepts to infection-group facets (this is the source of truth for group assignment)
+        facetConceptRepository.save(new FacetConceptModel(nonInfectedFacet.getFacetId(), c1.getConceptNodeId()));
+        facetConceptRepository.save(new FacetConceptModel(infectedFacet.getFacetId(), c2.getConceptNodeId()));
+        facetConceptRepository.save(new FacetConceptModel(infectedFacet.getFacetId(), c3.getConceptNodeId()));
+
+        // 1) Dry run — discover months without persisting
         GenerateRecoverMonthsRequest req = new GenerateRecoverMonthsRequest();
         req.dryRun = true;
 
@@ -121,7 +140,7 @@ class RecoverMonthsFacetGeneratorServiceTest {
         assertEquals(2, dryOk.discoveredMonths().size());
         assertNull(dryOk.load());
 
-        // 2) Actual generation (clear none), then verify facets and mappings
+        // 2) Actual generation — verify facets and mappings
         req.dryRun = false;
         GenerateRecoverMonthsResponse out = generatorService.generate(req);
         assertTrue(out instanceof GenerateRecoverMonthsSuccessResponse);
@@ -129,14 +148,29 @@ class RecoverMonthsFacetGeneratorServiceTest {
         assertNotNull(outOk.load());
         assertEquals("Generation complete.", outOk.message());
 
-        // Facets should exist
-        assertTrue(facetRepository.findByName("09m-post index").isPresent());
-        assertTrue(facetRepository.findByName("12m-post index").isPresent());
+        // Generated facets should use prefixed names and group-specific display
+        Optional<FacetModel> inf09Opt = facetRepository.findByName("Infected 09m-post index");
+        Optional<FacetModel> noninf09Opt = facetRepository.findByName("Non-infected 09m-post index");
+        Optional<FacetModel> inf12Opt = facetRepository.findByName("Infected 12m-post index");
+        assertTrue(inf09Opt.isPresent(), "Infected 09m-post index should exist");
+        assertTrue(noninf09Opt.isPresent(), "Non-infected 09m-post index should exist");
+        assertTrue(inf12Opt.isPresent(), "Infected 12m-post index should exist");
 
-        // Verify mappings for 09m and 12m facets
-        Long nineFacetId = facetRepository.findByName("09m-post index").map(FacetModel::getFacetId).orElseThrow();
-        Long twelveFacetId = facetRepository.findByName("12m-post index").map(FacetModel::getFacetId).orElseThrow();
+        // Old un-prefixed names should not exist
+        assertTrue(facetRepository.findByName("09m-post index").isEmpty());
+        assertTrue(facetRepository.findByName("12m-post index").isEmpty());
 
+        // Display should be un-prefixed (e.g. "09m-post index")
+        assertEquals("09m-post index", inf09Opt.get().getDisplay());
+        assertEquals("09m-post index", noninf09Opt.get().getDisplay());
+        assertEquals("12m-post index", inf12Opt.get().getDisplay());
+
+        // Parent IDs must point to the correct infection-group facet
+        assertEquals(infectedFacet.getFacetId(), inf09Opt.get().getParentId());
+        assertEquals(nonInfectedFacet.getFacetId(), noninf09Opt.get().getParentId());
+        assertEquals(infectedFacet.getFacetId(), inf12Opt.get().getParentId());
+
+        // Fetch saved concepts for concept-mapping assertions
         Optional<ConceptModel> c1Opt = conceptService.findByConcept(c1.getConceptPath());
         Optional<ConceptModel> c2Opt = conceptService.findByConcept(c2.getConceptPath());
         Optional<ConceptModel> c3Opt = conceptService.findByConcept(c3.getConceptPath());
@@ -144,16 +178,30 @@ class RecoverMonthsFacetGeneratorServiceTest {
         assertTrue(c2Opt.isPresent());
         assertTrue(c3Opt.isPresent());
 
+        Long inf09Id = inf09Opt.get().getFacetId();
+        Long noninf09Id = noninf09Opt.get().getFacetId();
+        Long inf12Id = inf12Opt.get().getFacetId();
+
+        // c1 (Noninf/9) → Non-infected 09m-post index only
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(noninf09Id, c1Opt.get().getConceptNodeId()).isPresent());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(inf09Id, c1Opt.get().getConceptNodeId()).isEmpty());
+
+        // c2 (Inf/12) → Infected 12m-post index only
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(inf12Id, c2Opt.get().getConceptNodeId()).isPresent());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(noninf09Id, c2Opt.get().getConceptNodeId()).isEmpty());
+
+        // c3 (Inf/9) → Infected 09m-post index only
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(inf09Id, c3Opt.get().getConceptNodeId()).isPresent());
+        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(noninf09Id, c3Opt.get().getConceptNodeId()).isEmpty());
+
+        // cNo (other dataset) must not appear in any generated month facet
         List<FacetConceptModel> all = facetConceptRepository.findAll();
         assertFalse(all.isEmpty());
-
-        // 09m facet should map c1 and c3
-        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(nineFacetId, c1Opt.get().getConceptNodeId()).isPresent());
-        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(nineFacetId, c3Opt.get().getConceptNodeId()).isPresent());
-        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(nineFacetId, c2Opt.get().getConceptNodeId()).isEmpty());
-
-        // 12m facet should map c2 only
-        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(twelveFacetId, c2Opt.get().getConceptNodeId()).isPresent());
-        assertTrue(facetConceptRepository.findByFacetIdAndConceptNodeId(twelveFacetId, c1Opt.get().getConceptNodeId()).isEmpty());
+        boolean noMapping = all.stream()
+                .filter(fc -> fc.getConceptNodeId().equals(cNo.getConceptNodeId()))
+                .allMatch(fc -> !fc.getFacetId().equals(inf09Id)
+                        && !fc.getFacetId().equals(noninf09Id)
+                        && !fc.getFacetId().equals(inf12Id));
+        assertTrue(noMapping, "cNo should not be mapped to any generated month facet");
     }
 }
