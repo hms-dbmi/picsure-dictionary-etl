@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>24</java.version>
         <spotless.version>2.43.0</spotless.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
 		<datasource-proxy.version>1.4.1</datasource-proxy.version>
 	</properties>
 	<url/>
