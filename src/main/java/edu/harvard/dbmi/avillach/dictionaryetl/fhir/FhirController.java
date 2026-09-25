@@ -39,6 +39,12 @@ public class FhirController {
         return ResponseEntity.ok("URL to Key Map updated successfully");
     }
 
+    @PatchMapping("/config/fields/load-mappings")
+    public ResponseEntity<String> updateFieldToKeyMap(@RequestBody String fieldToKeyMapJson) {
+        fhirService.setFieldToKeyMap(fieldToKeyMapJson);
+        return ResponseEntity.ok("Field to Key Map updated successfully");
+    }
+
     @GetMapping("/research-studies/")
     public ResponseEntity<List<ResearchStudy>> findAll() {
         try {

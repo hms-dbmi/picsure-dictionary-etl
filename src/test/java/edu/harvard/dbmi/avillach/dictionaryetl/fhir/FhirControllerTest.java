@@ -19,9 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-@ContextConfiguration(classes = {
-    FhirController.class
-})
+@ContextConfiguration(classes = {FhirController.class})
 public class FhirControllerTest {
 
     @Autowired
@@ -43,8 +41,7 @@ public class FhirControllerTest {
 
     @Test
     void testDatasetsMetadataRefresh_IOExceptionThrown() throws IOException {
-        doThrow(new IOException("FHIR API connection failed"))
-            .when(fhirService).updateDatasetMetadata();
+        doThrow(new IOException("FHIR API connection failed")).when(fhirService).updateDatasetMetadata();
 
         ResponseEntity<String> response = fhirController.datasetsMetadataRefresh();
 
@@ -86,22 +83,10 @@ public class FhirControllerTest {
 
     @Test
     void testFindAll_Success() throws IOException {
-        ResearchStudy study1 = new ResearchStudy(
-            "ResearchStudy",
-            "phs000001.v1.p1",
-            null,
-            "Test Study 1",
-            "Test Study 1 Description",
-            null
-        );
-        ResearchStudy study2 = new ResearchStudy(
-            "ResearchStudy",
-            "phs000002.v1.p1",
-            null,
-            "Test Study 2",
-            "Test Study 2 Description",
-            null
-        );
+        ResearchStudy study1 =
+            new ResearchStudy("ResearchStudy", "phs000001.v1.p1", null, "Test Study 1", "Test Study 1 Description", null, null, null, null);
+        ResearchStudy study2 =
+            new ResearchStudy("ResearchStudy", "phs000002.v1.p1", null, "Test Study 2", "Test Study 2 Description", null, null, null, null);
         List<ResearchStudy> mockStudies = Arrays.asList(study1, study2);
 
         when(fhirService.getResearchStudies()).thenReturn(mockStudies);
@@ -129,8 +114,7 @@ public class FhirControllerTest {
 
     @Test
     void testFindAll_IOExceptionThrown() throws IOException {
-        when(fhirService.getResearchStudies())
-            .thenThrow(new IOException("Failed to fetch research studies"));
+        when(fhirService.getResearchStudies()).thenThrow(new IOException("Failed to fetch research studies"));
 
         ResponseEntity<List<ResearchStudy>> response = fhirController.findAll();
 
@@ -168,14 +152,32 @@ public class FhirControllerTest {
 
     @Test
     void testGetDistinctPhsValues_IOExceptionThrown() throws IOException {
-        when(fhirService.getDistinctPhsValues())
-            .thenThrow(new IOException("Failed to extract PHS values"));
+        when(fhirService.getDistinctPhsValues()).thenThrow(new IOException("Failed to extract PHS values"));
 
         ResponseEntity<List<String>> response = fhirController.getDistinctPhsValues();
 
         assertEquals(500, response.getStatusCodeValue());
         assertNull(response.getBody());
         verify(fhirService, times(1)).getDistinctPhsValues();
+    }
+
+    @Test
+    void testUpdateFieldToKeyMap_Success() {
+        String fieldToKeyMapJson = """
+            {
+              "category": "study_design",
+              "sponsor": "sponsor",
+              "focus": "study_focus"
+            }
+            """;
+
+        doNothing().when(fhirService).setFieldToKeyMap(anyString());
+
+        ResponseEntity<String> response = fhirController.updateFieldToKeyMap(fieldToKeyMapJson);
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("Field to Key Map updated successfully", response.getBody());
+        verify(fhirService, times(1)).setFieldToKeyMap(fieldToKeyMapJson);
     }
 
     @Test
