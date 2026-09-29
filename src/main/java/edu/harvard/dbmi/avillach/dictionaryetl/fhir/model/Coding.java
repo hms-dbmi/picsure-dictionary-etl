@@ -2,6 +2,9 @@ package edu.harvard.dbmi.avillach.dictionaryetl.fhir.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * FHIR R4 Coding datatype (subset).
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Extension(String url, String valueString) {
+public record Coding(String system, String code, String display) {
 }

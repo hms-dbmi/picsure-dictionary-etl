@@ -98,53 +98,69 @@ From within, you can execute `set search_path to dict;` to search within the dic
 
 ## FHIR Controller
 
-The FHIR Controller provides endpoints to interact with a FHIR (Fast Healthcare Interoperability Resources) API for fetching and processing research study metadata.
+The FHIR Controller pulls dbGaP `ResearchStudy` resources from the Gen3 FHIR API and copies study metadata onto
+`dict.dataset` / `dict.dataset_meta`.
 
-Configuration:
-
-Add the following properties to your application configuration file (e.g., application-dev.properties):
+Configuration (`application.properties`):
 ```properties
-fhir.api.base.url=https://dbgap-api.ncbi.nlm.nih.gov/fhir/x1
-fhir.api.bulk.endpoint=/ResearchStudy
+fhir.api.base.url=https://h4nez3yyb6.execute-api.us-east-1.amazonaws.com/prod/
+fhir.api.bulk.endpoint=ResearchStudy
+fhir.api.bulk.fhir-page-size=100
+# Standard ResearchStudy field -> dataset_meta key (preferred source)
+fhir.field-to-key-map-json={"category":"study_design","sponsor":"sponsor","focus":"study_focus"}
+# Legacy extension URL suffix -> dataset_meta key (fallback when the standard field is absent)
+fhir.url-to-key-map-json={"DBGAP-FHIR-Category":"study_design","DBGAP-FHIR-Sponsor":"sponsor","DBGAP-FHIR-Focus":"study_focus"}
 ```
+
+Server constraints (verified against the production server):
+- `_count` must be 100 or less; larger values return HTTP 400.
+- `_format` is not supported. Sending it still returns 200, but the server appends an `OperationOutcome` warning entry
+  to every bundle. The service skips any bundle entry whose `resourceType` is not `ResearchStudy`.
+- Pages are followed via the bundle's `link[relation=next].url`, which carries an opaque `page=` cursor.
+- One resource is returned per consent group (e.g. `phs000007.v35.p16.c1`); the dataset `ref` is the first
+  dot-separated segment of `id`.
+
+Metadata mapping (ALS-12872): Gen3 moved the `DBGAP-FHIR-*` extensions into the standard R4 fields
+`ResearchStudy.category`, `ResearchStudy.sponsor` and `ResearchStudy.focus`. For each entry of
+`fhir.field-to-key-map-json` the standard field is read first (`text`, else the first `coding.display`, for
+CodeableConcepts; `display` for the sponsor Reference; multiple values are joined with `; `). If the standard field is
+absent, the value of the matching extension from `fhir.url-to-key-map-json` is used instead. Existing `dataset_meta`
+rows are updated in place; new keys are inserted; nothing is deleted.
 
 Endpoints:
 
-1. **GET `/api/fhir/research-studies/`**
-   - Fetches all research studies from the FHIR API.
-   - Returns a list of ResearchStudy objects containing study metadata.
-   - Uses pagination (500 results per page) to handle large datasets.
+1. **GET `/api/fhir/research-studies/`** — fetches every research study (all pages) and returns them.
    ```shell
-   curl -X GET http://localhost:8080/api/fhir/research-studies/
+   curl -X GET http://localhost:8090/api/fhir/research-studies/
    ```
 
-2. **GET `/api/fhir/research-studies/find-dbgap`**
-   - Extracts distinct phs (dbGaP study) values from all research studies.
-   - Returns a list of unique study identifiers.
+2. **GET `/api/fhir/research-studies/find-dbgap`** — returns the distinct phs ids across all studies.
    ```shell
-   curl -X GET http://localhost:8080/api/fhir/research-studies/find-dbgap
+   curl -X GET http://localhost:8090/api/fhir/research-studies/find-dbgap
    ```
 
-3. **PATCH `/api/fhir/load/metadata/refresh`**
-   - Refreshes dataset metadata by fetching studies from the FHIR API.
-   - Updates dataset records based on study identifiers and metadata.
-   - Returns a summary of datasets updated and metadata records processed.
+3. **PATCH `/api/fhir/load/metadata/refresh`** — for every study whose phs id matches an existing dataset `ref`,
+   overwrites the dataset description (when non-blank) and upserts the mapped `dataset_meta` keys. Logs a per-run
+   metrics summary.
    ```shell
-   curl -X PATCH http://localhost:8080/api/fhir/load/metadata/refresh
+   curl -X PATCH http://localhost:8090/api/fhir/load/metadata/refresh
    ```
 
-4. **PATCH `/api/fhir/load/metadata/mapping`**
-   - Maps FHIR metadata keys to dataset metadata fields.
-   - Reads a JSON mapping configuration to associate metadata attributes with datasets.
-   - Requires `fhir.api.url.to.key.map.json` configuration property.
+4. **PATCH `/api/fhir/config/fields/load-mappings`** — replaces the in-memory standard-field map. Body is the same JSON
+   shape as `fhir.field-to-key-map-json`. Not persisted across restarts.
    ```shell
-   curl -X PATCH http://localhost:8080/api/fhir/load/metadata/mapping
+   curl -X PATCH -H "Content-Type: application/json" \
+        --data '{"category":"study_design","sponsor":"sponsor","focus":"study_focus"}' \
+        http://localhost:8090/api/fhir/config/fields/load-mappings
    ```
 
-Implementation notes:
-- The service uses pagination with a page size of 500 results to stay within the default 10MB WebClient buffer limit.
-- Each paginated request fetches approximately 9.7MB of data, safely below the buffer threshold.
-- The Meta model supports `versionId`, `lastUpdated`, and `source` fields returned by the FHIR API.
+5. **PATCH `/api/fhir/config/extensions/load-mappings`** — replaces the in-memory legacy extension map. Body is the same
+   JSON shape as `fhir.url-to-key-map-json`. Not persisted across restarts.
+   ```shell
+   curl -X PATCH -H "Content-Type: application/json" \
+        --data '{"DBGAP-FHIR-Category":"study_design","DBGAP-FHIR-Sponsor":"sponsor","DBGAP-FHIR-Focus":"study_focus"}' \
+        http://localhost:8090/api/fhir/config/extensions/load-mappings
+   ```
 
 ## Facet Loader
 
